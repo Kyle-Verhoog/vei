@@ -1,0 +1,3 @@
+#! /bin/bash
+
+java -cp "lib/scala-lib.jar:target/scala-2.12/joosc_2.12-0.1.jar" compiler.Compiler "$@"
