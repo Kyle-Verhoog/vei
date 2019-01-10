@@ -1,5 +1,6 @@
 import compiler.Compiler.State
 import compiler.DFA
+import exceptions.TransitionNonExistentException
 import org.scalatest.FunSuite;
 
 class DFATest extends FunSuite {
@@ -29,6 +30,7 @@ class DFATest extends FunSuite {
     case ("three", '1') => "two"
     case ("four", '0')  => "two"
     case ("four", '1')  => "four"
+    case _ => throw TransitionNonExistentException()
   }
 
   test("Test single state transition") {
@@ -47,7 +49,7 @@ class DFATest extends FunSuite {
 
   test("Transition failure") {
     val dfa = new DFA(states, accepting, "zero", alphabet, transition)
-    assertThrows[scala.MatchError] {
+    assertThrows[TransitionNonExistentException] {
       dfa.next('2')
     }
   }
