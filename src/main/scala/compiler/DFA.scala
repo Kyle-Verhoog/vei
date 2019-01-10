@@ -6,14 +6,25 @@ class DFA[T](states: Set[State],
              acceptingStates: Set[State],
              startState: State,
              alphabet: Set[T],
-             transition: (State, T) => State)
-  extends FA[T](states, acceptingStates, startState, alphabet, transition) {
+             transition: (State, T) => State) {
 
-  def next(alpha: T): FA[T] = {
-    new NFA(states,
-      acceptingStates,
-      transition(startState, alpha),
-      alphabet,
-      transition)
+  def next(alpha: T): DFA[T] = {
+    new DFA(states,
+            acceptingStates,
+            transition(startState, alpha),
+            alphabet,
+            transition)
   }
+
+  def getStartState(): State = { // TODO
+    startState
+  }
+
+  def isComplete(): Boolean = {
+    acceptingStates.contains(startState)
+  }
+
+  /*def createDfa(nfa: NFA[T]): DFA[T] = {
+
+  }*/
 }
