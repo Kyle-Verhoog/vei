@@ -1,5 +1,5 @@
 import compiler.Compiler.State
-import compiler.DFA
+import compiler.scanner.DFA
 import exceptions.TransitionNonExistentException
 import org.scalatest.FunSuite;
 
@@ -36,7 +36,7 @@ class DFATest extends FunSuite {
   test("Test single state transition") {
     val dfa = new DFA(states, accepting, "zero", alphabet, transition)
     val newDfa = dfa.next('0')
-    assert(newDfa.getStartState().equals("one"))
+    assert(newDfa.startState.equals("one"))
   }
 
   test("Correctly identifies complete state") {
