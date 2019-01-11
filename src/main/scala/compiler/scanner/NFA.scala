@@ -5,15 +5,20 @@ import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
 
+/* TODO
+ * we will want to be able to merge a set of NFAs into one NFA with epsilon transitions going to each NFAs start state
+ * we need this in order to create the big NFA (and eventual DFA) to scan with
+ */
+
 class NFA[T](val states: Set[State],
              val acceptingStates: Set[State],
-             val startState: Set[State],
+             val startStates: Set[State],
              val alphabet: Set[T],
              val transition: (State, T) => Set[State],
              val epsilonSym: T) {
 
   def next(alpha: T): NFA[T] = {
-    val nextStates = findNextStates(startState, alpha)
+    val nextStates = findNextStates(startStates, alpha)
 
     if (nextStates.isEmpty) {
       throw TransitionNonExistentException()
@@ -27,8 +32,8 @@ class NFA[T](val states: Set[State],
             epsilonSym)
   }
 
-  def findNextStates(currentState: Set[State], alpha: T): Set[State] = {
-    val epsilonClosure = findEpsilonClosureMultipleStates(currentState)
+  def findNextStates(currentStates: Set[State], alpha: T): Set[State] = {
+    val epsilonClosure = findEpsilonClosureMultipleStates(currentStates)
     var newStates = Set[State]()
 
     for (state <- epsilonClosure) {
@@ -60,10 +65,10 @@ class NFA[T](val states: Set[State],
   }
 
   def findEpsilonClosureMultipleStates(
-      currentState: Set[State],
+      currentStates: Set[State],
       closureStates: Set[State] = Set[State]()): Set[State] = {
-    var epsilonClosure = currentState
-    for (state <- currentState) {
+    var epsilonClosure = currentStates
+    for (state <- currentStates) {
       epsilonClosure =
         epsilonClosure.union(findEpsilonClosure(state, closureStates))
     }
@@ -80,7 +85,7 @@ class NFA[T](val states: Set[State],
   }
 
   def isComplete(): Boolean = {
-    isAccepting(startState, acceptingStates)
+    isAccepting(startStates, acceptingStates)
   }
 
   def genDfaStateName(states: Set[State]): String = {
@@ -94,7 +99,7 @@ class NFA[T](val states: Set[State],
   }
 
   def createDfa(): DFA[T] = {
-    val nfaStartState = findEpsilonClosureMultipleStates(startState)
+    val nfaStartState = findEpsilonClosureMultipleStates(startStates)
 
     val startStateName = genDfaStateName(nfaStartState)
     val transitionList = mutable.HashMap[(String, T), String]()

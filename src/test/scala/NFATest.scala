@@ -34,7 +34,7 @@ class NFATest extends FunSuite {
     val nfa = new NFA(states, accepting, Set("one"), alphabet, transition, 'ε')
     val newNfa = nfa.next('1')
 
-    assert(newNfa.startState.diff(Set("two", "four")).isEmpty)
+    assert(newNfa.startStates.diff(Set("two", "four")).isEmpty)
   }
 
   test("Test epsilon clousre") {
