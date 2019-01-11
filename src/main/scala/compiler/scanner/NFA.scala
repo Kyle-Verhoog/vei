@@ -14,8 +14,15 @@ class NFA[T](val states: Set[State],
              val acceptingStates: Set[State],
              val startStates: Set[State],
              val alphabet: Set[T],
-             val transition: (State, T) => Set[State],
+             val transitionTable: mutable.HashMap[(State, T), Set[State]],
              val epsilonSym: T) {
+
+  def transition(state: State, alpha: T): Set[State] = {
+    if (!transitionTable.contains((state, alpha))) {
+      throw TransitionNonExistentException()
+    }
+    transitionTable((state, alpha))
+  }
 
   def next(alpha: T): NFA[T] = {
     val nextStates = findNextStates(startStates, alpha)
@@ -28,7 +35,7 @@ class NFA[T](val states: Set[State],
             acceptingStates,
             nextStates,
             alphabet,
-            transition,
+            transitionTable,
             epsilonSym)
   }
 
@@ -147,12 +154,7 @@ class NFA[T](val states: Set[State],
       accepting,
       startStateName,
       alphabet,
-      (state: State, alpha: T) => {
-        if (!transitionList.contains((state, alpha))) {
-          throw TransitionNonExistentException()
-        }
-        transitionList((state, alpha))
-      }
+      transitionList
     )
   }
 }

@@ -21,26 +21,25 @@ class DFATest extends FunSuite {
 
   val alphabet = Set('0', '1')
 
-  def transition(state: State, alpha: Char): State = (state, alpha) match {
-    case ("zero", '0')  => "one"
-    case ("zero", '1')  => "two"
-    case ("two", '0')   => "four"
-    case ("two", '1')   => "three"
-    case ("three", '0') => "three"
-    case ("three", '1') => "two"
-    case ("four", '0')  => "two"
-    case ("four", '1')  => "four"
-    case _ => throw TransitionNonExistentException()
-  }
+  val transitionTable = collection.mutable.HashMap(
+    ("zero", '0') -> "one",
+    ("zero", '1') -> "two",
+    ("two", '0') -> "four",
+    ("two", '1') -> "three",
+    ("three", '0') -> "three",
+    ("three", '1') -> "two",
+    ("four", '0') -> "two",
+    ("four", '1') -> "four"
+  )
 
   test("Test single state transition") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transition)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
     val newDfa = dfa.next('0')
     assert(newDfa.startState.equals("one"))
   }
 
   test("Correctly identifies complete state") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transition)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
     assert(!dfa.isComplete())
 
     val newDfa = dfa.next('0')
@@ -48,7 +47,7 @@ class DFATest extends FunSuite {
   }
 
   test("Transition failure") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transition)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
     assertThrows[TransitionNonExistentException] {
       dfa.next('2')
     }
