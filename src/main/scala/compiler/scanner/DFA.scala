@@ -1,4 +1,4 @@
-package compiler.scanner
+package compiler
 
 import compiler.Compiler.State
 import exceptions.TransitionNonExistentException
@@ -29,5 +29,4 @@ class DFA[T](val states: Set[State],
   def isComplete(): Boolean = {
     acceptingStates.contains(startState)
   }
-
 }

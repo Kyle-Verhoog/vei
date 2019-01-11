@@ -1,7 +1,5 @@
-import compiler.Compiler.State
-import compiler.scanner.NFA
-import exceptions.TransitionNonExistentException
-import org.scalatest.FunSuite;
+import compiler.NFA
+import org.scalatest.FunSuite
 
 class NFATest extends FunSuite {
   val states = Set(

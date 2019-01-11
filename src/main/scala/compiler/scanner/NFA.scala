@@ -1,14 +1,9 @@
-package compiler.scanner
+package compiler
 
 import compiler.Compiler.State
 import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
-
-/* TODO
- * we will want to be able to merge a set of NFAs into one NFA with epsilon transitions going to each NFAs start state
- * we need this in order to create the big NFA (and eventual DFA) to scan with
- */
 
 class NFA[T](val states: Set[State],
              val acceptingStates: Set[State],
