@@ -134,11 +134,12 @@ class NFA[T](val states: Set[State],
         // NOTE: apparently scala has no `continue` so this is what i had to do
         if (nextStatesEpsilonClosure.nonEmpty) {
           val stateName = genDfaStateName(nextStatesEpsilonClosure)
-          // check if we already have this state
+          transitionList += ((currentStateName, alpha) -> stateName)
+
+          // check if we already have this state before enqueing it again
           if (!states.contains(stateName)) {
             states += stateName
             queue.enqueue(nextStatesEpsilonClosure)
-            transitionList += ((currentStateName, alpha) -> stateName)
           }
         }
       }

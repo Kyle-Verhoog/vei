@@ -29,4 +29,8 @@ class DFA[T](val states: Set[State],
   def isComplete(): Boolean = {
     acceptingStates.contains(startState)
   }
+
+  def canProceed(alpha: T): Boolean = {
+    transitionTable.contains((startState, alpha))
+  }
 }

@@ -38,7 +38,8 @@ object Utility {
     // add postfix version of NFA to the new one
     var i = 0
     for (nfa <- nfas) {
-      val postfix = "MERGED_POSTFIX " + (i += 1)
+      i += 1
+      val postfix = "MERGED_POSTFIX" + i
       states = states.union(postfixStates(nfa.states, postfix))
       startStates = startStates.union(postfixStates(nfa.startStates, postfix))
       acceptingStates =

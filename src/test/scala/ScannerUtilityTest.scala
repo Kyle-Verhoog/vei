@@ -26,13 +26,15 @@ class ScannerUtilityTest extends FunSuite {
   }
 
   def genNFA2(): NFA[State] = {
-    val states = Set("three", "four")
-    val accepting = Set("four")
-    val startState = Set("three")
+    val states = Set("three", "four", "five")
+    val accepting = Set("four", "five")
+    val startState = Set("three", "five")
     val alphabet = Set("0", "1")
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(
         ("three", "0") -> Set("four"),
+        ("three", "0") -> Set("five"),
+        ("three", "1") -> Set("five"),
         ("four", "1") -> Set("four")
       )
 
@@ -50,21 +52,26 @@ class ScannerUtilityTest extends FunSuite {
     assert(
       mergedNFA.states
         .diff(
-          Set("oneMERGED_POSTFIX ()",
-              "twoMERGED_POSTFIX ()",
-              "threeMERGED_POSTFIX ()",
-              "fourMERGED_POSTFIX ()"))
+          Set("oneMERGED_POSTFIX1",
+              "twoMERGED_POSTFIX1",
+              "threeMERGED_POSTFIX2",
+              "fourMERGED_POSTFIX2",
+              "fiveMERGED_POSTFIX2"))
         .isEmpty)
 
-    assert(
-      mergedNFA.acceptingStates
-        .diff(Set("twoMERGED_POSTFIX ()", "fourMERGED_POSTFIX ()"))
-        .isEmpty)
+    assert(mergedNFA.acceptingStates
+      .diff(
+        Set("twoMERGED_POSTFIX1", "fourMERGED_POSTFIX2", "fiveMERGED_POSTFIX2"))
+      .isEmpty)
 
     assert(
       mergedNFA.startStates
-        .diff(Set("oneMERGED_POSTFIX ()", "threeMERGED_POSTFIX ()"))
+        .diff(
+          Set("oneMERGED_POSTFIX1",
+              "threeMERGED_POSTFIX2",
+              "fiveMERGED_POSTFIX2"))
         .isEmpty)
-      // TODO determine how to test transitions
+
+    // TODO how many transitions we want to test
   }
 }
