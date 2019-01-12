@@ -1,7 +1,7 @@
 package regex
 import scala.collection.mutable.ListBuffer
 
-case class Paren (nalt: Integer, natom: Integer) {
+case class Paren(nalt: Integer, natom: Integer) {
   def getnalt(): Integer = {
     nalt
   }
@@ -11,14 +11,13 @@ case class Paren (nalt: Integer, natom: Integer) {
 }
 
 object Regex {
-  def toPost(regex: String): String = {
+  def toPostfix(regex: String): String = {
     var postfix = ""
+    var cch = '@'
     var x = 0
     var natom = 0
     var nalt = 0
     var parens = new ListBuffer[Paren]()
-    var nparen = 0
-    var cch = '@'
 
     for (x <- 0 until regex.length()) {
       var re = regex.charAt(x)
@@ -30,43 +29,44 @@ object Regex {
             postfix += cch
           }
 
-          nparen += 1
           parens += new Paren(nalt, natom)
           nalt = 0
           natom = 0
         }
+        case '|' => {
+          if (natom == 0) {
+            println("Error") // TODO: throw
+          }
+          natom -= 1
+          while (natom > 0) {
+            postfix += cch
+            natom -= 1
+          }
+          nalt += 1
+        }
         case ')' => {
-          if (nparen < 1) {
+          if (parens.length < 1) {
             println("error 1") // TODO: throw
           }
           if (natom == 0) {
             println("error 2") // TODO: throw
           }
 
-          while (natom-1 > 0) {
+          natom -= 1
+          while (natom > 0) {
             postfix += cch
             natom -= 1
           }
 
-          for (x <- nalt until 0) {
+          while (nalt > 0) {
             postfix += '|'
+            nalt -= 1
           }
 
-          var par = parens.remove(nparen-1)
-          nparen -= 1
+          var par = parens.remove(parens.length - 1)
           nalt = par.getnalt()
           natom = par.getnatom()
           natom += 1
-        }
-        case '|' => {
-          if (natom == 0) {
-            println("Error") // TODO: throw
-          }
-          while (natom - 1 > 0) {
-            postfix += cch
-            natom -= 1
-          }
-          nalt += 1
         }
         case '?' | '*' | '+' => {
           if (natom == 0) {
@@ -86,13 +86,22 @@ object Regex {
       }
     }
 
-    while (natom-1 > 0) {
+    if (parens.length > 0) {
+      // TODO throw
+    }
+
+    natom -= 1
+    while (natom > 0) {
       postfix += cch
       natom -= 1
+    }
+
+    while (nalt > 0) {
+      postfix += '|'
+      nalt -= 1
     }
     postfix
   }
 
-  def toNFA(regex: String) {
-  }
+  def toNFA(regex: String) {}
 }
