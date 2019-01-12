@@ -1,6 +1,6 @@
 package compiler
 
-import compiler.scanner.Tokens
+import compiler.scanner.TokenDefinition
 
 object Compiler {
   type State = String
@@ -8,9 +8,9 @@ object Compiler {
   def main(args: Array[String]) {
     val dfa = Utility
       .merge(Set(
-               Tokens.IF(),
-               Tokens.ELSE(),
-               Tokens.INT()
+               TokenDefinition.IF(),
+               TokenDefinition.ELSE(),
+               TokenDefinition.INT()
              ),
              "ε")
       .createDfa()

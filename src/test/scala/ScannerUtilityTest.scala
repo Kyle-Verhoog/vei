@@ -1,6 +1,7 @@
 import compiler.Compiler.State
 import compiler.Utility
 import compiler.NFA
+import compiler.scanner.Token.Token
 import org.scalatest.FunSuite
 
 import scala.collection.mutable
@@ -16,12 +17,14 @@ class ScannerUtilityTest extends FunSuite {
         ("one", "0") -> Set("two"),
         ("two", "1") -> Set("two")
       )
+    val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
 
     new NFA[State](states,
                    accepting,
                    startState,
                    alphabet,
                    transitionTable,
+                   tokenStates,
                    "ε")
   }
 
@@ -37,12 +40,14 @@ class ScannerUtilityTest extends FunSuite {
         ("three", "1") -> Set("five"),
         ("four", "1") -> Set("four")
       )
+    val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
 
     new NFA[State](states,
                    accepting,
                    startState,
                    alphabet,
                    transitionTable,
+                   tokenStates,
                    "ε")
   }
 

@@ -1,6 +1,7 @@
 package compiler
 
 import compiler.Compiler.State
+import compiler.scanner.Token.Token
 import exceptions.TransitionNonExistentException
 
 import scala.collection.mutable
@@ -9,7 +10,8 @@ class DFA[T](val states: Set[State],
              val acceptingStates: Set[State],
              val startState: State,
              val alphabet: Set[T],
-             val transitionTable: mutable.HashMap[(State, T), State]) {
+             val transitionTable: mutable.HashMap[(State, T), State],
+             val tokenStates: mutable.HashMap[State, Token]) {
 
   def transition(state: State, alpha: T): State = {
     if (!transitionTable.contains((state, alpha))) {
@@ -23,7 +25,8 @@ class DFA[T](val states: Set[State],
             acceptingStates,
             transition(startState, alpha),
             alphabet,
-            transitionTable)
+            transitionTable,
+            tokenStates)
   }
 
   def isComplete(): Boolean = {

@@ -1,6 +1,10 @@
+import compiler.Compiler.State
 import compiler.DFA
+import compiler.scanner.Token.Token
 import exceptions.TransitionNonExistentException
 import org.scalatest.FunSuite
+
+import scala.collection.mutable
 
 class DFATest extends FunSuite {
   val states = Set(
@@ -20,7 +24,7 @@ class DFATest extends FunSuite {
 
   val alphabet = Set('0', '1')
 
-  val transitionTable = collection.mutable.HashMap(
+  val transitionTable = mutable.HashMap(
     ("zero", '0') -> "one",
     ("zero", '1') -> "two",
     ("two", '0') -> "four",
@@ -31,14 +35,16 @@ class DFATest extends FunSuite {
     ("four", '1') -> "four"
   )
 
+  val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
+
   test("Test single state transition") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     val newDfa = dfa.next('0')
     assert(newDfa.startState.equals("one"))
   }
 
   test("Correctly identifies complete state") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     assert(!dfa.isComplete())
 
     val newDfa = dfa.next('0')
@@ -46,7 +52,7 @@ class DFATest extends FunSuite {
   }
 
   test("Transition failure") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable)
+    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     assertThrows[TransitionNonExistentException] {
       dfa.next('2')
     }

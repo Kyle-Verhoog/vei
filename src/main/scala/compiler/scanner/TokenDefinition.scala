@@ -2,11 +2,12 @@ package compiler.scanner
 
 import compiler.Compiler.State
 import compiler.NFA
+import compiler.scanner.Token.Token
 
 import scala.collection.mutable
 
 // TODO figure out how we want to do this
-object Tokens {
+object TokenDefinition {
   def genDigitRange(lower: Int, upper: Int): Set[String] = {
     (lower to upper).map(digit => digit.toString).toSet
   }
@@ -22,6 +23,8 @@ object Tokens {
     val alphabet = genDigitRange(0, 9)
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "0") -> Set("zero"))
+    val tokenStates: mutable.HashMap[State, Token] =
+      mutable.HashMap("zero" -> Token.INTEGER, "digit" -> Token.INTEGER)
 
     // add transitions for 1-9 to start an int
     genDigitRange(1, 9).foreach(digit =>
@@ -36,6 +39,7 @@ object Tokens {
                    startState,
                    alphabet,
                    transitionTable,
+                   tokenStates,
                    "ε")
   }
 
@@ -47,12 +51,15 @@ object Tokens {
     val alphabet = Set("i", "f")
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "i") -> Set("i"), ("i", "f") -> Set("f"))
+    val tokenStates: mutable.HashMap[State, Token] =
+      mutable.HashMap("f" -> Token.IF)
 
     new NFA[State](states,
                    accepting,
                    startState,
                    alphabet,
                    transitionTable,
+                   tokenStates,
                    "ε")
   }
 
@@ -68,12 +75,15 @@ object Tokens {
         ("l", "s") -> Set("s"),
         ("s", "e") -> Set("e2")
       )
+    val tokenStates: mutable.HashMap[State, Token] =
+      mutable.HashMap("e2" -> Token.ELSE)
 
     new NFA[State](states,
                    accepting,
                    startState,
                    alphabet,
                    transitionTable,
+                   tokenStates,
                    "ε")
   }
 }

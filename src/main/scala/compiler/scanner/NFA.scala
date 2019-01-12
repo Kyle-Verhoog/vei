@@ -1,6 +1,7 @@
 package compiler
 
 import compiler.Compiler.State
+import compiler.scanner.Token.Token
 import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
@@ -10,6 +11,8 @@ class NFA[T](val states: Set[State],
              val startStates: Set[State],
              val alphabet: Set[T],
              val transitionTable: mutable.HashMap[(State, T), Set[State]],
+             // stores accepting states that are related to a token
+             val tokenStates: mutable.HashMap[State, Token],
              val epsilonSym: T) {
 
   def transition(state: State, alpha: T): Set[State] = {
@@ -31,6 +34,7 @@ class NFA[T](val states: Set[State],
             nextStates,
             alphabet,
             transitionTable,
+            tokenStates,
             epsilonSym)
   }
 
@@ -107,6 +111,7 @@ class NFA[T](val states: Set[State],
     val transitionList = mutable.HashMap[(String, T), String]()
     var states = Set[State](startStateName)
     var accepting = Set[State]()
+    var newTokenStates = mutable.HashMap[State, Token]()
 
     // generate dfa
     val queue = new mutable.Queue[Set[State]]
@@ -118,6 +123,14 @@ class NFA[T](val states: Set[State],
 
       // check if we should add the current state to accepting
       if (isAccepting(currentState, acceptingStates)) {
+        // add all token states that are not already defined
+        currentState.foreach(state => {
+          // TODO determine if we want to break ties here in some way
+          if (!newTokenStates.contains(state) && tokenStates.contains(state))
+            newTokenStates += state -> tokenStates(state)
+        })
+
+        // add to accepting
         accepting += currentStateName
       }
 
@@ -150,7 +163,8 @@ class NFA[T](val states: Set[State],
       accepting,
       startStateName,
       alphabet,
-      transitionList
+      transitionList,
+      newTokenStates
     )
   }
 }

@@ -1,6 +1,7 @@
 package compiler
 
 import compiler.Compiler.State
+import compiler.scanner.Token.Token
 
 import scala.collection.mutable
 
@@ -27,12 +28,24 @@ object Utility {
     newTable
   }
 
+  def postfixTokenStates[T](table: mutable.HashMap[State, Token],
+                            postfix: String): mutable.HashMap[State, Token] = {
+    val newTable = mutable.HashMap[State, Token]()
+    for (key <- table.keySet) {
+      newTable += (postfixState(key, postfix) -> table(key))
+    }
+
+    newTable
+  }
+
   def merge[T](nfas: Set[NFA[T]], epsilonSym: T): NFA[T] = {
     var states = Set[State]()
     var startStates = Set[State]()
     var acceptingStates = Set[State]()
     var alphabet = Set[T]()
     var transitionTable = mutable.HashMap[(State, T), Set[State]]()
+    var tokenStates = mutable.HashMap[State, Token]()
+
     // TODO what if epsilon symbols are different? Do we care to check this
 
     // add postfix version of NFA to the new one
@@ -46,6 +59,7 @@ object Utility {
         acceptingStates.union(postfixStates(nfa.acceptingStates, postfix))
       alphabet = alphabet.union(nfa.alphabet)
       transitionTable ++= postfixTransitionTable(nfa.transitionTable, postfix)
+      tokenStates ++= postfixTokenStates(nfa.tokenStates, postfix)
     }
 
     new NFA[T](states,
@@ -53,6 +67,7 @@ object Utility {
                startStates,
                alphabet,
                transitionTable,
+               tokenStates,
                epsilonSym)
   }
 }
