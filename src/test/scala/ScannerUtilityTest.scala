@@ -2,6 +2,8 @@ import compiler.Compiler.State
 import compiler.Utility
 import compiler.NFA
 import compiler.scanner.Token.Token
+import compiler.scanner.{Token, TokenDefinition}
+import exceptions.{TransitionNonExistentException}
 import org.scalatest.FunSuite
 
 import scala.collection.mutable
@@ -78,5 +80,45 @@ class ScannerUtilityTest extends FunSuite {
         .isEmpty)
 
     // TODO how many transitions we want to test
+  }
+
+  test("Test runDfa on valid tokens") {
+    val dfa = Utility
+      .merge(Set(
+               TokenDefinition.IF(),
+               TokenDefinition.ELSE(),
+               TokenDefinition.INT()
+             ),
+             "ε")
+      .createDfa()
+
+    val input = "0    123 if else 78       234"
+    val tokens = Utility.runDfa(input, dfa)
+    assert(
+      tokens.equals(
+        mutable.MutableList(
+          Token.INTEGER,
+          Token.INTEGER,
+          Token.IF,
+          Token.ELSE,
+          Token.INTEGER,
+          Token.INTEGER
+        )))
+  }
+
+  test("Test runDfa on some invalid tokens") {
+    val dfa = Utility
+      .merge(Set(
+               TokenDefinition.IF(),
+               TokenDefinition.ELSE(),
+               TokenDefinition.INT()
+             ),
+             "ε")
+      .createDfa()
+
+    val input = "0 123 bad if else"
+    assertThrows[TransitionNonExistentException] {
+      Utility.runDfa(input, dfa)
+    }
   }
 }

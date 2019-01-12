@@ -3,6 +3,7 @@ package compiler
 import compiler.Compiler.State
 import compiler.scanner.Token.Token
 import exceptions.TransitionNonExistentException
+import exceptions.NoTokenOnAcceptingStateException
 
 import scala.collection.mutable
 
@@ -35,5 +36,10 @@ class DFA[T](val states: Set[State],
 
   def canProceed(alpha: T): Boolean = {
     transitionTable.contains((startState, alpha))
+  }
+
+  def getCurrentToken(): Token = {
+    if (!tokenStates.contains(startState)) throw NoTokenOnAcceptingStateException()
+    tokenStates(startState)
   }
 }

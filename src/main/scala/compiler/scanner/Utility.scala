@@ -70,4 +70,26 @@ object Utility {
                tokenStates,
                epsilonSym)
   }
+
+  def runDfa(input: String, dfa: DFA[State]): mutable.MutableList[Token] = {
+    var currentDfa = dfa
+    var tokens = mutable.MutableList[Token]()
+
+    val it = input.toIterator.buffered
+    while (it.hasNext) {
+      val currentChar = it.next().toString
+      if (!currentChar.equals(" ")) {
+        currentDfa = currentDfa.next(currentChar)
+
+        // Stop if complete, and cant proceed
+        if (currentDfa.isComplete() && !(it.hasNext && currentDfa.canProceed(
+          it.head.toString))) {
+          tokens += currentDfa.getCurrentToken()
+          currentDfa = dfa
+        }
+      }
+    }
+
+    tokens
+  }
 }
