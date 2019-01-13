@@ -298,8 +298,8 @@ class Generator {
         if(old != null && !old.equals(a)) {
             throw new Error(
                     "Conflict on symbol "+sym+" in state "+state+"\n"+
-                            "Possible actions:\n"+
-                            old+" VS: \n\n"+a);
+                            "Possible actions:\nOld action:"+
+                            old+" \nVS\n Action:"+a);
         }
         if(old == null || !old.equals(a)) ret = true;
         table.put(p, a);
