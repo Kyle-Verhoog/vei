@@ -7,6 +7,21 @@ import compiler.NFA
 
 case class Paren(val nalt: Integer, val natom: Integer) {}
 
+class RegexEngine(val expression: String, val nfa: NFA[String]) {
+  def matches(s: String): Boolean = {
+    var n = nfa
+    try {
+      for (c <- s) {
+        n = n.next(c.toString)
+      }
+    } catch {
+      case _ => return false
+    }
+
+    return n.isComplete()
+  }
+}
+
 object Regex {
   def toPostfix(regex: String): String = {
     var postfix = ""
@@ -217,5 +232,11 @@ object Regex {
       }
     }
     stack(0)
+  }
+
+  def createEngine(expr: String): RegexEngine = {
+    val postfix = toPostfix(expr)
+    val nfa = postfixToNFA(postfix)
+    new RegexEngine(postfix, nfa)
   }
 }

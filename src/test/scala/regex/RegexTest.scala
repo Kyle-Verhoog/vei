@@ -101,17 +101,39 @@ class RegexPostfixToNFA extends FunSuite {
   }
 }
 
-class RegexNFATests extends FunSuite {
-  test("Concatenation simple") {
-    val nfa = Regex.postfixToNFA(Regex.toPostfix("abc"))
-    assert(!nfa.next("a").isComplete())
-    assert(!nfa.next("a").next("b").isComplete())
-    assert(nfa.next("a").next("b").next("c").isComplete())
+class RegexTests extends FunSuite {
+  test("Concatenation 3 atoms") {
+    val re = Regex.createEngine("abc")
+    assert(!re.matches(""))
+    assert(!re.matches("a"))
+    assert(!re.matches("ab"))
+    assert(!re.matches("b"))
+    assert(re.matches("abc"))
   }
 
-  test("Alternation simple") {
-    val nfa = Regex.postfixToNFA(Regex.toPostfix("a|b"))
-    assert(nfa.next("a").isComplete())
-    assert(nfa.next("b").isComplete())
+  test("Alternation 2 atoms") {
+    val re = Regex.createEngine("a|b")
+    assert(re.matches("a"))
+    assert(re.matches("b"))
+    assert(!re.matches("ab"))
+    assert(!re.matches("aa"))
+    assert(!re.matches("bb"))
+  }
+
+  test("Concatenation and alternation") {
+    val re = Regex.createEngine("a(asdf|1234)")
+    assert(re.matches("aasdf"))
+    assert(re.matches("a1234"))
+    assert(!re.matches("aasd"))
+    assert(!re.matches("aasdf1234"))
+  }
+
+  test("Nested concatentation and alternation") {
+    val re = Regex.createEngine("(asdf|(1|2))(3|4)")
+    assert(re.matches("asdf3"))
+    assert(re.matches("asdf4"))
+    assert(re.matches("13"))
+    assert(re.matches("14"))
+    assert(!re.matches("asdf1"))
   }
 }
