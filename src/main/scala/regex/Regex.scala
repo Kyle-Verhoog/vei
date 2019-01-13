@@ -120,22 +120,25 @@ object Regex {
       states: Set[State],
       acceptingStates: Set[State],
       startStates: Set[State],
-      alphabet: Set[String],
       transitionTable: mutable.HashMap[(State, String), Set[State]]
   ): NFA[String] = {
+    val alpha = Set("a", "b", "c")
     new NFA[String](
       states,
       acceptingStates,
       startStates,
-      alphabet,
+      alpha,
       transitionTable,
       HashMap[State, Token](),
       "ε"
     )
   }
 
+  def newState(): State = {
+    scala.util.Random.alphanumeric.take(16).mkString
+  }
+
   def postfixToNFA(postfix: String): NFA[String] = {
-    val alpha = Set("a", "b", "c")
     var stack = new ListBuffer[NFA[String]]()
     var x = 0
 
@@ -143,17 +146,47 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
+        case "|" => {
+          val e2 = stack.remove(stack.length - 1)
+          val e1 = stack.remove(stack.length - 1)
+
+          var transitionTable = mergeMaps(
+            e1.transitionTable,
+            e2.transitionTable
+          )
+
+          // Add new state to connect e1, e2
+          val s = newState()
+          var newStates = Set(s) | e1.states | e2.states
+
+          // Accepting states are the accepting states of e1 OR e2
+          var newAcceptingStates = e1.acceptingStates | e2.acceptingStates
+
+          // s is the new start state
+          var newStartStates = Set(s)
+
+          var nfa = newNFA(
+            newStates,
+            newAcceptingStates,
+            newStartStates,
+            transitionTable
+          )
+          // Add the transitions from s to the start states of e1, e2
+          nfa = nfa.addTransition((s, "ε"), e1.startStates | e2.startStates)
+
+          stack += nfa
+        }
         case "@" => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 
-          var transitionTable = mergeMaps[(State, String), Set[State]](
+          var transitionTable = mergeMaps(
             e1.transitionTable,
             e2.transitionTable
           )
 
           for (a <- e1.acceptingStates) {
-            transitionTable += ((a, "ε") -> e2.startStates) // TODO: copy e2.startStates
+            transitionTable += ((a, "ε") -> e2.startStates) // TODO: copy e2.startStates?
           }
 
           var newStates = e1.states | e2.states
@@ -164,20 +197,18 @@ object Regex {
             newStates,
             newAcceptingStates,
             newStartStates,
-            alpha,
             transitionTable
           )
           stack += nfa
         }
         case _ => {
-          val _ps = scala.util.Random.alphanumeric.take(16).mkString
-          val ps = scala.util.Random.alphanumeric.take(16).mkString
+          val _ps = newState()
+          val ps = newState()
 
           var nfa = newNFA(
             Set[State](_ps, ps),
             Set[State](ps),
             Set[State](_ps),
-            alpha,
             HashMap((_ps, p) -> Set(ps))
           )
 

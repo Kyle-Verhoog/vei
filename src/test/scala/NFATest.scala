@@ -105,4 +105,22 @@ class NFATest extends FunSuite {
     // TODO determine how to test transitions
 
   }
+
+  test("addTransition") {
+    val nfa = new NFA(
+      Set("a", "b"),
+      Set("b"),
+      Set("a"),
+      Set("a", "b", "c"),
+      collection.mutable.HashMap[(State, String), Set[State]](),
+      collection.mutable.HashMap[State, Token](),
+      "ε"
+    )
+
+    var newNfa = nfa.addTransition(("a", "b"), Set("b"))
+    assert(newNfa.transitionTable contains ("a", "b"))
+    newNfa = nfa.addTransition(("a", "ε"), Set("b"))
+    assert(newNfa.transitionTable contains ("a", "b"))
+    assert(newNfa.transitionTable contains ("a", "ε"))
+  }
 }

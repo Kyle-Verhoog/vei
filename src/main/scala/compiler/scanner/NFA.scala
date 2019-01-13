@@ -13,13 +13,13 @@ class NFA[T](
     val alphabet: Set[T],
     val transitionTable: mutable.HashMap[(State, T), Set[State]],
     // stores accepting states that are related to a token
-    val tokenStates: mutable.HashMap[State, Token],
+    val tokenStates: mutable.HashMap[State, Token], // TODO this should just be apart of `State`
     val epsilonSym: T
 ) {
 
   def transition(state: State, alpha: T): Set[State] = {
     if (!transitionTable.contains((state, alpha))) {
-      throw TransitionNonExistentException()
+      throw TransitionNonExistentException(message = "($state, $alpha)")
     }
     transitionTable((state, alpha))
   }
@@ -28,7 +28,9 @@ class NFA[T](
     val nextStates = findNextStates(startStates, alpha)
 
     if (nextStates.isEmpty) {
-      throw TransitionNonExistentException()
+      throw TransitionNonExistentException(
+        message = s"No next states for $alpha"
+      )
     }
 
     new NFA(
@@ -172,6 +174,23 @@ class NFA[T](
       alphabet,
       transitionList,
       newTokenStates
+    )
+  }
+
+  def addTransition(k: (State, T), v: Set[State]): NFA[T] = {
+    var transitions = transitionTable
+    var stateTransitions = transitions.get(k).getOrElse(Set[State]())
+    var newStateTransitions = v | stateTransitions
+    transitions += (k -> newStateTransitions)
+
+    new NFA(
+      states,
+      acceptingStates,
+      startStates,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      epsilonSym
     )
   }
 

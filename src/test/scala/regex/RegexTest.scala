@@ -108,4 +108,10 @@ class RegexNFATests extends FunSuite {
     assert(!nfa.next("a").next("b").isComplete())
     assert(nfa.next("a").next("b").next("c").isComplete())
   }
+
+  test("Alternation simple") {
+    val nfa = Regex.postfixToNFA(Regex.toPostfix("a|b"))
+    assert(nfa.next("a").isComplete())
+    assert(nfa.next("b").isComplete())
+  }
 }
