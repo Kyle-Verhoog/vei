@@ -1,18 +1,17 @@
 {
    "startingSymbol": "compilation_unit",
-   "terminals": ["!", "!=", "%", "%=", "&", "&&", "&=", "(", ")", "*", "*=", "+", "++", "+=", ",", "-", "--", "-=", ".", "/", "/=", ":", ";", "<", "<<", "<<=", "<=", "=", "==", ">", ">=", ">>", ">>=", ">>>", ">>>=", "?", "ABSTRACT", "BLOCK", "BOOLEAN", "BREAK", "BYTE", "CASE", "CATCH", "CHAR", "CLASS", "CONTINUE", "DEFAULT", "DO", "DOUBLE", "ELSE", "EXTENDS", "FINAL", "FLOAT", "FOR", "IF", "IMPLEMENTS", "IMPORT", "INSTANCEOF", "INT", "INTERFACTE", "LONG", "NATIVE", "NEW", "NONE", "PACKAGE", "PRIVATE", "PROTECTED", "PUBLIC", "RETURN", "SHORT", "STATIC", "SUPER", "SWITCH", "SYNCHRONIZED", "THIS", "THROW", "THROWS", "TRANSIENT", "TRY", "VOID", "VOLATILE", "WHILE", "[", "]", "^", "^=", "{", "|", "|=", "||", "}", "~"],
-   "nonterminals": [",opt", "abstract_method_declaration", "additive_expression", "and_expression", "argument_list", "argument_list_opt", "array_access", "array_creation_expression", "array_initializer", "array_type", "assignment", "assignment_expression", "assignment_operator", "block", "block_statement", "block_statements", "block_statements_opt", "boolean_literal", "break_statement", "cast_expression", "catch_clause", "catches", "catches_opt", "character_literal", "class_body", "class_body_declaration", "class_body_declarations", "class_declaration", "class_instance_creation_expression", "class_member_declaration", "class_or_interface_type", "class_or_interface_type,", "class_type", "class_type_list", "conditional_and_expression", "conditional_expression", "conditional_or_expression", "constant_declaration", "constant_expression", "constructor_body", "constructor_declaration", "continue_statement", "dim_expr", "dim_exprs", "dim_exprs,", "dims", "dims_opt", "do_statement", "empty_statement", "equality_expression", "exclusive_or_expression", "explicit_constructor_invocation", "explicit_constructor_invocation_opt", "expression", "expression_opt", "expression_statement", "extends_interfaces", "extends_interfaces_opt", "field_access", "field_declaration", "finally", "floating_point_literal", "floating_point_type", "for_init", "for_init_opt", "for_statement", "for_statement_no_short_if", "for_update", "for_update_opt", "formal_parameter", "formal_parameter_list", "formal_parameter_list_opt", "identifier", "identifier_opt", "if_then_else_statement", "if_then_else_statement_no_short_if", "if_then_statement", "import_declaration", "import_declarations", "import_declarations_opt", "inclusive_or_expression", "integer_literal", "integral_type", "interface_body", "interface_declaration", "interface_member_declaration", "interface_member_declarations", "interface_member_declarations_opt", "interface_type", "interface_type_list", "interface_type_list,", "interfaces", "interfaces_opt,", "labeled_statement", "labeled_statement_no_short_if", "left_hand_side", "literal", "local_variable_declaration", "local_variable_declaration_statement", "method_body", "method_declaration", "method_header", "method_invocation", "modifier", "modifiers", "modifiers_opt", "multiplicative_expression", "name", "null_literal", "numeric_type", "package_declaration", "package_declaration_opt", "post_decrement_expression", "post_increment_expression", "postfix_expression", "pre_decrement_expression", "pre_increment_expression", "primary", "primary_no_new_array", "primitive_type", "qualified_name", "reference_type", "relational_expression", "return_statement", "shift_expression", "simple_name", "single_type_import_declaration", "statement", "statement_expression", "statement_expression_list", "statement_no_short_if", "statement_without_trailing_substatement", "static", "static_initializer", "string_literal", "super", "super_opt", "switch_block", "switch_block_statement_group", "switch_block_statement_groups", "switch_block_statement_groups_opt", "switch_label", "switch_labels", "switch_labels_opt", "switch_statement", "synchronized_statement", "throw_statement", "throws", "throws_opt", "try_statement", "type", "type_declaration", "type_declarations", "type_declarations_opt", "type_import_on_demand_declaration", "unary_expression", "unary_expression_not_plus_minus", "variable_declarator", "variable_declarator_id", "variable_declarators", "variable_initializer", "variable_initializers", "variable_initializers_opt", "while_statement", "while_statement_no_short_if"],
+   "terminals": ["IDENTIFIER", "INTEGER_LITERAL", "FLOATING_POINT_LITERAL", "BOOLEAN_LITERAL", "CHARACTER_LITERAL", "STRING_LITERAL", "NULL_LITERAL", "FINALLY", "!", "!=", "%", "%=", "&", "&&", "&=", "(", ")", "*", "*=", "+", "++", "+=", ",", "-", "--", "-=", ".", "/", "/=", ":", ";", "<", "<<", "<<=", "<=", "=", "==", ">", ">=", ">>", ">>=", ">>>", ">>>=", "?", "ABSTRACT", "BLOCK", "BOOLEAN", "BREAK", "BYTE", "CASE", "CATCH", "CHAR", "CLASS", "CONTINUE", "DEFAULT", "DO", "DOUBLE", "ELSE", "EXTENDS", "FINAL", "FLOAT", "FOR", "IF", "IMPLEMENTS", "IMPORT", "INSTANCEOF", "INT", "INTERFACTE", "LONG", "NATIVE", "NEW", "", "PACKAGE", "PRIVATE", "PROTECTED", "PUBLIC", "RETURN", "SHORT", "STATIC", "SUPER", "SWITCH", "SYNCHRONIZED", "THIS", "THROW", "THROWS", "TRANSIENT", "TRY", "VOID", "VOLATILE", "WHILE", "[", "]", "^", "^=", "{", "|", "|=", "||", "}", "~"],
+   "nonterminals": ["compilation_unit","interfaces_opt", "method_declarator", "constructor_declarator", ",opt", "abstract_method_declaration", "additive_expression", "and_expression", "argument_list", "argument_list_opt", "array_access", "array_creation_expression", "array_initializer", "array_type", "assignment", "assignment_expression", "assignment_operator", "block", "block_statement", "block_statements", "block_statements_opt", "break_statement", "cast_expression", "catch_clause", "catches", "catches_opt", "class_body", "class_body_declaration", "class_body_declarations", "class_declaration", "class_instance_creation_expression", "class_member_declaration", "class_or_interface_type", "class_or_interface_type,", "class_type", "class_type_list", "conditional_and_expression", "conditional_expression", "conditional_or_expression", "constant_declaration", "constant_expression", "constructor_body", "constructor_declaration", "continue_statement", "dim_expr", "dim_exprs", "dim_exprs,", "dims", "dims_opt", "do_statement", "empty_statement", "equality_expression", "exclusive_or_expression", "explicit_constructor_invocation", "explicit_constructor_invocation_opt", "expression", "expression_opt", "expression_statement", "extends_interfaces", "extends_interfaces_opt", "field_access", "field_declaration", "finally", "floating_point_type", "for_init", "for_init_opt", "for_statement", "for_statement_no_short_if", "for_update", "for_update_opt", "formal_parameter", "formal_parameter_list", "formal_parameter_list_opt", "identifier_opt", "if_then_else_statement", "if_then_else_statement_no_short_if", "if_then_statement", "import_declaration", "import_declarations", "import_declarations_opt", "inclusive_or_expression", "integral_type", "interface_body", "interface_declaration", "interface_member_declaration", "interface_member_declarations", "interface_member_declarations_opt", "interface_type", "interface_type_list", "interfaces", "interfaces_opt,", "labeled_statement", "labeled_statement_no_short_if", "left_hand_side", "literal", "local_variable_declaration", "local_variable_declaration_statement", "method_body", "method_declaration", "method_header", "method_invocation", "modifier", "modifiers", "modifiers_opt", "multiplicative_expression", "name", "numeric_type", "package_declaration", "package_declaration_opt", "post_decrement_expression", "post_increment_expression", "postfix_expression", "pre_decrement_expression", "pre_increment_expression", "primary", "primary_no_new_array", "primitive_type", "qualified_name", "reference_type", "relational_expression", "return_statement", "shift_expression", "simple_name", "single_type_import_declaration", "statement", "statement_expression", "statement_expression_list", "statement_no_short_if", "statement_without_trailing_substatement", "static_initializer", "super", "super_opt", "switch_block", "switch_block_statement_group", "switch_block_statement_groups", "switch_block_statement_groups_opt", "switch_label", "switch_labels", "switch_labels_opt", "switch_statement", "synchronized_statement", "throw_statement", "throws", "throws_opt", "try_statement", "type", "type_declaration", "type_declarations", "type_declarations_opt", "type_import_on_demand_declaration", "unary_expression", "unary_expression_not_plus_minus", "variable_declarator", "variable_declarator_id", "variable_declarators", "variable_initializer", "variable_initializers", "variable_initializers_opt", "while_statement", "while_statement_no_short_if"],
    "productionRules":
       {
          "literal": [
-            "integer_literal",
-            "floating_point_literal",
-            "boolean_literal",
-            "character_literal",
-            "string_literal",
-            "null_literal"
+            "INTEGER_LITERAL",
+            "FLOATING_POINT_LITERAL",
+            "BOOLEAN_LITERAL",
+            "CHARACTER_LITERAL",
+            "STRING_LITERAL",
+            "NULL_LITERAL"
          ],
-
          "type": [
             "primitive_type",
             "reference_type"
@@ -60,10 +59,10 @@
             "qualified_name"
          ],
          "simple_name": [
-            "identifier"
+            "IDENTIFIER"
          ],
          "qualified_name": [
-            "name . identifier"
+            "name . IDENTIFIER"
          ],
 
          "compilation_unit": [
@@ -73,15 +72,15 @@
          ],
          "package_declaration_opt": [
             "package_declaration",
-            "NONE"
+            ""
          ],
          "import_declarations_opt": [
             "import_declarations",
-            "NONE"
+            ""
          ],
          "type_declarations_opt": [
             "type_declarations",
-            "NONE"
+            ""
          ],
          "import_declarations": [
             "import_declaration",
@@ -128,15 +127,15 @@
          ],
 
          "class_declaration": [
-            "modifiers_opt CLASS identifier super_opt interfaces_opt, class_body"
+            "modifiers_opt CLASS IDENTIFIER super_opt interfaces_opt class_body"
          ],
          "super_opt": [
             "super",
-            "NONE"
+            ""
          ],
          "interfaces_opt": [
             "interfaces",
-            "NONE"
+            ""
          ],
          "super": [
             "EXTENDS class_type"
@@ -146,7 +145,7 @@
          ],
          "interface_type_list": [
             "interface_type",
-            "interface_type_list, interface_type"
+            "interface_type_list , interface_type"
          ],
          "class_body": [
             "{ class_body_declarations }"
@@ -177,7 +176,7 @@
             "variable_declarator_id = variable_initializer"
          ],
          "variable_declarator_id": [
-            "identifier",
+            "IDENTIFIER",
             "variable_declarator_id [ ]"
          ],
          "variable_initializer": [
@@ -193,7 +192,7 @@
             "modifiers_opt VOID method_declaration throws_opt"
          ],
          "method_declarator": [
-            "identifier ( formal_parameter_list_opt )"
+            "IDENTIFIER ( formal_parameter_list_opt )"
          ],
          "formal_parameter_list": [
             "formal_parameter",
@@ -215,7 +214,7 @@
          ],
 
          "static_initializer": [
-            "static BLOCK"
+            "STATIC BLOCK"
          ],
 
          "constructor_declaration": [
@@ -223,25 +222,25 @@
          ],
          "throws_opt": [
             "throws",
-            "NONE"
+            ""
          ],
          "constructor_declarator": [
             "simple_name ( formal_parameter_list_opt )"
          ],
          "formal_parameter_list_opt": [
             "formal_parameter_list",
-            "NONE"
+            ""
          ],
          "constructor_body": [
             "{ explicit_constructor_invocation_opt block_statements_opt }"
          ],
          "block_statements_opt": [
             "block_statements",
-            "NONE"
+            ""
          ],
          "explicit_constructor_invocation_opt": [
             "explicit_constructor_invocation",
-            "NONE"
+            ""
          ],
          "explicit_constructor_invocation": [
             "THIS ( argument_list_opt ) ;",
@@ -249,15 +248,15 @@
          ],
 
          "interface_declaration": [
-            "modifiers_opt INTERFACTE identifier extends_interfaces_opt interface_body"
+            "modifiers_opt INTERFACTE IDENTIFIER extends_interfaces_opt interface_body"
          ],
          "modifiers_opt": [
-            "modifiers_opt",
-            "NONE"
+            "modifiers",
+            ""
          ],
          "extends_interfaces_opt": [
             "extends_interfaces",
-            "NONE"
+            ""
          ],
          "extends_interfaces": [
             "EXTENDS interface_type",
@@ -268,7 +267,7 @@
          ],
          "interface_member_declarations_opt": [
             "interface_member_declarations",
-            "NONE"
+            ""
          ],
          "interface_member_declarations": [
             "interface_member_declaration",
@@ -290,11 +289,11 @@
          ],
          ",opt": [
             ",",
-            "NONE"
+            ""
          ],
          "variable_initializers_opt": [
             "variable_initializers",
-            "NONE"
+            ""
          ],
          "variable_initializers": [
             "variable_initializer",
@@ -351,10 +350,10 @@
             ";"
          ],
          "labeled_statement": [
-            "identifier : statement"
+            "IDENTIFIER : statement"
          ],
          "labeled_statement_no_short_if": [
-            "identifier : statement_no_short_if"
+            "IDENTIFIER : statement_no_short_if"
          ],
          "expression_statement": [
             "statement_expression ;"
@@ -385,11 +384,11 @@
          ],
          "switch_block_statement_groups_opt": [
             "switch_block_statement_groups",
-            "NONE"
+            ""
          ],
          "switch_labels_opt": [
             "switch_labels",
-            "NONE"
+            ""
          ],
          "switch_block_statement_groups": [
             "switch_block_statement_group",
@@ -423,15 +422,15 @@
          ],
          "for_init_opt": [
             "for_init",
-            "NONE"
+            ""
          ],
          "expression_opt": [
             "expression",
-            "NONE"
+            ""
          ],
          "for_update_opt": [
             "for_update",
-            "NONE"
+            ""
          ],
          "for_init": [
             "statement_expression_list",
@@ -451,8 +450,8 @@
             "CONTINUE identifier_opt ;"
          ],
          "identifier_opt": [
-            "identifier",
-            "NONE"
+            "IDENTIFIER",
+            ""
          ],
          "return_statement": [
             "RETURN expression ;"
@@ -467,9 +466,12 @@
             "TRY block catches",
             "TRY block catches_opt finally"
          ],
+         "finally": [
+            "FINALLY block"
+         ],
          "catches_opt": [
             "catches",
-            "NONE"
+            ""
          ],
          "catches": [
             "catch_clause",
@@ -515,17 +517,17 @@
             "dims [ ]"
          ],
          "field_access": [
-            "primary . identifier",
-            "SUPER . identifier"
+            "primary . IDENTIFIER",
+            "SUPER . IDENTIFIER"
          ],
          "method_invocation": [
             "name ( argument_list_opt )",
-            "primary . identifier ( argument_list_opt )",
-            "SUPER . identifier ( argument_list_opt )"
+            "primary . IDENTIFIER ( argument_list_opt )",
+            "SUPER . IDENTIFIER ( argument_list_opt )"
          ],
          "argument_list_opt": [
             "argument_list",
-            "NONE"
+            ""
          ],
          "array_access": [
             "name [ expression ]",
@@ -569,7 +571,7 @@
          ],
          "dims_opt": [
             "dims",
-            "NONE"
+            ""
          ],
          "multiplicative_expression": [
             "unary_expression",

@@ -299,7 +299,7 @@ class Generator {
             throw new Error(
                     "Conflict on symbol "+sym+" in state "+state+"\n"+
                             "Possible actions:\n"+
-                            old+"\n"+a);
+                            old+" VS: \n\n"+a);
         }
         if(old == null || !old.equals(a)) ret = true;
         table.put(p, a);

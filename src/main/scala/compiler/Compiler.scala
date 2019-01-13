@@ -8,7 +8,7 @@ object Compiler {
   type State = String
 
   def main(args: Array[String]) {
-    val cfg = Source.fromResource("sample.cfg").mkString
+    val cfg = Source.fromResource("grammar.cfg").mkString
     println(cfg)
     Jlalr1.parse(cfg)
 
