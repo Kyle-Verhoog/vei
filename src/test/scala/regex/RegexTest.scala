@@ -64,13 +64,48 @@ class RegexPostFixTest extends FunSuite {
 }
 
 class RegexPostfixToNFA extends FunSuite {
-  test("toNFA") {
+  test("Concatenation simple") {
     val nfa = Regex.postfixToNFA("ab@")
-    println(nfa)
     val start = nfa.startStates.head
-    val s = nfa.transitionTable((start, "a")).head
-    val t = nfa.transitionTable((s, "ε")).head
-    val f = nfa.transitionTable((t, "b")).head
-    assert(nfa.acceptingStates contains f)
+    var s = nfa.transitionTable((start, "a")).head
+    s = nfa.transitionTable((s, "ε")).head
+    s = nfa.transitionTable((s, "b")).head
+    assert(nfa.acceptingStates contains s)
+  }
+
+  test("Concatenation same char") {
+    val nfa = Regex.postfixToNFA("aa@")
+    val start = nfa.startStates.head
+    var s = nfa.transitionTable((start, "a")).head
+    s = nfa.transitionTable((s, "ε")).head
+    s = nfa.transitionTable((s, "a")).head
+    assert(nfa.acceptingStates contains s)
+  }
+
+  test("Concatenation multi") {
+    val nfa = Regex.postfixToNFA("ab@c@")
+    val start = nfa.startStates.head
+    var s = nfa.transitionTable((start, "a")).head
+    s = nfa.transitionTable((s, "ε")).head
+    s = nfa.transitionTable((s, "b")).head
+    s = nfa.transitionTable((s, "ε")).head
+    s = nfa.transitionTable((s, "c")).head
+    assert(nfa.acceptingStates contains s)
+  }
+
+  test("Concatenation NFA.complete()") {
+    val nfa = Regex.postfixToNFA("ab@c@")
+    assert(!nfa.next("a").isComplete())
+    assert(!nfa.next("a").next("b").isComplete())
+    assert(nfa.next("a").next("b").next("c").isComplete())
+  }
+}
+
+class RegexNFATests extends FunSuite {
+  test("Concatenation simple") {
+    val nfa = Regex.postfixToNFA(Regex.toPostfix("abc"))
+    assert(!nfa.next("a").isComplete())
+    assert(!nfa.next("a").next("b").isComplete())
+    assert(nfa.next("a").next("b").next("c").isComplete())
   }
 }

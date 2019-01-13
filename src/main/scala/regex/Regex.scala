@@ -5,8 +5,7 @@ import scala.collection.mutable.{HashMap, ListBuffer}
 import compiler.Compiler.State
 import compiler.NFA
 
-case class Paren(val nalt: Integer, val natom: Integer) {
-}
+case class Paren(val nalt: Integer, val natom: Integer) {}
 
 object Regex {
   def toPostfix(regex: String): String = {
@@ -118,12 +117,12 @@ object Regex {
   }
 
   def newNFA(
-    states: Set[State],
-    acceptingStates: Set[State],
-    startStates: Set[State],
-    alphabet: Set[String],
-    transitionTable: mutable.HashMap[(State, String), Set[State]]
-    ): NFA[String] = {
+      states: Set[State],
+      acceptingStates: Set[State],
+      startStates: Set[State],
+      alphabet: Set[String],
+      transitionTable: mutable.HashMap[(State, String), Set[State]]
+  ): NFA[String] = {
     new NFA[String](
       states,
       acceptingStates,
@@ -132,7 +131,7 @@ object Regex {
       transitionTable,
       HashMap[State, Token](),
       "ε"
-      )
+    )
   }
 
   def postfixToNFA(postfix: String): NFA[String] = {
@@ -147,10 +146,11 @@ object Regex {
         case "@" => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
-          println(e2)
-          println(e1)
 
-          var transitionTable = mergeMaps[(State, String), Set[State]](e1.transitionTable, e2.transitionTable)
+          var transitionTable = mergeMaps[(State, String), Set[State]](
+            e1.transitionTable,
+            e2.transitionTable
+          )
 
           for (a <- e1.acceptingStates) {
             transitionTable += ((a, "ε") -> e2.startStates) // TODO: copy e2.startStates
@@ -165,7 +165,7 @@ object Regex {
             newAcceptingStates,
             newStartStates,
             alpha,
-            transitionTable,
+            transitionTable
           )
           stack += nfa
         }
@@ -178,7 +178,7 @@ object Regex {
             Set[State](ps),
             Set[State](_ps),
             alpha,
-            HashMap((_ps, p) -> Set(ps)),
+            HashMap((_ps, p) -> Set(ps))
           )
 
           stack += nfa
