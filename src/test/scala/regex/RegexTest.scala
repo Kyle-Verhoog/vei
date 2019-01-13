@@ -62,3 +62,15 @@ class RegexPostFixTest extends FunSuite {
     assert(Regex.toPostfix(r) == "1+2*@3?@45|@")
   }
 }
+
+class RegexPostfixToNFA extends FunSuite {
+  test("toNFA") {
+    val nfa = Regex.postfixToNFA("ab@")
+    println(nfa)
+    val start = nfa.startStates.head
+    val s = nfa.transitionTable((start, "a")).head
+    val t = nfa.transitionTable((s, "ε")).head
+    val f = nfa.transitionTable((t, "b")).head
+    assert(nfa.acceptingStates contains f)
+  }
+}

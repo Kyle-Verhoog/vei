@@ -174,4 +174,14 @@ class NFA[T](
       newTokenStates
     )
   }
+
+  override def toString = {
+    s"""NFA(
+      Q (states): $states
+      q₀(startStates): $startStates
+      F (acceptingStates): $acceptingStates
+      Δ (transitionTable): $transitionTable
+      Σ (alphabet): $alphabet
+    )"""
+  }
 }
