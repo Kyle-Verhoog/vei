@@ -161,6 +161,27 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
+        case "*" => {
+          val e = stack.remove(stack.length - 1)
+
+          val s = newState()
+          val states = Set(s) | e.states
+          val startStates = Set(s)
+          val acceptingStates = Set(s) | e.acceptingStates
+
+          var nfa = newNFA(
+            states,
+            acceptingStates,
+            startStates,
+            e.transitionTable
+          )
+
+          nfa = nfa.addTransition((s, "ε"), e.startStates)
+          for (as <- e.acceptingStates) {
+            nfa = nfa.addTransition((as, "ε"), Set(s))
+          }
+          stack += nfa
+        }
         case "|" => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
@@ -172,18 +193,18 @@ object Regex {
 
           // Add new state to connect e1, e2
           val s = newState()
-          var newStates = Set(s) | e1.states | e2.states
+          var states = Set(s) | e1.states | e2.states
 
           // Accepting states are the accepting states of e1 OR e2
-          var newAcceptingStates = e1.acceptingStates | e2.acceptingStates
+          var acceptingStates = e1.acceptingStates | e2.acceptingStates
 
           // s is the new start state
-          var newStartStates = Set(s)
+          var startStates = Set(s)
 
           var nfa = newNFA(
-            newStates,
-            newAcceptingStates,
-            newStartStates,
+            states,
+            acceptingStates,
+            startStates,
             transitionTable
           )
           // Add the transitions from s to the start states of e1, e2

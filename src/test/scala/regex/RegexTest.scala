@@ -136,4 +136,24 @@ class RegexTests extends FunSuite {
     assert(re.matches("14"))
     assert(!re.matches("asdf1"))
   }
+
+  test("Zero-or-more 1 atom") {
+    val re = Regex.createEngine("a*")
+    assert(re.matches(""))
+    assert(re.matches("a"))
+    assert(re.matches("aa"))
+    assert(re.matches("aaa"))
+    assert(re.matches("aaaaaaaaaaaaaaaaaaaaaaa"))
+    assert(!re.matches("b"))
+  }
+
+  test("Zero-or-more with alternation") {
+    val re = Regex.createEngine("(a|b)*")
+    assert(re.matches(""))
+    assert(re.matches("a"))
+    assert(re.matches("ab"))
+    assert(re.matches("aba"))
+    assert(re.matches("abbbbaaabbb"))
+    assert(re.matches("aaaaaaaaaaaaaaaaaaaaaaab"))
+  }
 }
