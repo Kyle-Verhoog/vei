@@ -21,13 +21,15 @@ class ScannerUtilityTest extends FunSuite {
       )
     val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
 
-    new NFA[State](states,
-                   accepting,
-                   startState,
-                   alphabet,
-                   transitionTable,
-                   tokenStates,
-                   "ε")
+    new NFA[State](
+      states,
+      accepting,
+      startState,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      "ε"
+    )
   }
 
   def genNFA2(): NFA[State] = {
@@ -44,13 +46,15 @@ class ScannerUtilityTest extends FunSuite {
       )
     val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
 
-    new NFA[State](states,
-                   accepting,
-                   startState,
-                   alphabet,
-                   transitionTable,
-                   tokenStates,
-                   "ε")
+    new NFA[State](
+      states,
+      accepting,
+      startState,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      "ε"
+    )
   }
 
   test("Test merge NFAs") {
@@ -59,37 +63,54 @@ class ScannerUtilityTest extends FunSuite {
     assert(
       mergedNFA.states
         .diff(
-          Set("oneMERGED_POSTFIX1",
-              "twoMERGED_POSTFIX1",
-              "threeMERGED_POSTFIX2",
-              "fourMERGED_POSTFIX2",
-              "fiveMERGED_POSTFIX2"))
-        .isEmpty)
+          Set(
+            "oneMERGED_POSTFIX1",
+            "twoMERGED_POSTFIX1",
+            "threeMERGED_POSTFIX2",
+            "fourMERGED_POSTFIX2",
+            "fiveMERGED_POSTFIX2"
+          )
+        )
+        .isEmpty
+    )
 
-    assert(mergedNFA.acceptingStates
-      .diff(
-        Set("twoMERGED_POSTFIX1", "fourMERGED_POSTFIX2", "fiveMERGED_POSTFIX2"))
-      .isEmpty)
+    assert(
+      mergedNFA.acceptingStates
+        .diff(
+          Set(
+            "twoMERGED_POSTFIX1",
+            "fourMERGED_POSTFIX2",
+            "fiveMERGED_POSTFIX2"
+          )
+        )
+        .isEmpty
+    )
 
     assert(
       mergedNFA.startStates
         .diff(
-          Set("oneMERGED_POSTFIX1",
-              "threeMERGED_POSTFIX2",
-              "fiveMERGED_POSTFIX2"))
-        .isEmpty)
+          Set(
+            "oneMERGED_POSTFIX1",
+            "threeMERGED_POSTFIX2",
+            "fiveMERGED_POSTFIX2"
+          )
+        )
+        .isEmpty
+    )
 
     // TODO how many transitions we want to test
   }
 
   test("Test runDfa on valid tokens") {
     val dfa = Utility
-      .merge(Set(
-               TokenDefinition.IF(),
-               TokenDefinition.ELSE(),
-               TokenDefinition.INT()
-             ),
-             "ε")
+      .merge(
+        Set(
+          TokenDefinition.IF(),
+          TokenDefinition.ELSE(),
+          TokenDefinition.INT()
+        ),
+        "ε"
+      )
       .createDfa()
 
     val input = "0    123 if else 78       234"
@@ -103,17 +124,21 @@ class ScannerUtilityTest extends FunSuite {
           Token.ELSE,
           Token.INTEGER,
           Token.INTEGER
-        )))
+        )
+      )
+    )
   }
 
   test("Test runDfa on some invalid tokens") {
     val dfa = Utility
-      .merge(Set(
-               TokenDefinition.IF(),
-               TokenDefinition.ELSE(),
-               TokenDefinition.INT()
-             ),
-             "ε")
+      .merge(
+        Set(
+          TokenDefinition.IF(),
+          TokenDefinition.ELSE(),
+          TokenDefinition.INT()
+        ),
+        "ε"
+      )
       .createDfa()
 
     val input = "0 123 bad if else"

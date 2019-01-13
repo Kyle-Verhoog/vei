@@ -16,7 +16,8 @@ object Utility {
 
   def postfixTransitionTable[T](
       table: mutable.HashMap[(State, T), Set[State]],
-      postfix: String): mutable.HashMap[(State, T), Set[State]] = {
+      postfix: String
+  ): mutable.HashMap[(State, T), Set[State]] = {
     val newTable = mutable.HashMap[(State, T), Set[State]]()
 
     for (key <- table.keySet) {
@@ -28,8 +29,10 @@ object Utility {
     newTable
   }
 
-  def postfixTokenStates[T](table: mutable.HashMap[State, Token],
-                            postfix: String): mutable.HashMap[State, Token] = {
+  def postfixTokenStates[T](
+      table: mutable.HashMap[State, Token],
+      postfix: String
+  ): mutable.HashMap[State, Token] = {
     val newTable = mutable.HashMap[State, Token]()
     for (key <- table.keySet) {
       newTable += (postfixState(key, postfix) -> table(key))
@@ -62,13 +65,15 @@ object Utility {
       tokenStates ++= postfixTokenStates(nfa.tokenStates, postfix)
     }
 
-    new NFA[T](states,
-               acceptingStates,
-               startStates,
-               alphabet,
-               transitionTable,
-               tokenStates,
-               epsilonSym)
+    new NFA[T](
+      states,
+      acceptingStates,
+      startStates,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      epsilonSym
+    )
   }
 
   def runDfa(input: String, dfa: DFA[State]): mutable.MutableList[Token] = {
@@ -83,7 +88,8 @@ object Utility {
 
         // Stop if complete, and cant proceed
         if (currentDfa.isComplete() && !(it.hasNext && currentDfa.canProceed(
-          it.head.toString))) {
+              it.head.toString
+            ))) {
           tokens += currentDfa.getCurrentToken()
           currentDfa = dfa
         }

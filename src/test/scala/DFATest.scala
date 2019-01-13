@@ -38,13 +38,15 @@ class DFATest extends FunSuite {
   val tokenStates: mutable.HashMap[State, Token] = mutable.HashMap()
 
   test("Test single state transition") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
+    val dfa =
+      new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     val newDfa = dfa.next('0')
     assert(newDfa.startState.equals("one"))
   }
 
   test("Correctly identifies complete state") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
+    val dfa =
+      new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     assert(!dfa.isComplete())
 
     val newDfa = dfa.next('0')
@@ -52,7 +54,8 @@ class DFATest extends FunSuite {
   }
 
   test("Transition failure") {
-    val dfa = new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
+    val dfa =
+      new DFA(states, accepting, "zero", alphabet, transitionTable, tokenStates)
     assertThrows[TransitionNonExistentException] {
       dfa.next('2')
     }

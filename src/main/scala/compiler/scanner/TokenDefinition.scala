@@ -27,20 +27,24 @@ object TokenDefinition {
       mutable.HashMap("zero" -> Token.INTEGER, "digit" -> Token.INTEGER)
 
     // add transitions for 1-9 to start an int
-    genDigitRange(1, 9).foreach(digit =>
-      transitionTable += ("start", digit) -> Set("digit"))
+    genDigitRange(1, 9).foreach(
+      digit => transitionTable += ("start", digit) -> Set("digit")
+    )
 
     // add transitions for 0-9 to continue an int
-    genDigitRange(1, 9).foreach(digit =>
-      transitionTable += ("digit", digit) -> Set("digit"))
+    genDigitRange(1, 9).foreach(
+      digit => transitionTable += ("digit", digit) -> Set("digit")
+    )
 
-    new NFA[State](states,
-                   accepting,
-                   startState,
-                   alphabet,
-                   transitionTable,
-                   tokenStates,
-                   "ε")
+    new NFA[State](
+      states,
+      accepting,
+      startState,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      "ε"
+    )
   }
 
   // TODO: The NFAs below we can probably do something else with since they are just words, but I wanted to test with them
@@ -54,13 +58,15 @@ object TokenDefinition {
     val tokenStates: mutable.HashMap[State, Token] =
       mutable.HashMap("f" -> Token.IF)
 
-    new NFA[State](states,
-                   accepting,
-                   startState,
-                   alphabet,
-                   transitionTable,
-                   tokenStates,
-                   "ε")
+    new NFA[State](
+      states,
+      accepting,
+      startState,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      "ε"
+    )
   }
 
   def ELSE(): NFA[State] = {
@@ -78,12 +84,14 @@ object TokenDefinition {
     val tokenStates: mutable.HashMap[State, Token] =
       mutable.HashMap("e2" -> Token.ELSE)
 
-    new NFA[State](states,
-                   accepting,
-                   startState,
-                   alphabet,
-                   transitionTable,
-                   tokenStates,
-                   "ε")
+    new NFA[State](
+      states,
+      accepting,
+      startState,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      "ε"
+    )
   }
 }

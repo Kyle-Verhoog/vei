@@ -6,14 +6,16 @@ import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
 
-class NFA[T](val states: Set[State],
-             val acceptingStates: Set[State],
-             val startStates: Set[State],
-             val alphabet: Set[T],
-             val transitionTable: mutable.HashMap[(State, T), Set[State]],
-             // stores accepting states that are related to a token
-             val tokenStates: mutable.HashMap[State, Token],
-             val epsilonSym: T) {
+class NFA[T](
+    val states: Set[State],
+    val acceptingStates: Set[State],
+    val startStates: Set[State],
+    val alphabet: Set[T],
+    val transitionTable: mutable.HashMap[(State, T), Set[State]],
+    // stores accepting states that are related to a token
+    val tokenStates: mutable.HashMap[State, Token],
+    val epsilonSym: T
+) {
 
   def transition(state: State, alpha: T): Set[State] = {
     if (!transitionTable.contains((state, alpha))) {
@@ -29,13 +31,15 @@ class NFA[T](val states: Set[State],
       throw TransitionNonExistentException()
     }
 
-    new NFA(states,
-            acceptingStates,
-            nextStates,
-            alphabet,
-            transitionTable,
-            tokenStates,
-            epsilonSym)
+    new NFA(
+      states,
+      acceptingStates,
+      nextStates,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      epsilonSym
+    )
   }
 
   def findNextStates(currentStates: Set[State], alpha: T): Set[State] = {
@@ -55,7 +59,8 @@ class NFA[T](val states: Set[State],
 
   def findEpsilonClosure(
       currentState: State,
-      closureStates: Set[State] = Set[State]()): Set[State] = {
+      closureStates: Set[State] = Set[State]()
+  ): Set[State] = {
     var newClosureStates = closureStates + currentState // should always include current state
     try {
       for (state <- transition(currentState, epsilonSym)) {
@@ -72,7 +77,8 @@ class NFA[T](val states: Set[State],
 
   def findEpsilonClosureMultipleStates(
       currentStates: Set[State],
-      closureStates: Set[State] = Set[State]()): Set[State] = {
+      closureStates: Set[State] = Set[State]()
+  ): Set[State] = {
     var epsilonClosure = currentStates
     for (state <- currentStates) {
       epsilonClosure =
@@ -142,7 +148,8 @@ class NFA[T](val states: Set[State],
       for (alpha <- alphabet) {
         val nextStates = findNextStates(currentState, alpha)
         val nextStatesEpsilonClosure = findEpsilonClosureMultipleStates(
-          nextStates)
+          nextStates
+        )
 
         // NOTE: apparently scala has no `continue` so this is what i had to do
         if (nextStatesEpsilonClosure.nonEmpty) {

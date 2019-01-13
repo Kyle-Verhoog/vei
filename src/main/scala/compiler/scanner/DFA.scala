@@ -7,12 +7,14 @@ import exceptions.NoTokenOnAcceptingStateException
 
 import scala.collection.mutable
 
-class DFA[T](val states: Set[State],
-             val acceptingStates: Set[State],
-             val startState: State,
-             val alphabet: Set[T],
-             val transitionTable: mutable.HashMap[(State, T), State],
-             val tokenStates: mutable.HashMap[State, Token]) {
+class DFA[T](
+    val states: Set[State],
+    val acceptingStates: Set[State],
+    val startState: State,
+    val alphabet: Set[T],
+    val transitionTable: mutable.HashMap[(State, T), State],
+    val tokenStates: mutable.HashMap[State, Token]
+) {
 
   def transition(state: State, alpha: T): State = {
     if (!transitionTable.contains((state, alpha))) {
@@ -22,12 +24,14 @@ class DFA[T](val states: Set[State],
   }
 
   def next(alpha: T): DFA[T] = {
-    new DFA(states,
-            acceptingStates,
-            transition(startState, alpha),
-            alphabet,
-            transitionTable,
-            tokenStates)
+    new DFA(
+      states,
+      acceptingStates,
+      transition(startState, alpha),
+      alphabet,
+      transitionTable,
+      tokenStates
+    )
   }
 
   def isComplete(): Boolean = {
@@ -39,7 +43,8 @@ class DFA[T](val states: Set[State],
   }
 
   def getCurrentToken(): Token = {
-    if (!tokenStates.contains(startState)) throw NoTokenOnAcceptingStateException()
+    if (!tokenStates.contains(startState))
+      throw NoTokenOnAcceptingStateException()
     tokenStates(startState)
   }
 }
