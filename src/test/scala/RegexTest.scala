@@ -200,7 +200,6 @@ class RegexTests extends FunSuite {
   }
 }
 
-
 class RegexUtils extends FunSuite {
   test("mergeMaps") {
     val m1 = HashMap(("asdf" -> "TEST"))

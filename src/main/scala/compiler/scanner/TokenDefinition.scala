@@ -24,7 +24,10 @@ object TokenDefinition {
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "0") -> Set("zero"))
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("zero" -> new Token("INTEGER", "val"), "digit" -> new Token("INTEGER", "val"))
+      mutable.HashMap(
+        "zero" -> new Token("INTEGER", "val"),
+        "digit" -> new Token("INTEGER", "val")
+      )
 
     // add transitions for 1-9 to start an int
     genDigitRange(1, 9).foreach(
@@ -56,7 +59,7 @@ object TokenDefinition {
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "i") -> Set("i"), ("i", "f") -> Set("f"))
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("f" ->  new Token("IF", "val"))
+      mutable.HashMap("f" -> new Token("IF", "val"))
 
     new NFA[State](
       states,
@@ -82,7 +85,7 @@ object TokenDefinition {
         ("s", "e") -> Set("e2")
       )
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("e2" ->  new Token("ELSE", "val"))
+      mutable.HashMap("e2" -> new Token("ELSE", "val"))
 
     new NFA[State](
       states,

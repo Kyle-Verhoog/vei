@@ -7,7 +7,8 @@ class Token(val tokenType: String, var value: String) {
 
   override def equals(that: Any): Boolean =
     that match {
-      case that: Token => tokenType.equals(that.tokenType) && value.equals(that.value)
+      case that: Token =>
+        tokenType.equals(that.tokenType) && value.equals(that.value)
       case _ => false
     }
 }

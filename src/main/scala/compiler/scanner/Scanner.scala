@@ -3,7 +3,6 @@ import compiler.{DFA, NFA}
 import regex.Regex
 import scala.collection.mutable.{ListBuffer}
 
-
 object TokenEngine {
   def fromRegex(regex: String, token: Token): TokenEngine = {
     val nfa = Regex.toNFA(regex)
@@ -54,7 +53,7 @@ object Scanner {
     for (l <- s.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
       val token = new Token(rawConf(0), "some value") // TODO fix this
-      val regex = rawConf(1).substring(1, rawConf(1).length-1)
+      val regex = rawConf(1).substring(1, rawConf(1).length - 1)
       engine = engine.addRegex(regex, token)
     }
     new Scanner(engine.nfa.createDfa())
@@ -86,12 +85,11 @@ class Scanner(val dfa: DFA[String]) {
           isComplete = true
           lastDFA = d
           // hack: to handle when a DFA is matched on the last character
-          if (x == src.length()-1)
+          if (x == src.length() - 1)
             throw new Exception()
         }
         x += 1
-      }
-      catch {
+      } catch {
         case _: Throwable => {
           if (isComplete) {
             var token = lastDFA.getCurrentToken()
@@ -103,8 +101,7 @@ class Scanner(val dfa: DFA[String]) {
             v = ""
             // move back to just after the matched text
             x = i + 1
-          }
-          else {
+          } else {
             println(s"LEX ERROR on char '$s', parsed '$v' at position $x")
             x = src.length()
           }

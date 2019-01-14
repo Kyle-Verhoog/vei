@@ -1,7 +1,6 @@
 import compiler.scanner.Scanner
 import org.scalatest.FunSuite
 
-
 class ScannerTest extends FunSuite {
   test("if statement basic") {
     val scanner = Scanner.fromConfig(s"""IF "if"
@@ -40,5 +39,5 @@ class ScannerTest extends FunSuite {
       ab = baaaaa;
     }""")
   }
-  */
+ */
 }
