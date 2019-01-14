@@ -25,43 +25,43 @@ class RegexPostFixTest extends FunSuite {
   }
 
   test("Zero-or-more operator grouped") {
-    val r = "(ab)*";
-    assert(Regex.toPostfix(r) == "ab@*")
+    val r = "(ab)⨂";
+    assert(Regex.toPostfix(r) == "ab@⨂")
   }
 
   test("One-or-more operator grouped") {
-    val r = "(ab)+";
-    assert(Regex.toPostfix(r) == "ab@+")
+    val r = "(ab)⨁";
+    assert(Regex.toPostfix(r) == "ab@⨁")
   }
 
   test("Zero-or-one operator grouped") {
-    val r = "(ab)?";
-    assert(Regex.toPostfix(r) == "ab@?")
+    val r = "(ab)⁇";
+    assert(Regex.toPostfix(r) == "ab@⁇")
   }
 
   test("Alternate operator") {
-    val r = "a|b";
-    assert(Regex.toPostfix(r) == "ab|")
+    val r = "a⎧b";
+    assert(Regex.toPostfix(r) == "ab⎧")
   }
 
   test("Multiple alternate operator") {
-    val r = "a|b|c";
-    assert(Regex.toPostfix(r) == "abc||")
+    val r = "a⎧b⎧c";
+    assert(Regex.toPostfix(r) == "abc⎧⎧")
   }
 
   test("Paren alternate") {
-    val r = "a|(b|c)";
-    assert(Regex.toPostfix(r) == "abc||")
+    val r = "a⎧(b⎧c)";
+    assert(Regex.toPostfix(r) == "abc⎧⎧")
   }
 
   test("Alternate 0 or 1") {
-    val r = "(a|b)?";
-    assert(Regex.toPostfix(r) == "ab|?")
+    val r = "(a⎧b)⁇";
+    assert(Regex.toPostfix(r) == "ab⎧⁇")
   }
 
   test("All operators") {
-    val r = "(1)+(2)*(3)?(4|5)";
-    assert(Regex.toPostfix(r) == "1+2*@3?@45|@")
+    val r = "(1)⨁(2)⨂(3)⁇(4⎧5)";
+    assert(Regex.toPostfix(r) == "1⨁2⨂@3⁇@45⎧@")
   }
 }
 
@@ -114,7 +114,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Alternation 2 atoms") {
-    val re = Regex.createEngine("a|b")
+    val re = Regex.createEngine("a⎧b")
     assert(re.matches("a"))
     assert(re.matches("b"))
     assert(!re.matches("ab"))
@@ -123,7 +123,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Concatenation and alternation") {
-    val re = Regex.createEngine("a(asdf|1234)")
+    val re = Regex.createEngine("a(asdf⎧1234)")
     assert(re.matches("aasdf"))
     assert(re.matches("a1234"))
     assert(!re.matches("aasd"))
@@ -131,7 +131,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Alternation concatenated same character") {
-    val re = Regex.createEngine("1(1*)")
+    val re = Regex.createEngine("1(1⨂)")
     assert(re.matches("1"))
     assert(re.matches("11"))
     assert(re.matches("11111111111111111"))
@@ -140,7 +140,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Nested concatentation and alternation") {
-    val re = Regex.createEngine("(asdf|(1|2))(3|4)")
+    val re = Regex.createEngine("(asdf⎧(1⎧2))(3⎧4)")
     assert(re.matches("asdf3"))
     assert(re.matches("asdf4"))
     assert(re.matches("13"))
@@ -149,7 +149,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Zero-or-more 1 atom") {
-    val re = Regex.createEngine("a*")
+    val re = Regex.createEngine("a⨂")
     assert(re.matches(""))
     assert(re.matches("a"))
     assert(re.matches("aa"))
@@ -159,7 +159,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Zero-or-more with alternation") {
-    val re = Regex.createEngine("(a|b)*")
+    val re = Regex.createEngine("(a⎧b)⨂")
     assert(re.matches(""))
     assert(re.matches("a"))
     assert(re.matches("ab"))
@@ -176,7 +176,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Whitespace repeating") {
-    val re = Regex.createEngine("( )(( )*)")
+    val re = Regex.createEngine("( )(( )⨂)")
     assert(re.matches(" "))
     assert(re.matches("     "))
     assert(re.matches("         "))

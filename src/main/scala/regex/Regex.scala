@@ -16,7 +16,7 @@ class RegexEngine(val expr: String, val nfa: NFA[String]) {
       }
     } catch {
       // TODO: we could be more descriptive here.
-      case _ : Throwable => return false
+      case _: Throwable => return false
     }
 
     return n.isComplete()
@@ -25,6 +25,23 @@ class RegexEngine(val expr: String, val nfa: NFA[String]) {
 
 object Regex {
   def toPostfix(regex: String): String = {
+    val processedRegex =
+      regex
+        .replaceAllLiterally("(", "⦅")
+        .replaceAllLiterally("\\⦅", "\\(")
+        .replaceAllLiterally(")", "⦆")
+        .replaceAllLiterally("\\⦆", "\\)")
+        .replaceAllLiterally("|", "⎧")
+        .replaceAllLiterally("\\⎧", "\\|")
+        .replaceAllLiterally("+", "⨁")
+        .replaceAllLiterally("\\⨁", "\\+")
+        .replaceAllLiterally("*", "⨂")
+        .replaceAllLiterally("\\⨂", "\\*")
+        .replaceAllLiterally("?", "⁇")
+        .replaceAllLiterally("\\⁇", "\\?")
+
+    println(regex)
+    println("hiiii " + processedRegex)
     var postfix = ""
     var cch = '@'
     var x = 0
@@ -32,11 +49,11 @@ object Regex {
     var nalt = 0
     var parens = new ListBuffer[Paren]()
 
-    for (x <- 0 until regex.length()) {
-      val re = regex.charAt(x)
+    for (x <- 0 until processedRegex.length()) {
+      val re = processedRegex.charAt(x)
 
       re match {
-        case '(' => {
+        case '⦅' => {
           if (natom > 1) {
             natom -= 1
             postfix += cch
@@ -46,7 +63,7 @@ object Regex {
           nalt = 0
           natom = 0
         }
-        case '|' => {
+        case '⎧' => {
           if (natom == 0) {
             println("Error") // TODO: throw
           }
@@ -57,7 +74,7 @@ object Regex {
           }
           nalt += 1
         }
-        case ')' => {
+        case '⦆' => {
           if (parens.length < 1) {
             println("error 1") // TODO: throw
           }
@@ -72,7 +89,7 @@ object Regex {
           }
 
           while (nalt > 0) {
-            postfix += '|'
+            postfix += '⎧'
             nalt -= 1
           }
 
@@ -81,7 +98,7 @@ object Regex {
           natom = par.natom
           natom += 1
         }
-        case '?' | '*' | '+' => {
+        case '⁇' | '⨂' | '⨁' => {
           if (natom == 0) {
             println("Error symb") // throws
           }
@@ -110,7 +127,7 @@ object Regex {
     }
 
     while (nalt > 0) {
-      postfix += '|'
+      postfix += '⎧'
       nalt -= 1
     }
     postfix
@@ -162,7 +179,7 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
-        case "*" => {
+        case "⨂" => {
           val e = stack.remove(stack.length - 1)
 
           val s = newState()
@@ -183,7 +200,7 @@ object Regex {
           }
           stack += nfa
         }
-        case "|" => {
+        case "⎧" => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 

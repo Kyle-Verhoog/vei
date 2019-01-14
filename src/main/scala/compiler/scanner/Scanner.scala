@@ -58,7 +58,7 @@ object Scanner {
   }
 }
 
-class Scanner(dfa: DFA[String]) {
+class Scanner(val dfa: DFA[String]) {
   def scan(src: String) {
     println(dfa)
     var d = dfa
