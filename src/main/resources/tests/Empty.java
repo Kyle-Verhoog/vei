@@ -1,1 +1,5 @@
-public class { public static void ( [ ] ) { true false null 'a' "b" } }
+public class abc {
+    public static void ab([ ] ) {
+        true false null 'a' "b"
+    }
+}

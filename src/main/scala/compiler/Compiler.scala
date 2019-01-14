@@ -30,7 +30,6 @@ object Compiler {
     val testProg = Source.fromResource("tests/Empty.java").mkString
 
     val scan = Scanner.fromConfig(tokenDefn)
-    val tokens = Utility.runDfa(testProg, scan.dfa)
-    println("generated tokens :\n" + tokens)
+    println("generated tokens :\n" + scan.scan(testProg))
   }
 }
