@@ -184,6 +184,12 @@ class RegexTests extends FunSuite {
     assert(!re.matches(""))
   }
 
+  test("Number") {
+    val re = Regex.createEngine("(1|2)(1|2)*")
+    assert(re.matches("1"))
+    assert(re.matches("11"))
+    assert(re.matches("22222"))
+  }
 }
 
 
