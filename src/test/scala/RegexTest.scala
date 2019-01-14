@@ -1,6 +1,7 @@
+import org.scalatest.FunSuite
 import regex.Regex
-import scala.collection.mutable.{HashMap}
-import org.scalatest.FunSuite;
+
+import scala.collection.mutable.HashMap
 
 class RegexPostFixTest extends FunSuite {
   test("No operators") {

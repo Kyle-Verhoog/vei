@@ -4,7 +4,7 @@ import regex.Regex
 
 
 object TokenEngine {
-  def fromRegex(regex: String, token: String): TokenEngine = {
+  def fromRegex(regex: String, token: Token): TokenEngine = {
     val nfa = Regex.toNFA(regex)
     // add the token states
     for (as <- nfa.acceptingStates) {
@@ -15,7 +15,7 @@ object TokenEngine {
 }
 
 class TokenEngine(val nfa: NFA[String]) {
-  def addRegex(regex: String, token: String): TokenEngine = {
+  def addRegex(regex: String, token: Token): TokenEngine = {
     val nfa2 = TokenEngine.fromRegex(regex, token).nfa
 
     var transitionTable = Regex.mergeMaps(
@@ -46,10 +46,10 @@ class TokenEngine(val nfa: NFA[String]) {
 
 object Scanner {
   def fromConfig(s: String): Scanner = {
-    var engine = TokenEngine.fromRegex(" ", "WHITESPACE")
+    var engine = TokenEngine.fromRegex(" ", new Token("Whitespace", " "))
     for (l <- s.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
-      val token = rawConf(0)
+      val token = new Token(rawConf(0), "some value") // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length-1)
       engine = engine.addRegex(regex, token)
     }
