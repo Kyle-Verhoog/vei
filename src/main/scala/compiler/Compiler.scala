@@ -26,8 +26,8 @@ object Compiler {
   }
 
   def scan(): Unit = {
-    val tokenDefn = Source.fromResource("tokens.txt").mkString
-    val testProg = Source.fromResource("tests/Empty.java").mkString
+    val tokenDefn = Source.fromResource("tokens.lex").mkString
+    val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
     val scan = Scanner.fromConfig(tokenDefn)
     println("generated tokens :\n" + scan.scan(testProg))

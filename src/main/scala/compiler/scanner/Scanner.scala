@@ -104,7 +104,7 @@ class Scanner(val dfa: DFA[String]) {
             var ttype = token.tokenType
             // token.value = lastTokenVal
             tokens += new Token(ttype, lastTokenVal)
-            // println(s"TOKEN: $ttype ($lastv)")
+            //println(s"TOKEN: $ttype ($lastTokenVal)")
             curDFA = dfa
             curTokenVal = ""
             // move back to just after the matched text

@@ -96,10 +96,3 @@ null
 '%'
 '.'
 ""
-"   aRSTst2    80924@#$@dsrt       nreti"
-
-"    rstarst
-
-rtrstrst"
-0010
-'rs'
