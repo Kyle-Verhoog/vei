@@ -126,6 +126,7 @@ class NFA[T](
     queue.enqueue(nfaStartState)
 
     while (queue.nonEmpty) {
+      println("Processing NFA queue, at size: " + queue.length)
       val currentState = queue.dequeue()
       val currentStateName = genDfaStateName(currentState)
 

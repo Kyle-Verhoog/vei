@@ -13,7 +13,8 @@ class DFA[T](
     val startState: State,
     val alphabet: Set[T],
     val transitionTable: mutable.HashMap[(State, T), State],
-    val tokenStates: mutable.HashMap[State, Token]
+    val tokenStates: mutable.HashMap[State, Token],
+    val processedTransitions: Set[T] = Set[T]()
 ) {
 
   def transition(state: State, alpha: T): State = {
@@ -30,7 +31,8 @@ class DFA[T](
       transition(startState, alpha),
       alphabet,
       transitionTable,
-      tokenStates
+      tokenStates,
+      processedTransitions + alpha
     )
   }
 
@@ -44,7 +46,7 @@ class DFA[T](
 
   def getCurrentToken(): Token = {
     if (!tokenStates.contains(startState))
-      throw NoTokenOnAcceptingStateException(message = s"$startState")
+      throw NoTokenOnAcceptingStateException(message = s"Start State:\n$startState\nTransitions:\n$processedTransitions")
     tokenStates(startState)
   }
 
