@@ -25,6 +25,7 @@ class RegexEngine(val expr: String, val nfa: NFA[String]) {
 
 object Regex {
   def toPostfix(regex: String): String = {
+    // TODO figure out if/how we want to handle escaping special chars
     val processedRegex =
       regex
         .replaceAllLiterally("(", "⦅")

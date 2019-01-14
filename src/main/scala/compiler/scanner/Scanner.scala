@@ -33,10 +33,10 @@ class TokenEngine(val nfa: NFA[String]) {
       states,
       acceptingStates,
       startStates,
-      Set("i", "f", "a", "b", "c", "d", "1", "2", "=", ";", "[", "]", "{", "}", " "),
+      (' ' to '~').map(ch=> ch.toString).toSet,
       transitionTable,
       tokenStates,
-      nfa.epsilonSym,
+      nfa.epsilonSym
     )
     newNfa = newNfa.addTransition((s, "ε"), nfa.startStates | nfa2.startStates)
 
