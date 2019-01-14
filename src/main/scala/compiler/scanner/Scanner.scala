@@ -33,7 +33,8 @@ class TokenEngine(val nfa: NFA[String]) {
       states,
       acceptingStates,
       startStates,
-      (' ' to '~').map(ch=> ch.toString).toSet,
+      (0 to 127).map(i => i.toChar.toString).toSet, // all ASCII chars
+      // (' ' to '~').map(ch=> ch.toString).toSet,
       transitionTable,
       tokenStates,
       nfa.epsilonSym
@@ -46,27 +47,44 @@ class TokenEngine(val nfa: NFA[String]) {
 
 object Scanner {
   def fromConfig(s: String): Scanner = {
-    var engine = TokenEngine.fromRegex(" ", new Token("Whitespace", " "))
+    // TODO: support spaces/special chars in config
+    var engine = TokenEngine.fromRegex("\n", new Token("NEWLINE", " "))
+    engine = engine.addRegex(" ", new Token("WHITESPACE", " "))
     for (l <- s.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
       val token = new Token(rawConf(0), "some value") // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length-1)
       engine = engine.addRegex(regex, token)
     }
-    println(engine.nfa)
+    // println(engine.nfa)
     new Scanner(engine.nfa.createDfa())
   }
 }
 
-// NFA -> DFA accepting states in NFA should be in DFA
-// TODO: it seems like when accepting states are put together they lose their token
 class Scanner(val dfa: DFA[String]) {
   def scan(src: String) {
-    println(dfa)
+    // println(dfa)
+
+    // TODO: HACK
+    // NFA -> DFA accepting states in NFA should be in DFA
+    // it seems like it's possible that accepting states don't have entries added to the tokenStates map
+    dfa.tokenStates foreach {
+      case (stok, token) => {
+        dfa.transitionTable foreach {
+          case ((stra, ch), out) => {
+            if (stra contains stok) {
+              dfa.tokenStates += (stra -> token)
+            }
+          }
+        }
+      }
+    }
+
+    // println(dfa)
     var d = dfa
     var v = ""
     for (s <- src) {
-      //try {
+      // try {
         d = d.next(s.toString)
         v += s
         if (d.isComplete()) {
@@ -76,9 +94,13 @@ class Scanner(val dfa: DFA[String]) {
           v = ""
           d = dfa // reset dfa
         }
+        else {
+        }
       // }
       // catch {
-      //   case _: Throwable => println("LEX ERROR")
+      //   case _: Throwable => {
+      //     println("LEX ERROR")
+      //   }
       // }
     }
   }

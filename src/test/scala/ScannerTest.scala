@@ -9,6 +9,7 @@ class ScannerTest extends FunSuite {
       VAR "(a|b|c|d)"
       LESSER "<"
       GREATER ">"
+      EQ "=="
       ASSIGN "="
       SEMI ";"
       LPAREN "["
