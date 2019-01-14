@@ -58,13 +58,9 @@ object Scanner {
   }
 }
 
-<<<<<<< HEAD
-class Scanner(val dfa: DFA[String]) {
-=======
 // NFA -> DFA accepting states in NFA should be in DFA
 // TODO: it seems like when accepting states are put together they lose their token
-class Scanner(dfa: DFA[String]) {
->>>>>>> add test and comment about bug
+class Scanner(val dfa: DFA[String]) {
   def scan(src: String) {
     println(dfa)
     var d = dfa
