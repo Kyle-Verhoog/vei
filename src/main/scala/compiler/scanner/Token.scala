@@ -1,6 +1,6 @@
 package compiler.scanner
 
-class Token(val tokenType: String, val value: String) {
+class Token(val tokenType: String, var value: String) {
   override def toString = {
     s"""TOKEN(TYPE : $tokenType VALUE: $value)"""
   }

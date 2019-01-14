@@ -1,6 +1,7 @@
 package compiler.scanner
 import compiler.{DFA, NFA}
 import regex.Regex
+import scala.collection.mutable.{ListBuffer}
 
 
 object TokenEngine {
@@ -56,19 +57,16 @@ object Scanner {
       val regex = rawConf(1).substring(1, rawConf(1).length-1)
       engine = engine.addRegex(regex, token)
     }
-    // println(engine.nfa)
     new Scanner(engine.nfa.createDfa())
   }
 }
 
 class Scanner(val dfa: DFA[String]) {
-  def scan(src: String) {
-    // println(dfa)
-
+  def scan(src: String): ListBuffer[Token] = {
+    var tokens = ListBuffer[Token]()
     // TODO: HACK
     // NFA -> DFA accepting states in NFA should be in DFA
     // it seems like it's possible that accepting states don't have entries added to the tokenStates map
-    // println(dfa)
     var d = dfa
     var lastDFA = d
     var i = 0
@@ -77,7 +75,6 @@ class Scanner(val dfa: DFA[String]) {
     var lastv = v
 
     var x = 0
-    // for (x <- 0 until src.length()) {
     while (x < src.length()) {
       var s = src.charAt(x)
       try {
@@ -99,6 +96,8 @@ class Scanner(val dfa: DFA[String]) {
           if (isComplete) {
             var token = lastDFA.getCurrentToken()
             var ttype = token.tokenType
+            token.value = lastv
+            tokens += token
             println(s"TOKEN: $ttype ($lastv)")
             d = dfa
             v = ""
@@ -113,5 +112,6 @@ class Scanner(val dfa: DFA[String]) {
         }
       }
     }
+    tokens
   }
 }
