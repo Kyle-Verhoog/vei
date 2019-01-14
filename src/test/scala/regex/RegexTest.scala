@@ -1,4 +1,5 @@
 import regex.Regex
+import scala.collection.mutable.{HashMap}
 import org.scalatest.FunSuite;
 
 class RegexPostFixTest extends FunSuite {
@@ -128,6 +129,15 @@ class RegexTests extends FunSuite {
     assert(!re.matches("aasdf1234"))
   }
 
+  test("Alternation concatenated same character") {
+    val re = Regex.createEngine("1(1*)")
+    assert(re.matches("1"))
+    assert(re.matches("11"))
+    assert(re.matches("11111111111111111"))
+    assert(!re.matches(""))
+    assert(!re.matches("111112"))
+  }
+
   test("Nested concatentation and alternation") {
     val re = Regex.createEngine("(asdf|(1|2))(3|4)")
     assert(re.matches("asdf3"))
@@ -155,5 +165,34 @@ class RegexTests extends FunSuite {
     assert(re.matches("aba"))
     assert(re.matches("abbbbaaabbb"))
     assert(re.matches("aaaaaaaaaaaaaaaaaaaaaaab"))
+  }
+
+  test("Whitespace") {
+    val re = Regex.createEngine(" ")
+    assert(re.matches(" "))
+    assert(!re.matches(""))
+    assert(!re.matches("  "))
+  }
+
+  test("Whitespace repeating") {
+    val re = Regex.createEngine("( )(( )*)")
+    assert(re.matches(" "))
+    assert(re.matches("     "))
+    assert(re.matches("         "))
+    assert(re.matches("  "))
+    assert(!re.matches(""))
+  }
+
+}
+
+
+class RegexUtils extends FunSuite {
+  test("mergeMaps") {
+    val m1 = HashMap(("asdf" -> "TEST"))
+    val m2 = HashMap(("asd" -> "TEST2"))
+    val merge = Regex.mergeMaps(m1, m2)
+
+    assert(merge contains "asdf")
+    assert(merge contains "asd")
   }
 }

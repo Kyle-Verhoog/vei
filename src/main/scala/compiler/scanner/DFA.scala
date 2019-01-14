@@ -18,7 +18,7 @@ class DFA[T](
 
   def transition(state: State, alpha: T): State = {
     if (!transitionTable.contains((state, alpha))) {
-      throw TransitionNonExistentException()
+      throw TransitionNonExistentException(message=s"$state, $alpha")
     }
     transitionTable((state, alpha))
   }
@@ -44,7 +44,18 @@ class DFA[T](
 
   def getCurrentToken(): Token = {
     if (!tokenStates.contains(startState))
-      throw NoTokenOnAcceptingStateException()
+      throw NoTokenOnAcceptingStateException(message=s"$startState")
     tokenStates(startState)
+  }
+
+  override def toString = {
+    s"""DFA(
+      Q (states): $states
+      q₀(startState): $startState
+      F (acceptingStates): $acceptingStates
+      Δ (transitionTable): $transitionTable
+      Σ (alphabet): $alphabet
+      Tokens: $tokenStates
+    )"""
   }
 }

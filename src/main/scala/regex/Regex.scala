@@ -7,7 +7,7 @@ import compiler.NFA
 
 case class Paren(val nalt: Integer, val natom: Integer) {}
 
-class RegexEngine(val expression: String, val nfa: NFA[String]) {
+class RegexEngine(val expr: String, val nfa: NFA[String]) {
   def matches(s: String): Boolean = {
     var n = nfa
     try {
@@ -15,7 +15,8 @@ class RegexEngine(val expression: String, val nfa: NFA[String]) {
         n = n.next(c.toString)
       }
     } catch {
-      case _ => return false
+      // TODO: we could be more descriptive here.
+      case _ : Throwable => return false
     }
 
     return n.isComplete()
@@ -255,9 +256,13 @@ object Regex {
     stack(0)
   }
 
-  def createEngine(expr: String): RegexEngine = {
-    val postfix = toPostfix(expr)
+  def toNFA(regex: String): NFA[String] = {
+    val postfix = toPostfix(regex)
     val nfa = postfixToNFA(postfix)
-    new RegexEngine(postfix, nfa)
+    nfa
+  }
+
+  def createEngine(expr: String, token: String = ""): RegexEngine = {
+    new RegexEngine(expr, toNFA(expr))
   }
 }

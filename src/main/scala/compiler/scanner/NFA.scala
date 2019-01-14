@@ -13,7 +13,7 @@ class NFA[T](
     val alphabet: Set[T],
     val transitionTable: mutable.HashMap[(State, T), Set[State]],
     // stores accepting states that are related to a token
-    val tokenStates: mutable.HashMap[State, Token], // TODO this should just be apart of `State`
+    val tokenStates: mutable.HashMap[State, Token], // TODO this should just be apart of `State`?
     val epsilonSym: T
 ) {
 
@@ -201,6 +201,7 @@ class NFA[T](
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
       Σ (alphabet): $alphabet
+      Tokens: $tokenStates
     )"""
   }
 }
