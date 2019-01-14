@@ -24,57 +24,64 @@ class RegexEngine(val expr: String, val nfa: NFA[String]) {
 }
 
 object Regex {
+  val ALT = "∪"
+  val CONCAT = "·"
+  val LPAREN = "⦅"
+  val RPAREN = "⦆"
+  val OOM = "⨁"
+  val ZOM = "⨂"
+  val ZOO = "⁇"
+
   def toPostfix(regex: String): String = {
     // TODO figure out if/how we want to handle escaping special chars
     val processedRegex =
       regex
-        .replaceAllLiterally("(", "⦅")
-        .replaceAllLiterally("\\⦅", "(")
-        .replaceAllLiterally(")", "⦆")
-        .replaceAllLiterally("\\⦆", ")")
-        .replaceAllLiterally("|", "⎧")
-        .replaceAllLiterally("\\⎧", "|")
-        .replaceAllLiterally("+", "⨁")
-        .replaceAllLiterally("\\⨁", "+")
-        .replaceAllLiterally("*", "⨂")
-        .replaceAllLiterally("\\⨂", "*")
-        .replaceAllLiterally("?", "⁇")
-        .replaceAllLiterally("\\⁇", "?")
-    println("Replaced regex " + regex + "     with     " + processedRegex)
+        .replaceAllLiterally("(", LPAREN)
+        .replaceAllLiterally(s"\\$LPAREN", "(")
+        .replaceAllLiterally(")", RPAREN)
+        .replaceAllLiterally(s"\\$RPAREN", ")")
+        .replaceAllLiterally("|", ALT)
+        .replaceAllLiterally(s"\\$ALT", "|")
+        .replaceAllLiterally("+", OOM)
+        .replaceAllLiterally(s"\\$OOM", "+")
+        .replaceAllLiterally("*", ZOM)
+        .replaceAllLiterally(s"\\$ZOM", "*")
+        .replaceAllLiterally("?", ZOO)
+        .replaceAllLiterally(s"\\$ZOO", "?")
+    // println("Replaced regex " + regex + "     with     " + processedRegex)
 
     var postfix = ""
-    var cch = '@'
     var x = 0
     var natom = 0
     var nalt = 0
     var parens = new ListBuffer[Paren]()
 
     for (x <- 0 until processedRegex.length()) {
-      val re = processedRegex.charAt(x)
+      val re = processedRegex.charAt(x).toString
 
       re match {
-        case '⦅' => {
+        case LPAREN => {
           if (natom > 1) {
             natom -= 1
-            postfix += cch
+            postfix += CONCAT
           }
 
           parens += new Paren(nalt, natom)
           nalt = 0
           natom = 0
         }
-        case '⎧' => {
+        case ALT => {
           if (natom == 0) {
             println("Error") // TODO: throw
           }
           natom -= 1
           while (natom > 0) {
-            postfix += cch
+            postfix += CONCAT
             natom -= 1
           }
           nalt += 1
         }
-        case '⦆' => {
+        case RPAREN => {
           if (parens.length < 1) {
             println("error 1") // TODO: throw
           }
@@ -84,12 +91,12 @@ object Regex {
 
           natom -= 1
           while (natom > 0) {
-            postfix += cch
+            postfix += CONCAT
             natom -= 1
           }
 
           while (nalt > 0) {
-            postfix += '⎧'
+            postfix += ALT
             nalt -= 1
           }
 
@@ -98,7 +105,7 @@ object Regex {
           natom = par.natom
           natom += 1
         }
-        case '⁇' | '⨂' | '⨁' => {
+        case ZOO | ZOM | OOM => {
           if (natom == 0) {
             println("Error symb") // throws
           }
@@ -107,7 +114,7 @@ object Regex {
         case _ => {
           if (natom > 1) {
             natom -= 1
-            postfix += cch
+            postfix += CONCAT
           }
 
           postfix += re
@@ -122,12 +129,12 @@ object Regex {
 
     natom -= 1
     while (natom > 0) {
-      postfix += cch
+      postfix += CONCAT
       natom -= 1
     }
 
     while (nalt > 0) {
-      postfix += '⎧'
+      postfix += ALT
       nalt -= 1
     }
     postfix
@@ -179,7 +186,7 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
-        case "⨂" => {
+        case ZOM => {
           val e = stack.remove(stack.length - 1)
 
           val s = newState()
@@ -200,7 +207,7 @@ object Regex {
           }
           stack += nfa
         }
-        case "⎧" => {
+        case ALT => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 
@@ -230,7 +237,7 @@ object Regex {
 
           stack += nfa
         }
-        case "@" => {
+        case CONCAT => {
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 
