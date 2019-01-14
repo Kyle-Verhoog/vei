@@ -1,7 +1,6 @@
 import compiler.Compiler.State
 import compiler.NFA
 import compiler.scanner.Token
-import compiler.scanner.Token.Token
 import org.scalatest.FunSuite
 
 import scala.collection.mutable

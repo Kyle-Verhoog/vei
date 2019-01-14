@@ -2,7 +2,7 @@ package compiler.scanner
 
 import compiler.Compiler.State
 import compiler.NFA
-import compiler.scanner.Token.Token
+import compiler.scanner.Token
 
 import scala.collection.mutable
 
@@ -24,7 +24,7 @@ object TokenDefinition {
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "0") -> Set("zero"))
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("zero" -> Token.INTEGER, "digit" -> Token.INTEGER)
+      mutable.HashMap("zero" -> new Token("INTEGER", "val"), "digit" -> new Token("INTEGER", "val"))
 
     // add transitions for 1-9 to start an int
     genDigitRange(1, 9).foreach(
@@ -56,7 +56,7 @@ object TokenDefinition {
     val transitionTable: mutable.HashMap[(State, State), Set[State]] =
       mutable.HashMap(("start", "i") -> Set("i"), ("i", "f") -> Set("f"))
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("f" -> Token.IF)
+      mutable.HashMap("f" ->  new Token("IF", "val"))
 
     new NFA[State](
       states,
@@ -82,7 +82,7 @@ object TokenDefinition {
         ("s", "e") -> Set("e2")
       )
     val tokenStates: mutable.HashMap[State, Token] =
-      mutable.HashMap("e2" -> Token.ELSE)
+      mutable.HashMap("e2" ->  new Token("ELSE", "val"))
 
     new NFA[State](
       states,

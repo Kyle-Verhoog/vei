@@ -1,7 +1,7 @@
 package compiler
 
 import compiler.Compiler.State
-import compiler.scanner.Token.Token
+import compiler.scanner.Token
 
 import scala.collection.mutable
 

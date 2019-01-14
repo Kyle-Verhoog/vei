@@ -1,6 +1,6 @@
 package regex
 import scala.collection.{SortedSet, mutable}
-import compiler.scanner.Token.Token
+import compiler.scanner.Token
 import scala.collection.mutable.{HashMap, ListBuffer}
 import compiler.Compiler.State
 import compiler.NFA

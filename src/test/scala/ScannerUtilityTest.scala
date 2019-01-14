@@ -1,7 +1,7 @@
 import compiler.Compiler.State
 import compiler.Utility
 import compiler.NFA
-import compiler.scanner.Token.Token
+import compiler.scanner.Token
 import compiler.scanner.{Token, TokenDefinition}
 import exceptions.{TransitionNonExistentException}
 import org.scalatest.FunSuite
@@ -118,12 +118,12 @@ class ScannerUtilityTest extends FunSuite {
     assert(
       tokens.equals(
         mutable.MutableList(
-          Token.INTEGER,
-          Token.INTEGER,
-          Token.IF,
-          Token.ELSE,
-          Token.INTEGER,
-          Token.INTEGER
+          new Token("INTEGER", "val"),
+          new Token("INTEGER", "val"),
+          new Token("IF", "val"),
+          new Token("ELSE", "val"),
+          new Token("INTEGER", "val"),
+          new Token("INTEGER", "val")
         )
       )
     )
