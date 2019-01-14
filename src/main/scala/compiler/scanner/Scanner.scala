@@ -66,44 +66,53 @@ class Scanner(val dfa: DFA[String]) {
     // TODO: HACK
     // NFA -> DFA accepting states in NFA should be in DFA
     // it seems like it's possible that accepting states don't have entries added to the tokenStates map
-    var d = dfa
-    var lastDFA = d
-    var i = 0
+    var curDFA = dfa
+    var curTokenVal = ""
+    var lastDFA = curDFA
+    var lastTokenVal = curTokenVal
+    var lastTokenEnd = 0
     var isComplete = false
-    var v = ""
-    var lastv = v
 
-    var x = 0
-    while (x < src.length()) {
-      var s = src.charAt(x)
+    var i = 0
+    /* Inadvertant maximal-munch scanning.
+     * Loop over the src string with a DFA. For each character that
+     * results in a final DFA state, update `lastDFA`, `i` and `lastv`.
+     * Then continue forward updating if necessary. If an exception
+     * is raised (token scanned is not in the DFA) then use `lastDFA`
+     * to get the token.
+     */
+    while (i < src.length()) {
+      var c = src.charAt(i)
+
       try {
-        d = d.next(s.toString)
-        v += s
-        if (d.isComplete()) {
-          lastv = v
-          i = x
+        curDFA = curDFA.next(c.toString)
+        curTokenVal += c
+        if (curDFA.isComplete()) {
+          lastTokenVal = curTokenVal
+          lastTokenEnd = i
           isComplete = true
-          lastDFA = d
+          lastDFA = curDFA
           // hack: to handle when a DFA is matched on the last character
-          if (x == src.length() - 1)
+          if (i == src.length() - 1)
             throw new Exception()
         }
-        x += 1
+        i += 1
       } catch {
         case _: Throwable => {
           if (isComplete) {
             var token = lastDFA.getCurrentToken()
             var ttype = token.tokenType
-            token.value = lastv
-            tokens += token
-            println(s"TOKEN: $ttype ($lastv)")
-            d = dfa
-            v = ""
+            // token.value = lastTokenVal
+            tokens += new Token(ttype, lastTokenVal)
+            // println(s"TOKEN: $ttype ($lastv)")
+            curDFA = dfa
+            curTokenVal = ""
             // move back to just after the matched text
-            x = i + 1
+            i = lastTokenEnd + 1
           } else {
-            println(s"LEX ERROR on char '$s', parsed '$v' at position $x")
-            x = src.length()
+            // TODO: throw new LexException
+            println(s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i")
+            i = src.length() // break out of loop
           }
           isComplete = false
         }
