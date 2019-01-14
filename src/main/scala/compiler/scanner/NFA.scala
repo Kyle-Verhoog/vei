@@ -167,7 +167,7 @@ class NFA[T](
       }
     }
 
-    new DFA(
+    var dfa = new DFA(
       states,
       accepting,
       startStateName,
@@ -175,6 +175,21 @@ class NFA[T](
       transitionList,
       newTokenStates
     )
+    // TODO: HACK
+    // NFA -> DFA accepting states in NFA should be in DFA
+    // it seems like it's possible that accepting states don't have entries added to the tokenStates map
+    dfa.tokenStates foreach {
+      case (stok, token) => {
+        dfa.transitionTable foreach {
+          case ((stra, ch), out) => {
+            if (stra contains stok) {
+              dfa.tokenStates += (stra -> token)
+            }
+          }
+        }
+      }
+    }
+    dfa
   }
 
   def addTransition(k: (State, T), v: Set[State]): NFA[T] = {

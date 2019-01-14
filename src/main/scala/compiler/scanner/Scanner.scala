@@ -68,40 +68,50 @@ class Scanner(val dfa: DFA[String]) {
     // TODO: HACK
     // NFA -> DFA accepting states in NFA should be in DFA
     // it seems like it's possible that accepting states don't have entries added to the tokenStates map
-    dfa.tokenStates foreach {
-      case (stok, token) => {
-        dfa.transitionTable foreach {
-          case ((stra, ch), out) => {
-            if (stra contains stok) {
-              dfa.tokenStates += (stra -> token)
-            }
-          }
-        }
-      }
-    }
-
     // println(dfa)
     var d = dfa
+    var lastDFA = d
+    var i = 0
+    var isComplete = false
     var v = ""
-    for (s <- src) {
-      // try {
+    var lastv = v
+
+    var x = 0
+    // for (x <- 0 until src.length()) {
+    while (x < src.length()) {
+      var s = src.charAt(x)
+      try {
         d = d.next(s.toString)
         v += s
         if (d.isComplete()) {
-          var token = d.getCurrentToken()
-          var ttype = token.tokenType
-          println(s"TOKEN: $ttype ($v)")
-          v = ""
-          d = dfa // reset dfa
+          lastv = v
+          i = x
+          isComplete = true
+          lastDFA = d
+          // hack: to handle when a DFA is matched on the last character
+          if (x == src.length()-1)
+            throw new Exception()
         }
-        else {
+        x += 1
+      }
+      catch {
+        case _: Throwable => {
+          if (isComplete) {
+            var token = lastDFA.getCurrentToken()
+            var ttype = token.tokenType
+            println(s"TOKEN: $ttype ($lastv)")
+            d = dfa
+            v = ""
+            // move back to just after the matched text
+            x = i + 1
+          }
+          else {
+            println(s"LEX ERROR on char '$s', parsed '$v' at position $x")
+            x = src.length()
+          }
+          isComplete = false
         }
-      // }
-      // catch {
-      //   case _: Throwable => {
-      //     println("LEX ERROR")
-      //   }
-      // }
+      }
     }
   }
 }

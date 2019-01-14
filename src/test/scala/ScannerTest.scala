@@ -6,7 +6,7 @@ class ScannerTest extends FunSuite {
   test("Read config") {
     val scanner = Scanner.fromConfig(s"""IF "if"
       INT "(1|2)(1|2)*"
-      VAR "(a|b|c|d)"
+      VAR "(a|b)(a|b)*"
       LESSER "<"
       GREATER ">"
       EQ "=="
@@ -16,8 +16,8 @@ class ScannerTest extends FunSuite {
       RPAREN "]"
       LBRACE "{"
       RBRACE "}"""")
-    scanner.scan(s"""if [a == 112] {
-      a = b;
+    scanner.scan(s"""if [ab == 112] {
+      ab = baaaaa;
     }""")
   }
 }
