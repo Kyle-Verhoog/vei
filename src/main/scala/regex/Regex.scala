@@ -28,20 +28,19 @@ object Regex {
     val processedRegex =
       regex
         .replaceAllLiterally("(", "⦅")
-        .replaceAllLiterally("\\⦅", "\\(")
+        .replaceAllLiterally("\\⦅", "(")
         .replaceAllLiterally(")", "⦆")
-        .replaceAllLiterally("\\⦆", "\\)")
+        .replaceAllLiterally("\\⦆", ")")
         .replaceAllLiterally("|", "⎧")
-        .replaceAllLiterally("\\⎧", "\\|")
+        .replaceAllLiterally("\\⎧", "|")
         .replaceAllLiterally("+", "⨁")
-        .replaceAllLiterally("\\⨁", "\\+")
+        .replaceAllLiterally("\\⨁", "+")
         .replaceAllLiterally("*", "⨂")
-        .replaceAllLiterally("\\⨂", "\\*")
+        .replaceAllLiterally("\\⨂", "*")
         .replaceAllLiterally("?", "⁇")
-        .replaceAllLiterally("\\⁇", "\\?")
+        .replaceAllLiterally("\\⁇", "?")
+    println("Replaced regex " + regex + "     with     " + processedRegex)
 
-    println(regex)
-    println("hiiii " + processedRegex)
     var postfix = ""
     var cch = '@'
     var x = 0
