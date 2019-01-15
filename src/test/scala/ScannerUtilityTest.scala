@@ -110,7 +110,7 @@ class ScannerUtilityTest extends FunSuite {
         ),
         "ε"
       )
-      .createDfa()
+      .toDFA()
 
     val input = "0    123 if else 78       234"
     val tokens = Utility.runDfa(input, dfa)
@@ -138,7 +138,7 @@ class ScannerUtilityTest extends FunSuite {
         ),
         "ε"
       )
-      .createDfa()
+      .toDFA()
 
     val input = "0 123 bad if else"
     assertThrows[TransitionNonExistentException] {

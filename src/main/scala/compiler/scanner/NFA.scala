@@ -112,7 +112,7 @@ class NFA[T](
     sorted.map(state => state.toString).mkString("")
   }
 
-  def createDfa(): DFA[T] = {
+  def toDFA(): DFA[T] = {
     val nfaStartState = findEpsilonClosureMultipleStates(startStates)
 
     val startStateName = genDfaStateName(nfaStartState)
@@ -192,10 +192,27 @@ class NFA[T](
     dfa
   }
 
-  def addTransition(k: (State, T), v: Set[State]): NFA[T] = {
+  def addTransitions(k: (State, T), v: Set[State]): NFA[T] = {
     var transitions = transitionTable
     var stateTransitions = transitions.get(k).getOrElse(Set[State]())
     var newStateTransitions = v | stateTransitions
+    transitions += (k -> newStateTransitions)
+
+    new NFA(
+      states,
+      acceptingStates,
+      startStates,
+      alphabet,
+      transitionTable,
+      tokenStates,
+      epsilonSym
+    )
+  }
+
+  def removeTransitions(k: (State, T), r: Set[State]): NFA[T] = {
+    var transitions = transitionTable
+    var stateTransitions = transitions.get(k).getOrElse(Set[State]())
+    var newStateTransitions = stateTransitions diff r
     transitions += (k -> newStateTransitions)
 
     new NFA(

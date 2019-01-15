@@ -73,7 +73,7 @@ class ScannerTest extends FunSuite {
       ab = baa & baaa;
       ab = baaaaa;
     }""")
-    println(tokens)
+    // println(tokens)
   }
 
   test("Scan basic tokens") {

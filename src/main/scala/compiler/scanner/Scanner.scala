@@ -39,12 +39,11 @@ class TokenEngine(val nfa: NFA[String]) {
       acceptingStates,
       startStates,
       (0 to 127).map(i => i.toChar.toString).toSet, // all ASCII chars
-      // (' ' to '~').map(ch=> ch.toString).toSet,
       transitionTable,
       tokenStates,
       nfa.epsilonSym
     )
-    newNfa = newNfa.addTransition((s, "ε"), nfa.startStates | nfa2.startStates)
+    newNfa = newNfa.addTransitions((s, "ε"), nfa.startStates | nfa2.startStates)
 
     new TokenEngine(newNfa)
   }
@@ -61,7 +60,7 @@ object Scanner {
       val regex = rawConf(1).substring(1, rawConf(1).length - 1)
       engine = engine.addRegex(regex, token)
     }
-    new Scanner(engine.nfa.createDfa())
+    new Scanner(engine.nfa.toDFA())
   }
 
   def serializeDfa(dfa: DFA[String], filePath: String): Unit = {

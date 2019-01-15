@@ -88,7 +88,7 @@ class NFATest extends FunSuite {
       tokenStates,
       'ε'
     )
-    val dfa = nfa.createDfa()
+    val dfa = nfa.toDFA()
 
     assert(
       dfa.states
@@ -105,7 +105,7 @@ class NFATest extends FunSuite {
 
   }
 
-  test("addTransition") {
+  test("addTransitions one") {
     val nfa = new NFA(
       Set("a", "b"),
       Set("b"),
@@ -116,10 +116,67 @@ class NFATest extends FunSuite {
       "ε"
     )
 
-    var newNfa = nfa.addTransition(("a", "b"), Set("b"))
+    var newNfa = nfa.addTransitions(("a", "b"), Set("b"))
     assert(newNfa.transitionTable contains ("a", "b"))
-    newNfa = nfa.addTransition(("a", "ε"), Set("b"))
+    newNfa = nfa.addTransitions(("a", "ε"), Set("b"))
     assert(newNfa.transitionTable contains ("a", "b"))
     assert(newNfa.transitionTable contains ("a", "ε"))
+  }
+
+  test("addTransitions multi") {
+    val nfa = new NFA(
+      Set("a", "b"),
+      Set("b"),
+      Set("a"),
+      Set("a", "b", "c"),
+      collection.mutable.HashMap[(State, String), Set[State]](),
+      collection.mutable.HashMap[State, Token](),
+      "ε"
+    )
+
+    var newNfa = nfa.addTransitions(("a", "b"), Set("b", "c"))
+    assert(newNfa.transitionTable("a", "b") contains "b")
+    assert(newNfa.transitionTable("a", "b") contains "c")
+  }
+
+
+  test("removeTransitions one") {
+    val nfa = new NFA(
+      Set("a", "b"),
+      Set("b"),
+      Set("a"),
+      Set("a", "b", "c"),
+      collection.mutable.HashMap[(State, String), Set[State]](),
+      collection.mutable.HashMap[State, Token](),
+      "ε"
+    )
+
+    var newNfa = nfa.addTransitions(("a", "b"), Set("b", "c"))
+    assert(newNfa.transitionTable("a", "b") contains "b")
+    assert(newNfa.transitionTable("a", "b") contains "c")
+    nfa.removeTransitions(("a", "b"), Set("b"))
+    assert(!(newNfa.transitionTable("a", "b") contains "b"))
+    assert(newNfa.transitionTable("a", "b") contains "c")
+  }
+
+  test("removeTransitions multi") {
+    val nfa = new NFA(
+      Set("a", "b"),
+      Set("b"),
+      Set("a"),
+      Set("a", "b", "c"),
+      collection.mutable.HashMap[(State, String), Set[State]](),
+      collection.mutable.HashMap[State, Token](),
+      "ε"
+    )
+
+    var newNfa = nfa.addTransitions(("a", "b"), Set("a", "b", "c"))
+    assert(newNfa.transitionTable("a", "b") contains "a")
+    assert(newNfa.transitionTable("a", "b") contains "b")
+    assert(newNfa.transitionTable("a", "b") contains "c")
+    nfa.removeTransitions(("a", "b"), newNfa.transitionTable("a", "b"))
+    assert(!(newNfa.transitionTable("a", "b") contains "a"))
+    assert(!(newNfa.transitionTable("a", "b") contains "b"))
+    assert(!(newNfa.transitionTable("a", "b") contains "c"))
   }
 }

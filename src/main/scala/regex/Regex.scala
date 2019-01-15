@@ -3,11 +3,11 @@ import scala.collection.{SortedSet, mutable}
 import compiler.scanner.Token
 import scala.collection.mutable.{HashMap, ListBuffer}
 import compiler.Compiler.State
-import compiler.NFA
+import compiler.{DFA, NFA}
 
 case class Paren(val nalt: Integer, val natom: Integer) {}
 
-class RegexEngine(val expr: String, val nfa: NFA[String]) {
+class RegexEngine(val expr: String, val nfa: DFA[String]) {
   def matches(s: String): Boolean = {
     var n = nfa
     try {
@@ -16,7 +16,9 @@ class RegexEngine(val expr: String, val nfa: NFA[String]) {
       }
     } catch {
       // TODO: we could be more descriptive here.
-      case _: Throwable => return false
+      case x: Throwable => {
+        return false
+      }
     }
 
     return n.isComplete()
@@ -42,9 +44,6 @@ object Regex {
       .replaceAllLiterally(s"\\$RBRACK", "]")
 
     var processedRegex = ""
-    // ()
-    // \(\)
-    // \|(|
     var i = 0
     while (i < temp.length) {
       if (temp.charAt(i).toString.equals(LBRACK)) {
@@ -82,12 +81,10 @@ object Regex {
       .replaceAllLiterally("?", ZOO)
       .replaceAllLiterally(s"\\$ZOO", "?")
 
-    //println(processedRegex)
     processedRegex
   }
 
   def toPostfix(regex: String): String = {
-    // TODO figure out if/how we want to handle escaping special chars
     val processedRegex = preProcess(regex)
     // println("Replaced regex " + regex + "     with     " + processedRegex)
 
@@ -203,7 +200,7 @@ object Regex {
       startStates: Set[State],
       transitionTable: mutable.HashMap[(State, String), Set[State]]
   ): NFA[String] = {
-    val alpha = Set("a", "b", "c")
+    val alpha = (0 to 127).map(i => i.toChar.toString).toSet // all ASCII chars
     new NFA[String](
       states,
       acceptingStates,
@@ -242,10 +239,11 @@ object Regex {
             e.transitionTable
           )
 
-          nfa = nfa.addTransition((s, "ε"), e.startStates)
+          nfa = nfa.addTransitions((s, "ε"), e.startStates)
           for (as <- e.acceptingStates) {
-            nfa = nfa.addTransition((as, "ε"), Set(s))
+            nfa = nfa.addTransitions((as, "ε"), Set(s))
           }
+
           stack += nfa
         }
         case ALT => {
@@ -274,7 +272,7 @@ object Regex {
             transitionTable
           )
           // Add the transitions from s to the start states of e1, e2
-          nfa = nfa.addTransition((s, "ε"), e1.startStates | e2.startStates)
+          nfa = nfa.addTransitions((s, "ε"), e1.startStates | e2.startStates)
 
           stack += nfa
         }
@@ -328,6 +326,8 @@ object Regex {
   }
 
   def createEngine(expr: String, token: String = ""): RegexEngine = {
-    new RegexEngine(expr, toNFA(expr))
+    val nfa = toNFA(expr)
+    val dfa = nfa.toDFA()
+    new RegexEngine(expr, dfa)
   }
 }

@@ -3,7 +3,7 @@ import regex.Regex
 
 import scala.collection.mutable.HashMap
 
-class RegexPostFixTest extends FunSuite {
+class RegexPostfixTest extends FunSuite {
   val ALT = "∪"
   val CONCAT = "·"
   val LPAREN = "⦅"
@@ -139,7 +139,7 @@ class RegexTests extends FunSuite {
   }
 
   test("Alternation concatenated same character") {
-    val re = Regex.createEngine("1(1⨂)")
+    val re = Regex.createEngine("1(1*)")
     assert(re.matches("1"))
     assert(re.matches("11"))
     assert(re.matches("11111111111111111"))
@@ -197,6 +197,11 @@ class RegexTests extends FunSuite {
     assert(re.matches("1"))
     assert(re.matches("11"))
     assert(re.matches("22222"))
+  }
+
+  test("Large regex") {
+    val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
+    assert(re.matches("ABSTRACT"))
   }
 }
 
