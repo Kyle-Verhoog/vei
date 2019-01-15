@@ -1,7 +1,8 @@
-import compiler.scanner.Scanner
+import compiler.scanner.{Scanner, Token}
 import org.scalatest.FunSuite
 import regex.Regex
 
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 class ScannerTest extends FunSuite {
@@ -76,10 +77,76 @@ class ScannerTest extends FunSuite {
   }
 
   test("all tokens") {
-    println("starting")
     val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
-    println("done creating scanner" + scanner.dfa)
-    val tokens = scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
+    var tokens = scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
+    tokens = tokens.filter(token => token.tokenType.equals("NEWLINE") || token.tokenType.equals("WHITESPACE"))
+
+    assert(tokens.equals(
+      ListBuffer[Token](
+        new Token("ABSTRACT", "abstract"),
+        new Token("BOOLEAN", "boolean"),
+        new Token("BYTE", "byte"),
+        new Token("CHAR", "char"),
+        new Token("CLASS", "class"),
+        new Token("ELSE", "else"),
+        new Token("EXTENDS", "extends"),
+        new Token("FINAL", "final"),
+        new Token("FOR", "for"),
+        new Token("IF", "if"),
+        new Token("IMPLEMENTS", "implements"),
+        new Token("IMPORT", "import"),
+        new Token("INSTANCEOF", "instanceof"),
+        new Token("INT", "int"),
+        new Token("INTERFACE", "interface"),
+        new Token("NATIVE", "native"),
+        new Token("NEW", "new"),
+        new Token("PACKAGE", "package"),
+        new Token("PRIVATE", "private"),
+        new Token("PROTECTED", "protected"),
+        new Token("PUBLIC", "public"),
+        new Token("RETURN", "return"),
+        new Token("SHORT", "short"),
+        new Token("STATIC", "static"),
+        new Token("SUPER", "super"),
+        new Token("THIS", "this"),
+        new Token("VOID", "void"),
+        new Token("WHILE", "while"),
+        new Token("~", "~"),
+        new Token("!", "!"),
+        new Token("%", "%"),
+        new Token("&", "&"),
+        new Token("&&", "&&"),
+        new Token(",", ","),
+        new Token("-", "-"),
+        new Token(".", "."),
+        new Token("/", "/"),
+        new Token(":", ":"),
+        new Token(";", ";"),
+        new Token("<", "<"),
+        new Token("=", "="),
+        new Token("!=", "!="),
+        new Token("<", "<="),
+        new Token(">", ">="),
+        new Token("==", "=="),
+        new Token(">", ">"),
+        new Token("?", "?"),
+        new Token("[", "["),
+        new Token("]", "]"),
+        new Token("{", "{"),
+        new Token("}", "}"),
+        new Token("^", "^"),
+        new Token("*", "*"),
+        new Token("(", "("),
+        new Token(")", ")"),
+        new Token("+", "+"),
+        new Token("|", "|"),
+        new Token("||", "||"),
+        new Token("IDENTIFIER", "([a-z]|[A-Z]|_|$)([a-z][A-Z][0-9]|_|$)*"),
+        new Token("BOOLEAN_LITERAL", "(true)|(false)"),
+        new Token("NULL_LITERAL", "null"),
+        new Token("INTEGER_LITERAL", "0|((1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)")
+      )
+    ))
     println(tokens)
   }
 }

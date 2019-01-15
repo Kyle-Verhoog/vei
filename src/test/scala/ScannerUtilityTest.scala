@@ -1,7 +1,6 @@
 import compiler.Compiler.State
 import compiler.Utility
 import compiler.NFA
-import compiler.scanner.Token
 import compiler.scanner.{Token, TokenDefinition}
 import exceptions.{TransitionNonExistentException}
 import org.scalatest.FunSuite

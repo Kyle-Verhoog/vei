@@ -46,7 +46,8 @@ object Regex {
     var i = 0
     while (i < temp.length) {
       if (temp.charAt(i).toString.equals(LBRACK)) {
-        val range = (temp.charAt(i + 1) to temp.charAt(i + 3)).map(ch=> ch.toString)
+        val range =
+          (temp.charAt(i + 1) to temp.charAt(i + 3)).map(ch => ch.toString)
         processedRegex += "(" + range.mkString("|") + ")"
         i += 4
       } else {
