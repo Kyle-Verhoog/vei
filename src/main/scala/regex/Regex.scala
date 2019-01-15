@@ -24,7 +24,6 @@ class RegexEngine(val expr: String, val nfa: DFA[String]) {
     return n.isComplete()
   }
 }
-
 object Regex {
   val ALT = "∪"
   val CONCAT = "·"
@@ -35,8 +34,12 @@ object Regex {
   val OOM = "⨁"
   val ZOM = "⨂"
   val ZOO = "⁇"
+  val NEW_LINE = "☭"
+  val SPACE = "☃"
+  val TAB = "☘"
+  val DOT = "ø"
 
-  def preProcess(regex: String): String = {
+  def expandRanges(regex: String): String = {
     val temp = regex
       .replaceAllLiterally("[", LBRACK)
       .replaceAllLiterally(s"\\$LBRACK", "[")
@@ -49,15 +52,15 @@ object Regex {
       if (temp.charAt(i).toString.equals(LBRACK)) {
         val range =
           (temp.charAt(i + 1) to temp.charAt(i + 3)).map(ch => ch.toString)
-          .map {
-            case "(" => "\\("
-            case ")" => "\\)"
-            case "+" => "\\+"
-            case "*" => "\\*"
-            case "?" => "\\?"
-            case "|" => "\\|"
-            case x => x
-          }.mkString("|")
+            .map {
+              case "(" => "\\("
+              case ")" => "\\)"
+              case "+" => "\\+"
+              case "*" => "\\*"
+              case "?" => "\\?"
+              case "|" => "\\|"
+              case x => x
+            }.mkString("|")
 
         processedRegex += "(" + range + ")"
         i += 4
@@ -67,7 +70,27 @@ object Regex {
       i += 1
     }
 
-    processedRegex = processedRegex
+    processedRegex
+  }
+
+  def replaceDot(regex: String): String = {
+    val allChars = (0 to 127).map(i => i.toChar.toString).map {
+      case "(" => "\\("
+      case ")" => "\\)"
+      case "[" => "\\["
+      case "]" => "\\]"
+      case "+" => "\\+"
+      case "*" => "\\*"
+      case "?" => "\\?"
+      case "|" => "\\|"
+      case x => x
+    }.mkString(ALT)
+
+    regex.replaceAllLiterally(DOT, LPAREN + allChars + RPAREN)
+  }
+
+  def addUnicode(regex: String): String = {
+    regex
       .replaceAllLiterally("(", LPAREN)
       .replaceAllLiterally(s"\\$LPAREN", "(")
       .replaceAllLiterally(")", RPAREN)
@@ -80,8 +103,18 @@ object Regex {
       .replaceAllLiterally(s"\\$ZOM", "*")
       .replaceAllLiterally("?", ZOO)
       .replaceAllLiterally(s"\\$ZOO", "?")
+      .replaceAllLiterally(".", DOT)
+      .replaceAllLiterally(s"\\$DOT", ".")
+      .replaceAllLiterally(s"$NEW_LINE", "\n")
+      .replaceAllLiterally(s"$SPACE", " ")
+      .replaceAllLiterally(s"$TAB", "\t")
+  }
 
-    processedRegex
+  def preProcess(regex: String): String = {
+    val rangedRegex = expandRanges(regex)
+    val unicodeRegex = addUnicode(rangedRegex)
+    println(replaceDot(unicodeRegex))
+    replaceDot(unicodeRegex)
   }
 
   def toPostfix(regex: String): String = {
@@ -243,7 +276,7 @@ object Regex {
           for (as <- e.acceptingStates) {
             nfa = nfa.addTransitions((as, "ε"), Set(s))
           }
-
+          println(nfa)
           stack += nfa
         }
         case ALT => {
@@ -285,10 +318,6 @@ object Regex {
             e2.transitionTable
           )
 
-          for (a <- e1.acceptingStates) {
-            transitionTable += ((a, "ε") -> e2.startStates) // TODO: copy e2.startStates?
-          }
-
           var newStates = e1.states | e2.states
           var newAcceptingStates = e2.acceptingStates
           var newStartStates = e1.startStates
@@ -299,6 +328,10 @@ object Regex {
             newStartStates,
             transitionTable
           )
+          for (a <- e1.acceptingStates) {
+            nfa.addTransitions((a, "ε"), e2.startStates)
+          }
+
           stack += nfa
         }
         case _ => {
@@ -327,6 +360,7 @@ object Regex {
 
   def createEngine(expr: String, token: String = ""): RegexEngine = {
     val nfa = toNFA(expr)
+    println(nfa)
     val dfa = nfa.toDFA()
     new RegexEngine(expr, dfa)
   }

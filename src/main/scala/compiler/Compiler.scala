@@ -12,7 +12,7 @@ object Compiler {
 
   def main(args: Array[String]) {
     //generateTable()
-    scan()
+    scanAndSerialize()
 
     if (args.length.equals(0)) {
       println("Must supply a file!")
@@ -27,7 +27,16 @@ object Compiler {
     Jlalr1.parse(cfg)
   }
 
-  def scan(): Unit = {
+  def scanAndSerialize(): Unit = {
+    val tokenDefn = Source.fromResource("tokens.lex").mkString
+    val testProg = Source.fromResource("testfiles/Empty.java").mkString
+
+    val scan = Scanner.fromConfig(tokenDefn)
+    println("generated tokens :\n" + scan.scan(testProg))
+    Scanner.serializeDfa(scan.dfa, "dfa.txt")
+  }
+
+  def scanWithoutSerializing(): Unit = {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 

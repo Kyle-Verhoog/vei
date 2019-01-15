@@ -199,6 +199,39 @@ class RegexTests extends FunSuite {
     assert(re.matches("22222"))
   }
 
+  test("Weird Number") {
+    val re = Regex.createEngine("(1|2)(1|2)(1|2)*a")
+    assert(re.matches("11a"))
+    assert(re.matches("1211a"))
+    assert(re.matches("22222a"))
+  }
+
+  test("1*a") {
+    val re = Regex.createEngine("1*a")
+    println(re.nfa)
+    assert(re.matches("a"))
+    assert(re.matches("11a"))
+  }
+
+  test("3 a's") {
+    val re = Regex.createEngine("\"(!|a|\\\")(!|a|\\\")(!|a|\\\")*\"")
+    assert(re.matches("\"aaa\""))
+  }
+
+  test("Whitespace basic string regex") {
+    val re = Regex.createEngine("\"(!|[a-d]|☭|☃|☘|\\\")*\"")
+    assert(re.matches("\"abc d ! \n \t\t   !ab \\\" \""))
+  }
+
+  test("Dot") {
+    val re = Regex.createEngine(".\\.")
+    assert(re.matches("\t."))
+  }
+
+  test("String regex") {
+    val re = Regex.createEngine("\"(!|[#-~]|☭|☃|☘|\\\")*\"")
+    assert(re.matches("\"some_string\\\"\""))
+  }
   test("Large regex") {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
     assert(re.matches("ABSTRACT"))
