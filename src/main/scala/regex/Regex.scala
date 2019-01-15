@@ -42,13 +42,25 @@ object Regex {
       .replaceAllLiterally(s"\\$RBRACK", "]")
 
     var processedRegex = ""
-
+    // ()
+    // \(\)
+    // \|(|
     var i = 0
     while (i < temp.length) {
       if (temp.charAt(i).toString.equals(LBRACK)) {
         val range =
           (temp.charAt(i + 1) to temp.charAt(i + 3)).map(ch => ch.toString)
-        processedRegex += "(" + range.mkString("|") + ")"
+          .map {
+            case "(" => "\\("
+            case ")" => "\\)"
+            case "+" => "\\+"
+            case "*" => "\\*"
+            case "?" => "\\?"
+            case "|" => "\\|"
+            case x => x
+          }.mkString("|")
+
+        processedRegex += "(" + range + ")"
         i += 4
       } else {
         processedRegex += temp.charAt(i)

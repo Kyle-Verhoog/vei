@@ -134,9 +134,8 @@ class NFA[T](
       if (isAccepting(currentState, acceptingStates)) {
         // add all token states that are not already defined
         currentState.foreach(state => {
-          // TODO determine if we want to break ties here in some way
-          if (!newTokenStates.contains(state) && tokenStates.contains(state))
-            newTokenStates += state -> tokenStates(state)
+          if (tokenStates.contains(state))
+            newTokenStates += currentStateName -> tokenStates(state)
         })
 
         // add to accepting
@@ -217,7 +216,7 @@ class NFA[T](
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
       Σ (alphabet): $alphabet
-      Tokens: $tokenStates
+      T (tokenStates): $tokenStates
     )"""
   }
 }
