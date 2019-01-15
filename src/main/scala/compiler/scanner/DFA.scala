@@ -7,6 +7,7 @@ import exceptions.NoTokenOnAcceptingStateException
 
 import scala.collection.mutable
 
+@SerialVersionUID(1001L)
 class DFA[T](
     val states: Set[State],
     val acceptingStates: Set[State],
@@ -15,7 +16,7 @@ class DFA[T](
     val transitionTable: mutable.HashMap[(State, T), State],
     val tokenStates: mutable.HashMap[State, Token],
     val processedTransitions: Set[T] = Set[T]()
-) {
+) extends Serializable {
 
   def transition(state: State, alpha: T): State = {
     if (!transitionTable.contains((state, alpha))) {

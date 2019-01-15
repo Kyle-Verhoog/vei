@@ -1,5 +1,7 @@
 package compiler
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+
 import compiler.scanner.Scanner
 import jlalr.Jlalr1
 
@@ -9,7 +11,7 @@ object Compiler {
   type State = String
 
   def main(args: Array[String]) {
-    generateTable()
+    //generateTable()
     scan()
 
     if (args.length.equals(0)) {
@@ -29,7 +31,7 @@ object Compiler {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
-    val scan = Scanner.fromConfig(tokenDefn)
+    val scan = new Scanner()
     println("generated tokens :\n" + scan.scan(testProg))
   }
 }

@@ -121,7 +121,7 @@ class NFA[T](
     var accepting = Set[State]()
     var newTokenStates = mutable.HashMap[State, Token]()
 
-    // generate dfa
+    // generate dfa.txt
     val queue = new mutable.Queue[Set[State]]
     queue.enqueue(nfaStartState)
 

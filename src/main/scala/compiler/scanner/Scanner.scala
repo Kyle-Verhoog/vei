@@ -1,7 +1,12 @@
 package compiler.scanner
+import java.io._
+import java.util.Base64
+
 import compiler.{DFA, NFA}
 import regex.Regex
-import scala.collection.mutable.{ListBuffer}
+
+import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 object TokenEngine {
   def fromRegex(regex: String, token: Token): TokenEngine = {
@@ -58,9 +63,56 @@ object Scanner {
     }
     new Scanner(engine.nfa.createDfa())
   }
+
+  def serializeDfa(dfa: DFA[String], filePath: String): Unit = {
+    val bo = new ByteArrayOutputStream()
+    val so = new ObjectOutputStream(bo)
+    so.writeObject(dfa)
+    so.flush()
+    so.close()
+
+    val file = new File(filePath)
+    println("writing to " + filePath)
+    val pw = new PrintWriter(file)
+    pw.write(Base64.getEncoder.encodeToString(bo.toByteArray))
+    pw.close()
+  }
+
+  def deserializeDfa(): DFA[String] = {
+    val fileContents = Source.fromResource("serializations/dfa.txt").mkString
+    val bytes = Base64.getDecoder.decode(fileContents)
+    val bi = new ByteArrayInputStream(bytes)
+    val si = new ObjectInputStream(bi)
+
+    si.readObject().asInstanceOf[DFA[String]]
+  }
+
+  def deserializeDfa(filePath: String): DFA[String] = {
+    val fileContents = Source.fromFile(filePath).mkString
+    val bytes = Base64.getDecoder.decode(fileContents)
+    val bi = new ByteArrayInputStream(bytes)
+    val si = new ObjectInputStream(bi)
+
+    si.readObject().asInstanceOf[DFA[String]]
+  }
 }
 
-class Scanner(val dfa: DFA[String]) {
+class Scanner(val dfa: DFA[String], val fileName: String) {
+  // constructor if only given dfa.txt
+  def this(dfa: DFA[String]) {
+    this(dfa, "")
+  }
+
+  // constructor if only given file to deserialize
+  def this(fileToDeserializeDfa: String) {
+    this(Scanner.deserializeDfa(fileToDeserializeDfa))
+  }
+
+  // constructor if given nothing (use default serialization place
+  def this() {
+    this(Scanner.deserializeDfa())
+  }
+
   def scan(src: String): ListBuffer[Token] = {
     var tokens = ListBuffer[Token]()
     // TODO: HACK
@@ -111,7 +163,8 @@ class Scanner(val dfa: DFA[String]) {
             i = lastTokenEnd + 1
           } else {
             // TODO: throw new LexException
-            println(s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i")
+            println(
+              s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i")
             i = src.length() // break out of loop
           }
           isComplete = false
