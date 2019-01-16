@@ -28,7 +28,7 @@ class State[T](val states: Set[T]) {
     new State(mystates)
   }
 }
-*/
+ */
 
 object NFA {
   type T = Set[Int]
@@ -208,7 +208,7 @@ class NFA[TTrans](
        * Then check if we already reached each of those states, if not add them to our states, and add
        * them to the queue
        */
-     // println("Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
+      // println("Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
       val alphaLoopTime = System.currentTimeMillis()
 
       for (alpha <- alphabet) {

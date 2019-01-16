@@ -167,5 +167,5 @@ class ScannerTest extends FunSuite {
       assert(lista(i).value.equals(listb(i).value))
     }
   }
-  */
+ */
 }

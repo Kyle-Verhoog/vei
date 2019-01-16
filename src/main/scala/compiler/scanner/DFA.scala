@@ -46,7 +46,10 @@ class DFA[TTrans](
 
   def getCurrentToken(): Token = {
     if (!tokenStates.contains(startState))
-      throw NoTokenOnAcceptingStateException(message = s"Start State:\n$startState\nTransitions:\n$processedTransitions")
+      throw NoTokenOnAcceptingStateException(
+        message =
+          s"Start State:\n$startState\nTransitions:\n$processedTransitions"
+      )
     tokenStates(startState)
   }
 

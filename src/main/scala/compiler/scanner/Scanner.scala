@@ -81,7 +81,8 @@ object Scanner {
   }
 
   def deserializeDfa(): DFA[String] = {
-    val fileContents = Source.fromResource("serializations/dfa_serialization").mkString
+    val fileContents =
+      Source.fromResource("serializations/dfa_serialization").mkString
     val bytes = Base64.getDecoder.decode(fileContents)
     val bi = new ByteArrayInputStream(bytes)
     val si = new ObjectInputStream(bi)
@@ -157,7 +158,11 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
             var token = lastDFA.getCurrentToken()
             var ttype = token.tokenType
             // token.value = lastTokenVal
-            tokens += new Token(ttype, lastTokenVal, lastDFA.getCurrentToken().tokenNumber)
+            tokens += new Token(
+              ttype,
+              lastTokenVal,
+              lastDFA.getCurrentToken().tokenNumber
+            )
             curDFA = dfa
             curTokenVal = ""
             // move back to just after the matched text
@@ -165,7 +170,8 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
           } else {
             // TODO: throw new LexException
             println(
-              s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i")
+              s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i"
+            )
             i = src.length() // break out of loop
           }
           isComplete = false

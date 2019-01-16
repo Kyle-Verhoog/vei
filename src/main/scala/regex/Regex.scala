@@ -51,7 +51,8 @@ object Regex {
     while (i < temp.length) {
       if (temp.charAt(i).toString.equals(LBRACK)) {
         val range =
-          (temp.charAt(i + 1) to temp.charAt(i + 3)).map(ch => ch.toString)
+          (temp.charAt(i + 1) to temp.charAt(i + 3))
+            .map(ch => ch.toString)
             .map {
               case "(" => "\\("
               case ")" => "\\)"
@@ -59,8 +60,9 @@ object Regex {
               case "*" => "\\*"
               case "?" => "\\?"
               case "|" => "\\|"
-              case x => x
-            }.mkString("|")
+              case x   => x
+            }
+            .mkString("|")
 
         processedRegex += "(" + range + ")"
         i += 4
@@ -74,17 +76,20 @@ object Regex {
   }
 
   def replaceDot(regex: String): String = {
-    val allChars = (0 to 127).map(i => i.toChar.toString).map {
-      case "(" => "\\("
-      case ")" => "\\)"
-      case "[" => "\\["
-      case "]" => "\\]"
-      case "+" => "\\+"
-      case "*" => "\\*"
-      case "?" => "\\?"
-      case "|" => "\\|"
-      case x => x
-    }.mkString(ALT)
+    val allChars = (0 to 127)
+      .map(i => i.toChar.toString)
+      .map {
+        case "(" => "\\("
+        case ")" => "\\)"
+        case "[" => "\\["
+        case "]" => "\\]"
+        case "+" => "\\+"
+        case "*" => "\\*"
+        case "?" => "\\?"
+        case "|" => "\\|"
+        case x   => x
+      }
+      .mkString(ALT)
 
     regex.replaceAllLiterally(DOT, LPAREN + allChars + RPAREN)
   }

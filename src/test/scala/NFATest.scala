@@ -9,12 +9,12 @@ class NFATest extends FunSuite {
     Set(1),
     Set(2),
     Set(3),
-    Set(4),
+    Set(4)
   )
 
   val accepting = Set(
     Set(3),
-    Set(4),
+    Set(4)
   )
 
   val startState = Set(1)
@@ -36,7 +36,7 @@ class NFATest extends FunSuite {
     val nfa = new NFA(
       states,
       accepting,
-      startStates=Set(Set(1)),
+      startStates = Set(Set(1)),
       alphabet,
       transitionTable,
       tokenStates,
@@ -139,6 +139,5 @@ class NFATest extends FunSuite {
     assert(newNfa.transitionTable("a", "b") contains "c")
   }
 
-  */
+ */
 }
-

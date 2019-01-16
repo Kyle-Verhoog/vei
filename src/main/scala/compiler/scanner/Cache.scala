@@ -9,9 +9,9 @@ object Cache {
   val epsilonClosureCache = mutable.HashMap[(NFA.T, Set[NFA.T]), Set[NFA.T]]()
 
   def findEpsilonClosureCached(
-                                currentState: NFA.T,
-                                closureStates: Set[NFA.T] = Set[NFA.T]()
-                              ): Set[NFA.T] = {
+      currentState: NFA.T,
+      closureStates: Set[NFA.T] = Set[NFA.T]()
+  ): Set[NFA.T] = {
     if (epsilonClosureCache.contains((currentState, closureStates))) {
       return epsilonClosureCache((currentState, closureStates))
     }
@@ -19,9 +19,10 @@ object Cache {
   }
 
   def insert(
-                                currentState: NFA.T,
-                                closureStates: Set[NFA.T] = Set[NFA.T](),
-            result: Set[NFA.T]) = {
+      currentState: NFA.T,
+      closureStates: Set[NFA.T] = Set[NFA.T](),
+      result: Set[NFA.T]
+  ) = {
     epsilonClosureCache += ((currentState, closureStates) -> result)
   }
 
