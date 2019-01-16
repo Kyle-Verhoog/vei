@@ -1,31 +1,81 @@
 package compiler
 
-import compiler.Compiler.State
 import compiler.scanner.{Cache, Token}
+import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
 import scala.util.Random
 
-class NFA[T](
-    val states: Set[State],
-    val acceptingStates: Set[State],
-    val startStates: Set[State],
-    val alphabet: Set[T],
-    val transitionTable: mutable.HashMap[(State, T), Set[State]],
+/*
+object State {
+  def generate[T](states: Set[T]): State[T] = {
+    new State(states)
+  }
+}
+
+class State[T](val states: Set[T]) {
+  def contains(other: State[T]): Boolean = {
+    (states diff other.states) != Set()
+  }
+
+  // Generates a new State given names of previous states
+  def generate(newStates: Set[State[T]]): State[T] = {
+    var mystates = states
+    for (s <- newStates) {
+      mystates = mystates union s.states
+    }
+    new State(mystates)
+  }
+}
+*/
+
+object NFA {
+  type T = Set[Int]
+  var idCount = 0
+
+  def genId(): Int = {
+    val r = idCount
+    idCount += 1
+    r
+  }
+
+  def newState(prevStates: Set[T] = Set[T]()): T = {
+    var s = Set(genId())
+    for (prev <- prevStates) {
+      s = s union prev
+    }
+    s
+  }
+
+  def foldStates(prevStates: Set[T] = Set[T]()): T = {
+    var s = Set[Int]()
+    for (prev <- prevStates) {
+      s = s union prev
+    }
+    s
+  }
+}
+
+class NFA[TTrans](
+    val states: Set[NFA.T],
+    val acceptingStates: Set[NFA.T],
+    val startStates: Set[NFA.T],
+    val alphabet: Set[TTrans],
+    val transitionTable: mutable.HashMap[(NFA.T, TTrans), Set[NFA.T]],
     // stores accepting states that are related to a token
-    val tokenStates: mutable.HashMap[State, Token], // TODO this should just be apart of `State`?
-    val epsilonSym: T
+    val tokenStates: mutable.HashMap[NFA.T, Token],
+    val epsilonSym: TTrans
 ) {
 
-  def transition(state: State, alpha: T): Set[State] = {
+  def transition(state: NFA.T, alpha: TTrans): Set[NFA.T] = {
     if (!transitionTable.contains((state, alpha))) {
       throw TransitionNonExistentException(message = "($state, $alpha)")
     }
     transitionTable((state, alpha))
   }
 
-  def next(alpha: T): NFA[T] = {
+  def next(alpha: TTrans): NFA[TTrans] = {
     val nextStates = findNextStates(startStates, alpha)
 
     if (nextStates.isEmpty) {
@@ -45,13 +95,11 @@ class NFA[T](
     )
   }
 
-  def findNextStates(currentStates: Set[State], alpha: T): Set[State] = {
-    val temp = System.currentTimeMillis()
-    val epsilonClosure = findEpsilonClosureMultipleStates(currentStates)
-    //println("               time to find epsilon " + (System.currentTimeMillis() - temp))
-    var newStates = Set[State]()
+  def findNextStates(currentStates: Set[NFA.T], alpha: TTrans): Set[NFA.T] = {
+    val epsilonClosures = findEpsilonClosureMultipleStates(currentStates)
+    var newStates = Set[NFA.T]()
 
-    for (state <- epsilonClosure) {
+    for (state <- epsilonClosures) {
       try {
         newStates = newStates.union(transition(state, alpha))
       } catch {
@@ -63,15 +111,15 @@ class NFA[T](
   }
 
   def findEpsilonClosure(
-      currentState: State,
-      closureStates: Set[State] = Set[State]()
-  ): Set[State] = {
+      currentState: NFA.T,
+      closureStates: Set[NFA.T] = Set[NFA.T]()
+  ): Set[NFA.T] = {
     if (Cache.findEpsilonClosureCached(currentState, closureStates) != null) {
       return Cache.findEpsilonClosureCached(currentState, closureStates)
     }
 
-    var newClosureStates = mutable.Set[State]()
-    var queue: mutable.Queue[State] = mutable.Queue(currentState)
+    var newClosureStates = mutable.Set[NFA.T]()
+    var queue: mutable.Queue[NFA.T] = mutable.Queue(currentState)
 
     while (queue.nonEmpty) {
       val dequedState = queue.dequeue()
@@ -92,38 +140,10 @@ class NFA[T](
     newClosureStates.toSet
   }
 
-  /*
-  def findEpsilonClosure(
-                          currentState: State,
-                          closureStates: Set[State] = Set[State]()
-                        ): Set[State] = {
-    if (Cache.findEpsilonClosureCached(currentState) != null) {
-      return Cache.findEpsilonClosureCached(currentState)
-    }
-
-    var newClosureStates = closureStates + currentState // should always include current state
-    try {
-      for (state <- transition(currentState, epsilonSym)) {
-        if (!newClosureStates.contains(state)) {
-          if (Cache.findEpsilonClosureCached(state) != null) {
-            newClosureStates = Cache.findEpsilonClosureCached(state)
-          } else {
-            newClosureStates = findEpsilonClosure(state, newClosureStates)
-          }
-        }
-      }
-    } catch {
-      case e: TransitionNonExistentException => {}
-    }
-    Cache.insert(currentState, newClosureStates.toSet)
-    newClosureStates.toSet
-  }
-   */
-
   def findEpsilonClosureMultipleStates(
-      currentStates: Set[State],
-      closureStates: Set[State] = Set[State]()
-  ): Set[State] = {
+      currentStates: Set[NFA.T],
+      closureStates: Set[NFA.T] = Set[NFA.T]()
+  ): Set[NFA.T] = {
     var epsilonClosure = currentStates
     for (state <- currentStates) {
       epsilonClosure =
@@ -132,7 +152,7 @@ class NFA[T](
     epsilonClosure
   }
 
-  def isAccepting(states: Set[State], accepting: Set[State]): Boolean = {
+  def isAccepting(states: Set[NFA.T], accepting: Set[NFA.T]): Boolean = {
     for (state <- states) {
       if (accepting.contains(state)) {
         return true
@@ -145,27 +165,16 @@ class NFA[T](
     isAccepting(startStates, acceptingStates)
   }
 
-  def genDfaStateName(states: Set[State]): String = {
-    if (states.isEmpty) {
-      throw new RuntimeException("DFA state name cannot be empty!")
-    }
-    var sorted = SortedSet[State]()
-    sorted = sorted.union(states)
-
-    sorted.map(state => state.toString).mkString("")
-  }
-
-  def toDFA(): DFA[T] = {
+  def toDFA(): DFA[TTrans] = {
     val nfaStartState = findEpsilonClosureMultipleStates(startStates)
-
-    val startStateName = genDfaStateName(nfaStartState)
-    val transitionList = mutable.HashMap[(String, T), String]()
-    var states = Set[State](startStateName)
-    var accepting = Set[State]()
-    var newTokenStates = mutable.HashMap[State, Token]()
+    val startState = NFA.foldStates(nfaStartState)
+    val newTransitionTable = mutable.HashMap[(NFA.T, TTrans), NFA.T]()
+    var states = Set[NFA.T](startState)
+    var accepting = Set[NFA.T]()
+    var newTokenStates = mutable.HashMap[NFA.T, Token]()
 
     // generate dfa.txt
-    val queue = new mutable.Queue[Set[State]]
+    val queue = new mutable.Queue[Set[NFA.T]]
     queue.enqueue(nfaStartState)
 
     var prevTime = System.currentTimeMillis()
@@ -176,32 +185,26 @@ class NFA[T](
       prevTime = System.currentTimeMillis()
 
       val currentState = queue.dequeue()
-      val currentStateName = genDfaStateName(currentState)
+      val newState = NFA.foldStates(currentState)
+
+      states += newState
 
       // check if we should add the current state to accepting
       if (isAccepting(currentState, acceptingStates)) {
 
         // look through each old state that is creating the currentState
         currentState.foreach(state => {
-          // if the old state is a token state add it
           if (tokenStates.contains(state)) {
-            // only replace if replacing with smaller number (ordering matters)!!!!!!!!!
-            if (newTokenStates.contains(currentStateName)) {
-              if (tokenStates(state).tokenNumber < newTokenStates(currentStateName).tokenNumber) {
-                newTokenStates += currentStateName -> tokenStates(state)
-              }
-            } else { // otherwise just do it
-              newTokenStates += currentStateName -> tokenStates(state)
-            }
+            newTokenStates += newState -> tokenStates(state)
           }
         })
 
         // add to accepting
-        accepting += currentStateName
+        accepting += newState
       }
 
       /*
-       * Go through each possible transition and calculate the next states and that sets epsilon clousre
+       * Go through each possible transition and calculate the next states and that sets epsilon closure
        * Then check if we already reached each of those states, if not add them to our states, and add
        * them to the queue
        */
@@ -220,12 +223,12 @@ class NFA[T](
 
         // NOTE: apparently scala has no `continue` so this is what i had to do
         if (nextStatesEpsilonClosure.nonEmpty) {
-          val stateName = genDfaStateName(nextStatesEpsilonClosure)
-          transitionList += ((currentStateName, alpha) -> stateName)
+          val state = NFA.foldStates(nextStatesEpsilonClosure)
+          newTransitionTable += ((newState, alpha) -> state)
 
           // check if we already have this state before enqueing it again
-          if (!states.contains(stateName)) {
-            states += stateName
+          if (!states.contains(state)) {
+            states += state
             queue.enqueue(nextStatesEpsilonClosure)
           }
         }
@@ -233,12 +236,12 @@ class NFA[T](
       //println("time to finish alpha " + (System.currentTimeMillis() - prevTime))
     }
 
-    var dfa = new DFA(
+    var dfa = new DFA[TTrans](
       states,
       accepting,
-      startStateName,
+      startState,
       alphabet,
-      transitionList,
+      newTransitionTable,
       newTokenStates
     )
 
@@ -249,8 +252,10 @@ class NFA[T](
       case (stok, token) => {
         dfa.transitionTable foreach {
           case ((stra, ch), out) => {
-            if (stra contains stok) {
-              dfa.tokenStates += (stra -> token)
+            for (i <- stra) {
+              if (!(stra intersect stok).isEmpty) {
+                dfa.tokenStates += (stra -> token)
+              }
             }
           }
         }
@@ -259,27 +264,10 @@ class NFA[T](
     dfa
   }
 
-  def addTransitions(k: (State, T), v: Set[State]): NFA[T] = {
+  def addTransitions(k: (NFA.T, TTrans), v: Set[NFA.T]): NFA[TTrans] = {
     var transitions = transitionTable
-    var stateTransitions = transitions.get(k).getOrElse(Set[State]())
+    var stateTransitions = transitions.get(k).getOrElse(Set[NFA.T]())
     var newStateTransitions = v | stateTransitions
-    transitions += (k -> newStateTransitions)
-
-    new NFA(
-      states,
-      acceptingStates,
-      startStates,
-      alphabet,
-      transitionTable,
-      tokenStates,
-      epsilonSym
-    )
-  }
-
-  def removeTransitions(k: (State, T), r: Set[State]): NFA[T] = {
-    var transitions = transitionTable
-    var stateTransitions = transitions.get(k).getOrElse(Set[State]())
-    var newStateTransitions = stateTransitions diff r
     transitions += (k -> newStateTransitions)
 
     new NFA(
@@ -299,7 +287,6 @@ class NFA[T](
       q₀(startStates): $startStates
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
-      Σ (alphabet): $alphabet
       T (tokenStates): $tokenStates
     )"""
   }

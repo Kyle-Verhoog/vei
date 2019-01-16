@@ -1,4 +1,3 @@
-import compiler.Compiler.State
 import compiler.DFA
 import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
@@ -6,6 +5,7 @@ import org.scalatest.FunSuite
 
 import scala.collection.mutable
 
+/*
 class DFATest extends FunSuite {
   val states = Set(
     "zero",
@@ -61,3 +61,4 @@ class DFATest extends FunSuite {
     }
   }
 }
+*/

@@ -1,10 +1,10 @@
 package compiler
 
-import compiler.Compiler.State
 import compiler.scanner.Token
 
 import scala.collection.mutable
 
+/*
 object Utility {
   def postfixStates(states: Set[State], postfix: String): Set[State] = {
     states.map(state => postfixState(state, postfix))
@@ -99,3 +99,4 @@ object Utility {
     tokens
   }
 }
+*/

@@ -112,6 +112,11 @@ class RegexPostfixToNFA extends FunSuite {
 }
 
 class RegexTests extends FunSuite {
+  test("Sanity") {
+    val re = Regex.createEngine("a")
+    assert(re.matches("a"))
+  }
+
   test("Concatenation 3 atoms") {
     val re = Regex.createEngine("abc")
     assert(!re.matches(""))
@@ -208,7 +213,6 @@ class RegexTests extends FunSuite {
 
   test("1*a") {
     val re = Regex.createEngine("1*a")
-    println(re.nfa)
     assert(re.matches("a"))
     assert(re.matches("11a"))
   }
@@ -234,6 +238,7 @@ class RegexTests extends FunSuite {
   }
   test("Large regex") {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
+    println(re.dfa)
     assert(re.matches("ABSTRACT"))
   }
 }

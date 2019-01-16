@@ -1,3 +1,4 @@
+/*
 import compiler.Compiler.State
 import compiler.Utility
 import compiler.NFA
@@ -146,3 +147,4 @@ class ScannerUtilityTest extends FunSuite {
     }
   }
 }
+*/

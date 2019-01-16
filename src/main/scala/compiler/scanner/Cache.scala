@@ -1,17 +1,17 @@
 package compiler.scanner
 
-import compiler.Compiler.State
+import compiler.NFA
 import exceptions.TransitionNonExistentException
 
 import scala.collection.mutable
 
 object Cache {
-  val epsilonClosureCache = mutable.HashMap[(State, Set[State]), Set[State]]()
+  val epsilonClosureCache = mutable.HashMap[(NFA.T, Set[NFA.T]), Set[NFA.T]]()
 
   def findEpsilonClosureCached(
-                                currentState: State,
-                                closureStates: Set[State] = Set[State]()
-                              ): Set[State] = {
+                                currentState: NFA.T,
+                                closureStates: Set[NFA.T] = Set[NFA.T]()
+                              ): Set[NFA.T] = {
     if (epsilonClosureCache.contains((currentState, closureStates))) {
       return epsilonClosureCache((currentState, closureStates))
     }
@@ -19,9 +19,9 @@ object Cache {
   }
 
   def insert(
-                                currentState: State,
-                                closureStates: Set[State] = Set[State](),
-            result: Set[State]) = {
+                                currentState: NFA.T,
+                                closureStates: Set[NFA.T] = Set[NFA.T](),
+            result: Set[NFA.T]) = {
     epsilonClosureCache += ((currentState, closureStates) -> result)
   }
 

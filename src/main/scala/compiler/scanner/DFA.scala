@@ -1,31 +1,30 @@
 package compiler
 
-import compiler.Compiler.State
-import compiler.scanner.Token
+import compiler.scanner.{Token}
 import exceptions.TransitionNonExistentException
 import exceptions.NoTokenOnAcceptingStateException
 
 import scala.collection.mutable
 
 @SerialVersionUID(1001L)
-class DFA[T](
-    val states: Set[State],
-    val acceptingStates: Set[State],
-    val startState: State,
-    val alphabet: Set[T],
-    val transitionTable: mutable.HashMap[(State, T), State],
-    val tokenStates: mutable.HashMap[State, Token],
-    val processedTransitions: Set[T] = Set[T]()
+class DFA[TTrans](
+    val states: Set[NFA.T],
+    val acceptingStates: Set[NFA.T],
+    val startState: NFA.T,
+    val alphabet: Set[TTrans],
+    val transitionTable: mutable.HashMap[(NFA.T, TTrans), NFA.T],
+    val tokenStates: mutable.HashMap[NFA.T, Token],
+    val processedTransitions: Set[TTrans] = Set[TTrans]()
 ) extends Serializable {
 
-  def transition(state: State, alpha: T): State = {
+  def transition(state: NFA.T, alpha: TTrans): NFA.T = {
     if (!transitionTable.contains((state, alpha))) {
       throw TransitionNonExistentException(message = s"$state, $alpha")
     }
     transitionTable((state, alpha))
   }
 
-  def next(alpha: T): DFA[T] = {
+  def next(alpha: TTrans): DFA[TTrans] = {
     new DFA(
       states,
       acceptingStates,
@@ -41,7 +40,7 @@ class DFA[T](
     acceptingStates.contains(startState)
   }
 
-  def canProceed(alpha: T): Boolean = {
+  def canProceed(alpha: TTrans): Boolean = {
     transitionTable.contains((startState, alpha))
   }
 
@@ -57,7 +56,6 @@ class DFA[T](
       q₀(startState): $startState
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
-      Σ (alphabet): $alphabet
       T (tokenStates): $tokenStates
     )"""
   }

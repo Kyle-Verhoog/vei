@@ -28,7 +28,7 @@ class TokenEngine(val nfa: NFA[String]) {
       nfa2.transitionTable
     )
 
-    val s = Regex.newState()
+    val s = NFA.newState()
     var states = Set(s) | nfa.states | nfa2.states
     var acceptingStates = nfa.acceptingStates | nfa2.acceptingStates
     var startStates = Set(s)
@@ -111,9 +111,9 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
   }
 
   // constructor if given nothing (use default serialization place
-  def this() {
-    this(Scanner.deserializeDfa())
-  }
+  // def this() {
+  //   this(Scanner.deserializeDfa())
+  // }
 
   def scan(src: String): ListBuffer[Token] = {
     var tokens = ListBuffer[Token]()
@@ -158,7 +158,6 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
             var ttype = token.tokenType
             // token.value = lastTokenVal
             tokens += new Token(ttype, lastTokenVal, lastDFA.getCurrentToken().tokenNumber)
-            //println(s"TOKEN: $ttype ($lastTokenVal)")
             curDFA = dfa
             curTokenVal = ""
             // move back to just after the matched text

@@ -76,6 +76,7 @@ class ScannerTest extends FunSuite {
     // println(tokens)
   }
 
+  /*
   test("Scan basic tokens") {
     val time = System.currentTimeMillis()
 
@@ -166,4 +167,5 @@ class ScannerTest extends FunSuite {
       assert(lista(i).value.equals(listb(i).value))
     }
   }
+  */
 }

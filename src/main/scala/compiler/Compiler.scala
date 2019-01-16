@@ -10,8 +10,6 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object Compiler {
-  type State = String
-
   def main(args: Array[String]) {
     //generateTable()
     scanAndSerialize()
@@ -42,7 +40,7 @@ object Compiler {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
-    val scan = new Scanner()
-    println("generated tokens :\n" + scan.scan(testProg))
+    // val scan = new Scanner()
+    // println("generated tokens :\n" + scan.scan(testProg))
   }
 }

@@ -2,17 +2,17 @@ package regex
 import scala.collection.{SortedSet, mutable}
 import compiler.scanner.Token
 import scala.collection.mutable.{HashMap, ListBuffer}
-import compiler.Compiler.State
+import compiler.Compiler
 import compiler.{DFA, NFA}
 
 case class Paren(val nalt: Integer, val natom: Integer) {}
 
-class RegexEngine(val expr: String, val nfa: DFA[String]) {
+class RegexEngine(val expr: String, val dfa: DFA[String]) {
   def matches(s: String): Boolean = {
-    var n = nfa
+    var d = dfa
     try {
       for (c <- s) {
-        n = n.next(c.toString)
+        d = d.next(c.toString)
       }
     } catch {
       // TODO: we could be more descriptive here.
@@ -21,7 +21,7 @@ class RegexEngine(val expr: String, val nfa: DFA[String]) {
       }
     }
 
-    return n.isComplete()
+    return d.isComplete()
   }
 }
 object Regex {
@@ -228,10 +228,10 @@ object Regex {
   }
 
   def newNFA(
-      states: Set[State],
-      acceptingStates: Set[State],
-      startStates: Set[State],
-      transitionTable: mutable.HashMap[(State, String), Set[State]]
+      states: Set[NFA.T],
+      acceptingStates: Set[NFA.T],
+      startStates: Set[NFA.T],
+      transitionTable: mutable.HashMap[(NFA.T, String), Set[NFA.T]]
   ): NFA[String] = {
     val alpha = (0 to 127).map(i => i.toChar.toString).toSet // all ASCII chars
     new NFA[String](
@@ -240,13 +240,9 @@ object Regex {
       startStates,
       alpha,
       transitionTable,
-      HashMap[State, Token](),
+      HashMap[NFA.T, Token](),
       "ε"
     )
-  }
-
-  def newState(): State = {
-    scala.util.Random.alphanumeric.take(16).mkString
   }
 
   def postfixToNFA(postfix: String): NFA[String] = {
@@ -260,7 +256,7 @@ object Regex {
         case ZOM => {
           val e = stack.remove(stack.length - 1)
 
-          val s = newState()
+          val s = NFA.newState()
           val states = Set(s) | e.states
           val startStates = Set(s)
           val acceptingStates = Set(s) | e.acceptingStates
@@ -288,7 +284,7 @@ object Regex {
           )
 
           // Add new state to connect e1, e2
-          val s = newState()
+          val s = NFA.newState()
           var states = Set(s) | e1.states | e2.states
 
           // Accepting states are the accepting states of e1 OR e2
@@ -334,13 +330,13 @@ object Regex {
           stack += nfa
         }
         case _ => {
-          val _ps = newState()
-          val ps = newState()
+          val _ps = NFA.newState()
+          val ps = NFA.newState()
 
           var nfa = newNFA(
-            Set[State](_ps, ps),
-            Set[State](ps),
-            Set[State](_ps),
+            Set[NFA.T](_ps, ps),
+            Set[NFA.T](ps),
+            Set[NFA.T](_ps),
             HashMap((_ps, p) -> Set(ps))
           )
 
@@ -357,7 +353,7 @@ object Regex {
     nfa
   }
 
-  def createEngine(expr: String, token: String = ""): RegexEngine = {
+  def createEngine(expr: String): RegexEngine = {
     val nfa = toNFA(expr)
     val dfa = nfa.toDFA()
     new RegexEngine(expr, dfa)
