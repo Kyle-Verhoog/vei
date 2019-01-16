@@ -112,9 +112,9 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
   }
 
   // constructor if given nothing (use default serialization place
-  // def this() {
-  //   this(Scanner.deserializeDfa())
-  // }
+  def this() {
+    this(Scanner.deserializeDfa())
+  }
 
   def scan(src: String): ListBuffer[Token] = {
     var tokens = ListBuffer[Token]()

@@ -5,7 +5,6 @@ import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
-import scala.util.Random
 
 /*
 object State {
@@ -173,16 +172,15 @@ class NFA[TTrans](
     var accepting = Set[NFA.T]()
     var newTokenStates = mutable.HashMap[NFA.T, Token]()
 
-    // generate dfa.txt
     val queue = new mutable.Queue[Set[NFA.T]]
     queue.enqueue(nfaStartState)
 
-    var prevTime = System.currentTimeMillis()
+    // var prevTime = System.currentTimeMillis()
 
     while (queue.nonEmpty) {
       println("Processing NFA queue, at size: " + queue.length)
       //println("Time since last iteration: " + (System.currentTimeMillis() - prevTime))
-      prevTime = System.currentTimeMillis()
+      // prevTime = System.currentTimeMillis()
 
       val currentState = queue.dequeue()
       val newState = NFA.foldStates(currentState)
@@ -191,11 +189,20 @@ class NFA[TTrans](
 
       // check if we should add the current state to accepting
       if (isAccepting(currentState, acceptingStates)) {
-
         // look through each old state that is creating the currentState
         currentState.foreach(state => {
+          // if the old state is a token state add it
           if (tokenStates.contains(state)) {
-            newTokenStates += newState -> tokenStates(state)
+            // only replace if replacing with smaller number (ordering matters)!!!!!!!!!
+            if (newTokenStates.contains(newState)) {
+              if (tokenStates(state).tokenNumber < newTokenStates(newState).tokenNumber) {
+                newTokenStates += newState -> tokenStates(state)
+              }
+            }
+            else {
+              // otherwise just do it
+              newTokenStates += newState -> tokenStates(state)
+            }
           }
         })
 
@@ -209,7 +216,7 @@ class NFA[TTrans](
        * them to the queue
        */
       // println("Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
-      val alphaLoopTime = System.currentTimeMillis()
+      // val alphaLoopTime = System.currentTimeMillis()
 
       for (alpha <- alphabet) {
         //println("finding next states and epsilon clouser " + alpha)
@@ -248,19 +255,20 @@ class NFA[TTrans](
     // TODO: HACK
     // NFA -> DFA accepting states in NFA should be in DFA
     // it seems like it's possible that accepting states don't have entries added to the tokenStates map
-    dfa.tokenStates foreach {
-      case (stok, token) => {
-        dfa.transitionTable foreach {
-          case ((stra, ch), out) => {
-            for (i <- stra) {
-              if (!(stra intersect stok).isEmpty) {
-                dfa.tokenStates += (stra -> token)
-              }
-            }
-          }
-        }
-      }
-    }
+    // dfa.tokenStates foreach {
+    //   case (stoken, token) => {
+    //     dfa.transitionTable foreach {
+    //       case ((strans, ch), out) => {
+    //         for (i <- stra) {
+    //           println('o')
+    //           if (!(stra intersect stok).isEmpty) {
+    //             dfa.tokenStates += (stra -> token)
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
     dfa
   }
 
