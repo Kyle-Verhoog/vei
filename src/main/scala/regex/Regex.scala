@@ -113,7 +113,7 @@ object Regex {
   def preProcess(regex: String): String = {
     val rangedRegex = expandRanges(regex)
     val unicodeRegex = addUnicode(rangedRegex)
-    println(replaceDot(unicodeRegex))
+    //println(replaceDot(unicodeRegex))
     replaceDot(unicodeRegex)
   }
 
@@ -276,7 +276,6 @@ object Regex {
           for (as <- e.acceptingStates) {
             nfa = nfa.addTransitions((as, "ε"), Set(s))
           }
-          println(nfa)
           stack += nfa
         }
         case ALT => {
@@ -360,7 +359,6 @@ object Regex {
 
   def createEngine(expr: String, token: String = ""): RegexEngine = {
     val nfa = toNFA(expr)
-    println(nfa)
     val dfa = nfa.toDFA()
     new RegexEngine(expr, dfa)
   }

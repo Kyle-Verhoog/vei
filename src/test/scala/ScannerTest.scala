@@ -77,7 +77,11 @@ class ScannerTest extends FunSuite {
   }
 
   test("Scan basic tokens") {
+    val time = System.currentTimeMillis()
+    //val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
+    //val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
     val scanner = new Scanner()
+
     var tokens = scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
     tokens = tokens.filter(token => !token.tokenType.equals("NEWLINE") && !token.tokenType.equals("WHITESPACE"))
 
@@ -152,6 +156,8 @@ class ScannerTest extends FunSuite {
     def assertTokenListsMatch(lista: List[Token], listb: List[Token]): Unit = {
     assert(lista.size == listb.size)
     for (i <- 0 until lista.size) {
+      println(lista(i))
+      println(listb(i))
       assert(lista(i).tokenType.equals(listb(i).tokenType))
       assert(lista(i).value.equals(listb(i).value))
     }

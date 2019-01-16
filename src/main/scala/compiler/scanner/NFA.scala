@@ -1,10 +1,11 @@
 package compiler
 
 import compiler.Compiler.State
-import compiler.scanner.Token
+import compiler.scanner.{Cache, Token}
 import exceptions.TransitionNonExistentException
 
 import scala.collection.{SortedSet, mutable}
+import scala.util.Random
 
 class NFA[T](
     val states: Set[State],
@@ -45,7 +46,9 @@ class NFA[T](
   }
 
   def findNextStates(currentStates: Set[State], alpha: T): Set[State] = {
+    val temp = System.currentTimeMillis()
     val epsilonClosure = findEpsilonClosureMultipleStates(currentStates)
+    //println("               time to find epsilon " + (System.currentTimeMillis() - temp))
     var newStates = Set[State]()
 
     for (state <- epsilonClosure) {
@@ -63,19 +66,59 @@ class NFA[T](
       currentState: State,
       closureStates: Set[State] = Set[State]()
   ): Set[State] = {
+    if (Cache.findEpsilonClosureCached(currentState, closureStates) != null) {
+      return Cache.findEpsilonClosureCached(currentState, closureStates)
+    }
+
+    var newClosureStates = mutable.Set[State]()
+    var queue: mutable.Queue[State] = mutable.Queue(currentState)
+
+    while (queue.nonEmpty) {
+      val dequedState = queue.dequeue()
+      newClosureStates += dequedState
+
+      try {
+        for (state <- transition(dequedState, epsilonSym)) {
+          if (!newClosureStates.contains(state)) {
+            queue += state
+          }
+        }
+      } catch {
+        case e: TransitionNonExistentException => {}
+      }
+    }
+
+    Cache.insert(currentState, closureStates, newClosureStates.toSet)
+    newClosureStates.toSet
+  }
+
+  /*
+  def findEpsilonClosure(
+                          currentState: State,
+                          closureStates: Set[State] = Set[State]()
+                        ): Set[State] = {
+    if (Cache.findEpsilonClosureCached(currentState) != null) {
+      return Cache.findEpsilonClosureCached(currentState)
+    }
+
     var newClosureStates = closureStates + currentState // should always include current state
     try {
       for (state <- transition(currentState, epsilonSym)) {
-        if (!closureStates.contains(state)) {
-          newClosureStates = findEpsilonClosure(state, newClosureStates)
+        if (!newClosureStates.contains(state)) {
+          if (Cache.findEpsilonClosureCached(state) != null) {
+            newClosureStates = Cache.findEpsilonClosureCached(state)
+          } else {
+            newClosureStates = findEpsilonClosure(state, newClosureStates)
+          }
         }
       }
     } catch {
       case e: TransitionNonExistentException => {}
     }
-
-    newClosureStates
+    Cache.insert(currentState, newClosureStates.toSet)
+    newClosureStates.toSet
   }
+   */
 
   def findEpsilonClosureMultipleStates(
       currentStates: Set[State],
@@ -125,8 +168,14 @@ class NFA[T](
     val queue = new mutable.Queue[Set[State]]
     queue.enqueue(nfaStartState)
 
+    var prevTime = System.currentTimeMillis()
+
     while (queue.nonEmpty) {
       println("Processing NFA queue, at size: " + queue.length)
+      println(
+        "Time since last iteration: " + (System.currentTimeMillis() - prevTime))
+      prevTime = System.currentTimeMillis()
+
       val currentState = queue.dequeue()
       val currentStateName = genDfaStateName(currentState)
 
@@ -147,11 +196,19 @@ class NFA[T](
        * Then check if we already reached each of those states, if not add them to our states, and add
        * them to the queue
        */
+      println(
+        "Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
+      val alphaLoopTime = System.currentTimeMillis()
+
       for (alpha <- alphabet) {
+        //println("finding next states and epsilon clouser " + alpha)
         val nextStates = findNextStates(currentState, alpha)
+        //println("Time to find next states " + (System.currentTimeMillis() - prevTime))
+        //println("----")
         val nextStatesEpsilonClosure = findEpsilonClosureMultipleStates(
           nextStates
         )
+        //println("Time to find epsilon " + (System.currentTimeMillis() - prevTime))
 
         // NOTE: apparently scala has no `continue` so this is what i had to do
         if (nextStatesEpsilonClosure.nonEmpty) {
@@ -165,6 +222,7 @@ class NFA[T](
           }
         }
       }
+      println("time to finish alpha " + (System.currentTimeMillis() - prevTime))
     }
 
     var dfa = new DFA(

@@ -5,6 +5,8 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, 
 import compiler.scanner.Scanner
 import jlalr.Jlalr1
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object Compiler {
@@ -41,6 +43,19 @@ object Compiler {
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
     val scan = new Scanner()
+    println(scan.dfa.states.size)
+    var states = mutable.Set[State]()
+
+    scan.dfa.states.foreach(state => {
+      val charArray = state.toCharArray
+      println(state.length)
+      for (i <- 0 until (charArray.length / 16)) {
+        states += charArray.slice(i*16, i*16 + 16).mkString("")
+      }
+    })
+    println(states.size)
+    throw new RuntimeException()
+
     println("generated tokens :\n" + scan.scan(testProg))
   }
 }
