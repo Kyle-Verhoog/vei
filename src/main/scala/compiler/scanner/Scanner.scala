@@ -178,6 +178,8 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
         }
       }
     }
+    // TODO HACK this will make it throw if not finish
+    //curDFA.getCurrentToken()
     tokens
   }
 }

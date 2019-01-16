@@ -233,9 +233,16 @@ class RegexTests extends FunSuite {
   }
 
   test("String regex") {
-    val re = Regex.createEngine("\"(!|[#-~]|☭|☃|☘|\\\")*\"")
+    val re = Regex.createEngine("\"(!|[#-~]|\\\"|☃|☘)*\"")
     assert(re.matches("\"some_string\\\"\""))
   }
+
+
+  test("Bad String regex") {
+    val re = Regex.createEngine("\"(!|[#-~]|\\\"|☃|☘)*\"")
+    assert(!re.matches("\"ab\"a"))
+  }
+
   test("Large regex") {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
     println(re.dfa)

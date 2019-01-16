@@ -1,23 +1,14 @@
 package compiler
 
-import java.io.{
-  ByteArrayInputStream,
-  ByteArrayOutputStream,
-  ObjectInputStream,
-  ObjectOutputStream
-}
-
 import compiler.scanner.Scanner
 import jlalr.Jlalr1
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
     //generateTable()
-    scanAndSerialize()
+    scanWithoutSerializing()
 
     if (args.length.equals(0)) {
       println("Must supply a file!")
@@ -37,7 +28,7 @@ object Compiler {
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
     val scan = Scanner.fromConfig(tokenDefn)
-    println("generated tokens :\n" + scan.scan(testProg))
+    println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
     Scanner.serializeDfa(scan.dfa, "dfa_serialization")
   }
 
@@ -46,6 +37,6 @@ object Compiler {
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
     val scan = new Scanner()
-    println("generated tokens :\n" + scan.scan(testProg))
+    println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
   }
 }

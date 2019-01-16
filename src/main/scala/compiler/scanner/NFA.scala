@@ -178,7 +178,8 @@ class NFA[TTrans](
     // var prevTime = System.currentTimeMillis()
 
     while (queue.nonEmpty) {
-      println("Processing NFA queue, at size: " + queue.length)
+      if (queue.length % 20 == 0)
+        println("Processing NFA queue, at size: " + queue.length)
       //println("Time since last iteration: " + (System.currentTimeMillis() - prevTime))
       // prevTime = System.currentTimeMillis()
 
@@ -198,8 +199,7 @@ class NFA[TTrans](
               if (tokenStates(state).tokenNumber < newTokenStates(newState).tokenNumber) {
                 newTokenStates += newState -> tokenStates(state)
               }
-            }
-            else {
+            } else {
               // otherwise just do it
               newTokenStates += newState -> tokenStates(state)
             }

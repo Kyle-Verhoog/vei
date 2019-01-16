@@ -39,20 +39,14 @@ object Regex {
   val TAB = "☘"
   val DOT = "ø"
 
-  def expandRanges(regex: String): String = {
-    val temp = regex
-      .replaceAllLiterally("[", LBRACK)
-      .replaceAllLiterally(s"\\$LBRACK", "[")
-      .replaceAllLiterally("]", RBRACK)
-      .replaceAllLiterally(s"\\$RBRACK", "]")
 
+  def expandRanges(regex: String): String = {
     var processedRegex = ""
     var i = 0
-    while (i < temp.length) {
-      if (temp.charAt(i).toString.equals(LBRACK)) {
+    while (i < regex.length) {
+      if (regex.charAt(i).toString.equals(LBRACK)) {
         val range =
-          (temp.charAt(i + 1) to temp.charAt(i + 3))
-            .map(ch => ch.toString)
+          (regex.charAt(i + 1) to regex.charAt(i + 3)).map(ch => ch.toString)
             .map {
               case "(" => "\\("
               case ")" => "\\)"
@@ -60,14 +54,13 @@ object Regex {
               case "*" => "\\*"
               case "?" => "\\?"
               case "|" => "\\|"
-              case x   => x
-            }
-            .mkString("|")
+              case x => x
+            }.mkString(ALT)
 
-        processedRegex += "(" + range + ")"
+        processedRegex += LPAREN + range + RPAREN
         i += 4
       } else {
-        processedRegex += temp.charAt(i)
+        processedRegex += regex.charAt(i)
       }
       i += 1
     }
@@ -76,20 +69,7 @@ object Regex {
   }
 
   def replaceDot(regex: String): String = {
-    val allChars = (0 to 127)
-      .map(i => i.toChar.toString)
-      .map {
-        case "(" => "\\("
-        case ")" => "\\)"
-        case "[" => "\\["
-        case "]" => "\\]"
-        case "+" => "\\+"
-        case "*" => "\\*"
-        case "?" => "\\?"
-        case "|" => "\\|"
-        case x   => x
-      }
-      .mkString(ALT)
+    val allChars = (0 to 127).map(i => i.toChar.toString).mkString(ALT)
 
     regex.replaceAllLiterally(DOT, LPAREN + allChars + RPAREN)
   }
@@ -100,6 +80,10 @@ object Regex {
       .replaceAllLiterally(s"\\$LPAREN", "(")
       .replaceAllLiterally(")", RPAREN)
       .replaceAllLiterally(s"\\$RPAREN", ")")
+      .replaceAllLiterally("[", LBRACK)
+      .replaceAllLiterally(s"\\$LBRACK", "[")
+      .replaceAllLiterally("]", RBRACK)
+      .replaceAllLiterally(s"\\$RBRACK", "]")
       .replaceAllLiterally("|", ALT)
       .replaceAllLiterally(s"\\$ALT", "|")
       .replaceAllLiterally("+", OOM)
@@ -116,10 +100,9 @@ object Regex {
   }
 
   def preProcess(regex: String): String = {
-    val rangedRegex = expandRanges(regex)
-    val unicodeRegex = addUnicode(rangedRegex)
-    //println(replaceDot(unicodeRegex))
-    replaceDot(unicodeRegex)
+    val unicodeRegex = addUnicode(regex)
+    val rangedRegex = expandRanges(unicodeRegex)
+    replaceDot(rangedRegex)
   }
 
   def toPostfix(regex: String): String = {
