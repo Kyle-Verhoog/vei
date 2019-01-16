@@ -172,8 +172,7 @@ class NFA[T](
 
     while (queue.nonEmpty) {
       println("Processing NFA queue, at size: " + queue.length)
-      println(
-        "Time since last iteration: " + (System.currentTimeMillis() - prevTime))
+      //println("Time since last iteration: " + (System.currentTimeMillis() - prevTime))
       prevTime = System.currentTimeMillis()
 
       val currentState = queue.dequeue()
@@ -181,10 +180,20 @@ class NFA[T](
 
       // check if we should add the current state to accepting
       if (isAccepting(currentState, acceptingStates)) {
-        // add all token states that are not already defined
+
+        // look through each old state that is creating the currentState
         currentState.foreach(state => {
-          if (tokenStates.contains(state))
-            newTokenStates += currentStateName -> tokenStates(state)
+          // if the old state is a token state add it
+          if (tokenStates.contains(state)) {
+            // only replace if replacing with smaller number (ordering matters)!!!!!!!!!
+            if (newTokenStates.contains(currentStateName)) {
+              if (tokenStates(state).tokenNumber < newTokenStates(currentStateName).tokenNumber) {
+                newTokenStates += currentStateName -> tokenStates(state)
+              }
+            } else { // otherwise just do it
+              newTokenStates += currentStateName -> tokenStates(state)
+            }
+          }
         })
 
         // add to accepting
@@ -196,8 +205,7 @@ class NFA[T](
        * Then check if we already reached each of those states, if not add them to our states, and add
        * them to the queue
        */
-      println(
-        "Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
+     // println("Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
       val alphaLoopTime = System.currentTimeMillis()
 
       for (alpha <- alphabet) {
@@ -222,7 +230,7 @@ class NFA[T](
           }
         }
       }
-      println("time to finish alpha " + (System.currentTimeMillis() - prevTime))
+      //println("time to finish alpha " + (System.currentTimeMillis() - prevTime))
     }
 
     var dfa = new DFA(
@@ -233,6 +241,7 @@ class NFA[T](
       transitionList,
       newTokenStates
     )
+
     // TODO: HACK
     // NFA -> DFA accepting states in NFA should be in DFA
     // it seems like it's possible that accepting states don't have entries added to the tokenStates map

@@ -78,9 +78,11 @@ class ScannerTest extends FunSuite {
 
   test("Scan basic tokens") {
     val time = System.currentTimeMillis()
+
+    // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
     //val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
-    //val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
-    val scanner = new Scanner()
+    val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
+
 
     var tokens = scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
     tokens = tokens.filter(token => !token.tokenType.equals("NEWLINE") && !token.tokenType.equals("WHITESPACE"))
@@ -147,7 +149,9 @@ class ScannerTest extends FunSuite {
   }
 
   test("Scan crazy literals") {
-    val scanner = new Scanner()
+    // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
+    //val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
+    val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
     var tokens = scanner.scan(Source.fromResource("testfiles/CorrectLiterals.txt").mkString)
     tokens = tokens.filter(token => !token.tokenType.equals("NEWLINE") && !token.tokenType.equals("WHITESPACE"))
     // TODO actually verify

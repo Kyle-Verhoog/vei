@@ -35,7 +35,7 @@ object Compiler {
 
     val scan = Scanner.fromConfig(tokenDefn)
     println("generated tokens :\n" + scan.scan(testProg))
-    Scanner.serializeDfa(scan.dfa, "dfa.txt")
+    Scanner.serializeDfa(scan.dfa, "dfa_serialization")
   }
 
   def scanWithoutSerializing(): Unit = {
@@ -43,19 +43,6 @@ object Compiler {
     val testProg = Source.fromResource("testfiles/Empty.java").mkString
 
     val scan = new Scanner()
-    println(scan.dfa.states.size)
-    var states = mutable.Set[State]()
-
-    scan.dfa.states.foreach(state => {
-      val charArray = state.toCharArray
-      println(state.length)
-      for (i <- 0 until (charArray.length / 16)) {
-        states += charArray.slice(i*16, i*16 + 16).mkString("")
-      }
-    })
-    println(states.size)
-    throw new RuntimeException()
-
     println("generated tokens :\n" + scan.scan(testProg))
   }
 }

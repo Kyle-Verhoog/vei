@@ -54,11 +54,14 @@ object Scanner {
     // TODO: support spaces/special chars in config
     var engine = TokenEngine.fromRegex("\n", new Token("NEWLINE", " "))
     engine = engine.addRegex(" ", new Token("WHITESPACE", " "))
+
+    var tokenNumber = 0
     for (l <- s.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
-      val token = new Token(rawConf(0), "some value") // TODO fix this
+      val token = new Token(rawConf(0), "some value", tokenNumber) // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length - 1)
       engine = engine.addRegex(regex, token)
+      tokenNumber += 1
     }
     new Scanner(engine.nfa.toDFA())
   }
@@ -78,7 +81,7 @@ object Scanner {
   }
 
   def deserializeDfa(): DFA[String] = {
-    val fileContents = Source.fromResource("serializations/dfa.txt").mkString
+    val fileContents = Source.fromResource("serializations/dfa_serialization").mkString
     val bytes = Base64.getDecoder.decode(fileContents)
     val bi = new ByteArrayInputStream(bytes)
     val si = new ObjectInputStream(bi)
@@ -154,7 +157,7 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
             var token = lastDFA.getCurrentToken()
             var ttype = token.tokenType
             // token.value = lastTokenVal
-            tokens += new Token(ttype, lastTokenVal)
+            tokens += new Token(ttype, lastTokenVal, lastDFA.getCurrentToken().tokenNumber)
             //println(s"TOKEN: $ttype ($lastTokenVal)")
             curDFA = dfa
             curTokenVal = ""

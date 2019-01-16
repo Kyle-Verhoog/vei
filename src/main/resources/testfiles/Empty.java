@@ -6,14 +6,13 @@ import java.util.Scanner;
 
 public class Empty {
     public static void main(String[] args) {
-        true false null 'a' ""
         System.out.println("Helloworld");
     }
     public static int toInt(String line, String msg) {
         try {
             return new Integer(line);
         } catch(NumberFormatException e) {
-            throw new jlalr.Error("Expecting "+msg+" but the line is not a number:\n"+line);
+            throw new jlalr.Error("Expecting "+msg+" but the line is \"not a number:\n"+line);
         }
     }
     public static Grammar readGrammar(Scanner in) {
