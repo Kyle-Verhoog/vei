@@ -59,6 +59,7 @@ class DFA[TTrans](
       q₀(startState): $startState
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
+      Σ (alphabet): $alphabet
       T (tokenStates): $tokenStates
     )"""
   }

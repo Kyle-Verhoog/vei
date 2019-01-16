@@ -62,27 +62,26 @@ class NFATest extends FunSuite {
     assert(epsilonClosure.diff(Set(Set(1), Set(3), Set(2))).isEmpty)
   }
 
-  /*
   test("Test epsilon closure without epsilon transition") {
     val nfa = new NFA(
       states,
       accepting,
-      Set("one"),
+      Set(Set(1)),
       alphabet,
       transitionTable,
       tokenStates,
       'ε'
     )
-    val epsilonClosure = nfa.findEpsilonClosure("two")
+    val epsilonClosure = nfa.findEpsilonClosure(Set(2))
 
-    assert(epsilonClosure.diff(Set("two")).isEmpty)
+    assert(epsilonClosure.diff(Set(Set(2))).isEmpty)
   }
 
   test("Test convert to DFA") {
     val nfa = new NFA(
       states,
       accepting,
-      Set("one"),
+      Set(Set(1)),
       alphabet,
       transitionTable,
       tokenStates,
@@ -92,52 +91,49 @@ class NFATest extends FunSuite {
 
     assert(
       dfa.states
-        .diff(Set("onethreetwo", "fourtwo", "threetwo", "four"))
+        .diff(Set(Set(1, 2, 3), Set(4, 2), Set(3, 2), Set(4)))
         .isEmpty
     )
     assert(
       dfa.acceptingStates
-        .diff(Set("onethreetwo", "fourtwo", "threetwo", "four"))
+        .diff(Set(Set(1, 2, 3), Set(4, 2), Set(3, 2), Set(4)))
         .isEmpty
     )
-    assert(dfa.startState.equals("onethreetwo"))
+    assert(dfa.startState.equals(Set(1, 2, 3)))
     // TODO determine how to test transitions
-
   }
 
   test("addTransitions one") {
     val nfa = new NFA(
-      Set("a", "b"),
-      Set("b"),
-      Set("a"),
+      Set(Set(1), Set(2)),
+      Set(Set(2)),
+      Set(Set(1)),
       Set("a", "b", "c"),
       collection.mutable.HashMap[(NFA.T, String), Set[NFA.T]](),
       collection.mutable.HashMap[NFA.T, Token](),
       "ε"
     )
 
-    var newNfa = nfa.addTransitions(("a", "b"), Set("b"))
-    assert(newNfa.transitionTable contains ("a", "b"))
-    newNfa = nfa.addTransitions(("a", "ε"), Set("b"))
-    assert(newNfa.transitionTable contains ("a", "b"))
-    assert(newNfa.transitionTable contains ("a", "ε"))
+    var newNfa = nfa.addTransitions((Set(1), "b"), Set(Set(2)))
+    assert(newNfa.transitionTable contains (Set(1), "b"))
+    newNfa = nfa.addTransitions((Set(1), "ε"), Set(Set(2)))
+    assert(newNfa.transitionTable contains (Set(1), "b"))
+    assert(newNfa.transitionTable contains (Set(1), "ε"))
   }
 
   test("addTransitions multi") {
     val nfa = new NFA(
-      Set("a", "b"),
-      Set("b"),
-      Set("a"),
+      Set(Set(1), Set(2)),
+      Set(Set(2)),
+      Set(Set(1)),
       Set("a", "b", "c"),
       collection.mutable.HashMap[(NFA.T, String), Set[NFA.T]](),
       collection.mutable.HashMap[NFA.T, Token](),
       "ε"
     )
 
-    var newNfa = nfa.addTransitions(("a", "b"), Set("b", "c"))
-    assert(newNfa.transitionTable("a", "b") contains "b")
-    assert(newNfa.transitionTable("a", "b") contains "c")
+    var newNfa = nfa.addTransitions((Set(1), "b"), Set(Set(2), Set(3)))
+    assert(newNfa.transitionTable(Set(1), "b") contains Set(2))
+    assert(newNfa.transitionTable(Set(1), "b") contains Set(3))
   }
-
- */
 }

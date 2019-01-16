@@ -287,6 +287,7 @@ class NFA[TTrans](
       q₀(startStates): $startStates
       F (acceptingStates): $acceptingStates
       Δ (transitionTable): $transitionTable
+      Σ (alphabet): $alphabet
       T (tokenStates): $tokenStates
     )"""
   }
