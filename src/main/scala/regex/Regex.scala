@@ -216,24 +216,6 @@ object Regex {
     map
   }
 
-  def newNFA(
-      states: Set[NFA.T],
-      acceptingStates: Set[NFA.T],
-      startStates: Set[NFA.T],
-      transitionTable: mutable.HashMap[(NFA.T, String), Set[NFA.T]]
-  ): NFA[String] = {
-    val alpha = (0 to 127).map(i => i.toChar.toString).toSet // all ASCII chars
-    new NFA[String](
-      states,
-      acceptingStates,
-      startStates,
-      alpha,
-      transitionTable,
-      HashMap[NFA.T, Token](),
-      "ε"
-    )
-  }
-
   def postfixToNFA(postfix: String): NFA[String] = {
     var stack = new ListBuffer[NFA[String]]()
     var x = 0
@@ -250,7 +232,7 @@ object Regex {
           val startStates = Set(s)
           val acceptingStates = Set(s) | e.acceptingStates
 
-          var nfa = newNFA(
+          var nfa = NFA.newStringNFA(
             states,
             acceptingStates,
             startStates,
@@ -274,15 +256,15 @@ object Regex {
 
           // Add new state to connect e1, e2
           val s = NFA.newState()
-          var states = Set(s) | e1.states | e2.states
+          val states = Set(s) | e1.states | e2.states
 
           // Accepting states are the accepting states of e1 OR e2
-          var acceptingStates = e1.acceptingStates | e2.acceptingStates
+          val acceptingStates = e1.acceptingStates | e2.acceptingStates
 
           // s is the new start state
-          var startStates = Set(s)
+          val startStates = Set(s)
 
-          var nfa = newNFA(
+          var nfa = NFA.newStringNFA(
             states,
             acceptingStates,
             startStates,
@@ -306,7 +288,7 @@ object Regex {
           var newAcceptingStates = e2.acceptingStates
           var newStartStates = e1.startStates
 
-          var nfa = newNFA(
+          var nfa = NFA.newStringNFA(
             newStates,
             newAcceptingStates,
             newStartStates,
@@ -322,7 +304,7 @@ object Regex {
           val _ps = NFA.newState()
           val ps = NFA.newState()
 
-          var nfa = newNFA(
+          var nfa = NFA.newStringNFA(
             Set[NFA.T](_ps, ps),
             Set[NFA.T](ps),
             Set[NFA.T](_ps),

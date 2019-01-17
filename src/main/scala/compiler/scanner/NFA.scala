@@ -1,33 +1,10 @@
 package compiler
 
-import compiler.scanner.{Cache, Token}
+import compiler.scanner.Cache
 import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
 
-import scala.collection.{SortedSet, mutable}
-
-/*
-object State {
-  def generate[T](states: Set[T]): State[T] = {
-    new State(states)
-  }
-}
-
-class State[T](val states: Set[T]) {
-  def contains(other: State[T]): Boolean = {
-    (states diff other.states) != Set()
-  }
-
-  // Generates a new State given names of previous states
-  def generate(newStates: Set[State[T]]): State[T] = {
-    var mystates = states
-    for (s <- newStates) {
-      mystates = mystates union s.states
-    }
-    new State(mystates)
-  }
-}
- */
+import scala.collection.mutable
 
 object NFA {
   type T = Set[Int]
@@ -39,12 +16,32 @@ object NFA {
     r
   }
 
+  // all ASCII chars
+  val charAlphabet = (0 to 127).map(i => i.toChar.toString).toSet
+
+  def newStringNFA(
+      states: Set[NFA.T],
+      acceptingStates: Set[NFA.T],
+      startStates: Set[NFA.T],
+      transitionTable: mutable.HashMap[(NFA.T, String), Set[NFA.T]]
+  ): NFA[String] = {
+    new NFA[String](
+      states,
+      acceptingStates,
+      startStates,
+      charAlphabet,
+      transitionTable,
+      mutable.HashMap[NFA.T, Token](),
+      "ε"
+    )
+  }
+
   def newState(prevStates: Set[T] = Set[T]()): T = {
-    var s = Set(genId())
+    var state = Set(genId())
     for (prev <- prevStates) {
-      s = s union prev
+      state = state union prev
     }
-    s
+    state
   }
 
   def foldStates(prevStates: Set[T] = Set[T]()): T = {
@@ -175,13 +172,9 @@ class NFA[TTrans](
     val queue = new mutable.Queue[Set[NFA.T]]
     queue.enqueue(nfaStartState)
 
-    // var prevTime = System.currentTimeMillis()
-
     while (queue.nonEmpty) {
       if (queue.length % 20 == 0)
         println("Processing NFA queue, at size: " + queue.length)
-      //println("Time since last iteration: " + (System.currentTimeMillis() - prevTime))
-      // prevTime = System.currentTimeMillis()
 
       val currentState = queue.dequeue()
       val newState = NFA.foldStates(currentState)

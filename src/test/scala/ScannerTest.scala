@@ -77,8 +77,6 @@ class ScannerTest extends FunSuite {
   }
 
   test("Scan basic tokens") {
-    val time = System.currentTimeMillis()
-
     // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
     val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
     // val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
