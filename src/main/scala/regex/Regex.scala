@@ -1,11 +1,13 @@
 package regex
-import scala.collection.{SortedSet, mutable}
-import compiler.scanner.Token
-import scala.collection.mutable.{HashMap, ListBuffer}
-import compiler.Compiler
+import scala.collection.mutable
 import compiler.{DFA, NFA}
 
 case class Paren(val nalt: Integer, val natom: Integer) {}
+
+final case class RegexParseException(
+    private val message: String = "An error occurred while parsing regex",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
 
 class RegexEngine(val expr: String, val dfa: DFA[String]) {
   def matches(s: String): Boolean = {
@@ -16,28 +18,41 @@ class RegexEngine(val expr: String, val dfa: DFA[String]) {
       }
     } catch {
       // TODO: we could be more descriptive here.
-      case x: Throwable => {
-        return false
-      }
+      case _: Throwable => return false
     }
 
-    return d.isComplete()
+    d.isComplete()
   }
 }
 object Regex {
   val ALT = "∪"
   val CONCAT = "·"
+  val ZOM = "⨂"
   val LPAREN = "⦅"
   val RPAREN = "⦆"
   val LBRACK = "〚"
   val RBRACK = "〛"
-  val OOM = "⨁"
-  val ZOM = "⨂"
-  val ZOO = "⁇"
+  // val OOM = "⨁"
+  // val ZOO = "⁇"
   val NEW_LINE = "☭"
   val SPACE = "☃"
   val TAB = "☘"
   val DOT = "ø"
+
+  val escapeMapping = Map(
+    ALT -> "|",
+    "|" -> ALT,
+    ZOM -> "*",
+    "*" -> ZOM,
+    LPAREN -> "(",
+    "(" -> LPAREN,
+    RPAREN -> ")",
+    ")" -> RPAREN,
+    LBRACK -> "[",
+    "[" -> LBRACK,
+    RBRACK -> "]",
+    "]" -> RBRACK,
+  )
 
   def expandRanges(regex: String): String = {
     var processedRegex = ""
@@ -47,6 +62,7 @@ object Regex {
         val range =
           (regex.charAt(i + 1) to regex.charAt(i + 3))
             .map(ch => ch.toString)
+            // have to escape characters produced by the range
             .map {
               case "(" => "\\("
               case ")" => "\\)"
@@ -57,7 +73,6 @@ object Regex {
               case x   => x
             }
             .mkString(ALT)
-
         processedRegex += LPAREN + range + RPAREN
         i += 4
       } else {
@@ -87,12 +102,12 @@ object Regex {
       .replaceAllLiterally(s"\\$RBRACK", "]")
       .replaceAllLiterally("|", ALT)
       .replaceAllLiterally(s"\\$ALT", "|")
-      .replaceAllLiterally("+", OOM)
-      .replaceAllLiterally(s"\\$OOM", "+")
+      // .replaceAllLiterally("+", OOM)
+      // .replaceAllLiterally(s"\\$OOM", "+")
       .replaceAllLiterally("*", ZOM)
       .replaceAllLiterally(s"\\$ZOM", "*")
-      .replaceAllLiterally("?", ZOO)
-      .replaceAllLiterally(s"\\$ZOO", "?")
+      // .replaceAllLiterally("?", ZOO)
+      // .replaceAllLiterally(s"\\$ZOO", "?")
       .replaceAllLiterally(".", DOT)
       .replaceAllLiterally(s"\\$DOT", ".")
       .replaceAllLiterally(s"$NEW_LINE", "\n")
@@ -108,31 +123,28 @@ object Regex {
 
   def toPostfix(regex: String): String = {
     val processedRegex = preProcess(regex)
-    // println("Replaced regex " + regex + "     with     " + processedRegex)
 
     var postfix = ""
-    var x = 0
     var natom = 0
     var nalt = 0
-    var parens = new ListBuffer[Paren]()
+    var parens = new mutable.ListBuffer[Paren]()
 
     for (x <- 0 until processedRegex.length()) {
       val re = processedRegex.charAt(x).toString
 
       re match {
-        case LPAREN => {
+        case LPAREN =>
           if (natom > 1) {
             natom -= 1
             postfix += CONCAT
           }
 
-          parens += new Paren(nalt, natom)
+          parens += Paren(nalt, natom)
           nalt = 0
           natom = 0
-        }
-        case ALT => {
+        case ALT =>
           if (natom == 0) {
-            println("Error") // TODO: throw
+            throw new RuntimeException()
           }
           natom -= 1
           while (natom > 0) {
@@ -140,13 +152,14 @@ object Regex {
             natom -= 1
           }
           nalt += 1
-        }
-        case RPAREN => {
+        case RPAREN =>
           if (parens.length < 1) {
-            println("error 1") // TODO: throw
+            throw RegexParseException(
+              s"'$regex': missing opening paren somewhere before position $x")
           }
           if (natom == 0) {
-            println("error 2") // TODO: throw
+            throw RegexParseException(
+              s"'$regex': missing atom before paren at position $x")
           }
 
           natom -= 1
@@ -160,18 +173,17 @@ object Regex {
             nalt -= 1
           }
 
-          var par = parens.remove(parens.length - 1)
+          val par = parens.remove(parens.length - 1)
           nalt = par.nalt
           natom = par.natom
           natom += 1
-        }
-        case ZOO | ZOM | OOM => {
+        case o if o == ZOM /* || o == OOM || o == ZOO */ =>
           if (natom == 0) {
-            println("Error symb") // throws
+            throw RegexParseException(
+              s"'$regex': missing operand for ${escapeMapping(o)} operator at position $x")
           }
           postfix += re
-        }
-        case _ => {
+        case _ =>
           if (natom > 1) {
             natom -= 1
             postfix += CONCAT
@@ -179,12 +191,12 @@ object Regex {
 
           postfix += re
           natom += 1
-        }
       }
     }
 
-    if (parens.length > 0) {
-      // TODO throw
+    if (parens.nonEmpty) {
+      throw RegexParseException(
+        s"'$regex': Unclosed paren at position ${regex.length}")
     }
 
     natom -= 1
@@ -200,31 +212,27 @@ object Regex {
     postfix
   }
 
-  def mergeMaps[T, U](m1: HashMap[T, U], m2: HashMap[T, U]): HashMap[T, U] = {
-    var map = new HashMap[T, U]()
+  def mergeMaps[T, U](m1: mutable.HashMap[T, U],
+                      m2: mutable.HashMap[T, U]): mutable.HashMap[T, U] = {
+    var map = new mutable.HashMap[T, U]()
 
     m1 foreach {
-      case (key, value) => {
-        map += (key -> value)
-      }
+      case (key, value) => map += (key -> value)
     }
     m2 foreach {
-      case (key, value) => {
-        map += (key -> value)
-      }
+      case (key, value) => map += (key -> value)
     }
     map
   }
 
   def postfixToNFA(postfix: String): NFA[String] = {
-    var stack = new ListBuffer[NFA[String]]()
-    var x = 0
+    var stack = new mutable.ListBuffer[NFA[String]]()
 
     for (x <- 0 until postfix.length()) {
       val p = postfix.charAt(x).toString
 
       p match {
-        case ZOM => {
+        case ZOM =>
           val e = stack.remove(stack.length - 1)
 
           val s = NFA.newState()
@@ -244,12 +252,11 @@ object Regex {
             nfa = nfa.addTransitions((as, "ε"), Set(s))
           }
           stack += nfa
-        }
-        case ALT => {
+        case ALT =>
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 
-          var transitionTable = mergeMaps(
+          val transitionTable = mergeMaps(
             e1.transitionTable,
             e2.transitionTable
           )
@@ -274,19 +281,18 @@ object Regex {
           nfa = nfa.addTransitions((s, "ε"), e1.startStates | e2.startStates)
 
           stack += nfa
-        }
-        case CONCAT => {
+        case CONCAT =>
           val e2 = stack.remove(stack.length - 1)
           val e1 = stack.remove(stack.length - 1)
 
-          var transitionTable = mergeMaps(
+          val transitionTable = mergeMaps(
             e1.transitionTable,
             e2.transitionTable
           )
 
-          var newStates = e1.states | e2.states
-          var newAcceptingStates = e2.acceptingStates
-          var newStartStates = e1.startStates
+          val newStates = e1.states | e2.states
+          val newAcceptingStates = e2.acceptingStates
+          val newStartStates = e1.startStates
 
           var nfa = NFA.newStringNFA(
             newStates,
@@ -299,8 +305,7 @@ object Regex {
           }
 
           stack += nfa
-        }
-        case _ => {
+        case _ =>
           val _ps = NFA.newState()
           val ps = NFA.newState()
 
@@ -308,14 +313,17 @@ object Regex {
             Set[NFA.T](_ps, ps),
             Set[NFA.T](ps),
             Set[NFA.T](_ps),
-            HashMap((_ps, p) -> Set(ps))
+            mutable.HashMap((_ps, p) -> Set(ps))
           )
 
           stack += nfa
-        }
       }
     }
-    stack(0)
+
+    if (stack.length != 1) {
+      throw RegexParseException()
+    }
+    stack.head
   }
 
   def toNFA(regex: String): NFA[String] = {

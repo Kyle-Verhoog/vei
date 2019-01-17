@@ -1,16 +1,52 @@
+import scala.collection.mutable
 import org.scalatest.FunSuite
-import regex.Regex
+import regex.{Regex, RegexParseException}
 
-import scala.collection.mutable.HashMap
+class RegexPreprocessTestSuite extends FunSuite {
+  test("Expansion simple") {
+    val act = "[a-d]"
+    val exp =
+      s"${Regex.LPAREN}a${Regex.ALT}b${Regex.ALT}c${Regex.ALT}d${Regex.RPAREN}"
+    assert(Regex.preProcess(act) == exp)
+  }
+}
 
-class RegexPostfixTest extends FunSuite {
-  val ALT = "∪"
-  val CONCAT = "·"
-  val LPAREN = "⦅"
-  val RPAREN = "⦆"
-  val OOM = "⨁"
-  val ZOM = "⨂"
-  val ZOO = "❓"
+class RegexParseTestSuite extends FunSuite {
+  test("Empty regex") {
+    Regex.toPostfix("")
+  }
+
+  test("Error: missing closing paren") {
+    val regex = "(1"
+    assertThrows[RegexParseException](Regex.toPostfix(regex))
+  }
+
+  test("Error: missing opening paren") {
+    val regex = "1)"
+    assertThrows[RegexParseException](Regex.toPostfix(regex))
+  }
+
+  test("Error: missing atom between parens") {
+    val regex = "()"
+    assertThrows[RegexParseException](Regex.toPostfix(regex))
+  }
+
+  test("Error: missing alt operand") {
+    val regex = "*"
+    assertThrows[RegexParseException](Regex.toPostfix(regex))
+  }
+
+  test("Escaped parens") {
+    val regex = "\\(a\\)"
+    val exp = s"(a${Regex.CONCAT})${Regex.CONCAT}"
+    assert(Regex.toPostfix(regex) == exp)
+  }
+
+  test("Escaped brackets") {
+    val regex = "\\[a\\]"
+    val exp = s"[a${Regex.CONCAT}]${Regex.CONCAT}"
+    assert(Regex.toPostfix(regex) == exp)
+  }
 
   test("No operators") {
     val r = "123456abcd"
@@ -37,15 +73,15 @@ class RegexPostfixTest extends FunSuite {
     assert(Regex.toPostfix(r) == "ab·⨂")
   }
 
-  test("One-or-more operator grouped") {
-    val r = "(ab)⨁"
-    assert(Regex.toPostfix(r) == "ab·⨁")
-  }
+  // test("One-or-more operator grouped") {
+  //   val r = "(ab)⨁"
+  //   assert(Regex.toPostfix(r) == "ab·⨁")
+  // }
 
-  test("Zero-or-one operator grouped") {
-    val r = "(ab)⁇"
-    assert(Regex.toPostfix(r) == "ab·⁇")
-  }
+  // test("Zero-or-one operator grouped") {
+  //   val r = "(ab)⁇"
+  //   assert(Regex.toPostfix(r) == "ab·⁇")
+  // }
 
   test("Alternate operator") {
     val r = "a∪b"
@@ -62,18 +98,18 @@ class RegexPostfixTest extends FunSuite {
     assert(Regex.toPostfix(r) == "abc∪∪")
   }
 
-  test("Alternate 0 or 1") {
-    val r = "(a∪b)⁇"
-    assert(Regex.toPostfix(r) == "ab∪⁇")
-  }
+  // test("Alternate 0 or 1") {
+  //   val r = "(a∪b)⁇"
+  //   assert(Regex.toPostfix(r) == "ab∪⁇")
+  // }
 
-  test("All operators") {
-    val r = "(1)⨁(2)⨂(3)⁇(4∪5)"
-    assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
-  }
+  // test("All operators") {
+  //   val r = "(1)⨁(2)⨂(3)⁇(4∪5)"
+  //   assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
+  // }
 }
 
-class RegexPostfixToNFA extends FunSuite {
+class RegexPostfixToNFATestSuite extends FunSuite {
   test("Concatenation simple") {
     val nfa = Regex.postfixToNFA("ab·")
     val start = nfa.startStates.head
@@ -111,7 +147,7 @@ class RegexPostfixToNFA extends FunSuite {
   }
 }
 
-class RegexTests extends FunSuite {
+class RegexTestSuite extends FunSuite {
   test("Sanity") {
     val re = Regex.createEngine("a")
     assert(re.matches("a"))
@@ -251,8 +287,8 @@ class RegexTests extends FunSuite {
 
 class RegexUtils extends FunSuite {
   test("mergeMaps") {
-    val m1 = HashMap("asdf" -> "TEST")
-    val m2 = HashMap("asd" -> "TEST2")
+    val m1 = mutable.HashMap("asdf" -> "TEST")
+    val m2 = mutable.HashMap("asd" -> "TEST2")
     val merge = Regex.mergeMaps(m1, m2)
 
     assert(merge contains "asdf")
