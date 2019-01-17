@@ -83,9 +83,13 @@ class ScannerTest extends FunSuite {
     val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
     // val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
 
-
-    var tokens = scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
-    tokens = tokens.filter(token => !token.tokenType.equals("NEWLINE") && !token.tokenType.equals("WHITESPACE"))
+    var tokens =
+      scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
+    tokens = tokens.filter(
+      token =>
+        !token.tokenType.equals("NEWLINE") && !token.tokenType
+          .equals("WHITESPACE")
+    )
 
     var verifyingTokens = ListBuffer[Token](
       new Token("ABSTRACT", "abstract"),
@@ -143,7 +147,8 @@ class ScannerTest extends FunSuite {
       new Token(")", ")"),
       new Token("+", "+"),
       new Token("|", "|"),
-      new Token("||", "||"))
+      new Token("||", "||")
+    )
 
     assertTokenListsMatch(tokens.toList, verifyingTokens.toList)
   }
@@ -151,13 +156,21 @@ class ScannerTest extends FunSuite {
   test("Scan crazy literals") {
     // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
     //val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
-    val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
-    var tokens = scanner.scan(Source.fromResource("testfiles/CorrectLiterals.txt").mkString)
-    tokens = tokens.filter(token => !token.tokenType.equals("NEWLINE") && !token.tokenType.equals("WHITESPACE"))
+    val scanner = Scanner.fromConfig(
+      Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString
+    )
+    var tokens = scanner.scan(
+      Source.fromResource("testfiles/CorrectLiterals.txt").mkString
+    )
+    tokens = tokens.filter(
+      token =>
+        !token.tokenType.equals("NEWLINE") && !token.tokenType
+          .equals("WHITESPACE")
+    )
     // TODO actually verify
   }
 
-    def assertTokenListsMatch(lista: List[Token], listb: List[Token]): Unit = {
+  def assertTokenListsMatch(lista: List[Token], listb: List[Token]): Unit = {
     assert(lista.size == listb.size)
     for (i <- 0 until lista.size) {
       println(lista(i))

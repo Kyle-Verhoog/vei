@@ -39,14 +39,14 @@ object Regex {
   val TAB = "☘"
   val DOT = "ø"
 
-
   def expandRanges(regex: String): String = {
     var processedRegex = ""
     var i = 0
     while (i < regex.length) {
       if (regex.charAt(i).toString.equals(LBRACK)) {
         val range =
-          (regex.charAt(i + 1) to regex.charAt(i + 3)).map(ch => ch.toString)
+          (regex.charAt(i + 1) to regex.charAt(i + 3))
+            .map(ch => ch.toString)
             .map {
               case "(" => "\\("
               case ")" => "\\)"
@@ -54,8 +54,9 @@ object Regex {
               case "*" => "\\*"
               case "?" => "\\?"
               case "|" => "\\|"
-              case x => x
-            }.mkString(ALT)
+              case x   => x
+            }
+            .mkString(ALT)
 
         processedRegex += LPAREN + range + RPAREN
         i += 4

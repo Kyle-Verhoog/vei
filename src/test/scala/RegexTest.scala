@@ -237,7 +237,6 @@ class RegexTests extends FunSuite {
     assert(re.matches("\"some_string\\\"\""))
   }
 
-
   test("Bad String regex") {
     val re = Regex.createEngine("\"(!|[#-~]|\\\"|☃|☘)*\"")
     assert(!re.matches("\"ab\"a"))
