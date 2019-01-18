@@ -1,3 +1,16 @@
+/**
+  * A simplified regular expression implementation. Provides functionality for
+  * matching or generating NFAs.
+  *
+  * The following operators are supported:
+  *  - () (precedence)
+  *  - | (alternation)
+  *  - * (zero-or-more)
+  *  - [x-y] (range of characters from x to y)
+  *  - . (match-any)
+  *
+  *  To escape the above characters prefix them \
+  */
 package regex
 import scala.collection.mutable
 import compiler.{DFA, NFA}
@@ -6,6 +19,12 @@ case class Paren(val nalt: Integer, val natom: Integer) {}
 
 final case class RegexParseException(
     private val message: String = "An error occurred while parsing regex",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
+
+final case class RegexNFAConversionException(
+    private val message: String =
+      "An error occurred while converting regex to NFA",
     private val cause: Throwable = None.orNull
 ) extends Exception(message, cause)
 
@@ -24,6 +43,7 @@ class RegexEngine(val expr: String, val dfa: DFA[String]) {
     d.isComplete()
   }
 }
+
 object Regex {
   val ALT = "∪"
   val CONCAT = "·"
@@ -32,8 +52,8 @@ object Regex {
   val RPAREN = "⦆"
   val LBRACK = "〚"
   val RBRACK = "〛"
-  // val OOM = "⨁"
-  // val ZOO = "⁇"
+  val OOM = "⨁"
+  val ZOO = "⁇"
   val NEW_LINE = "☭"
   val SPACE = "☃"
   val TAB = "☘"
@@ -102,12 +122,12 @@ object Regex {
       .replaceAllLiterally(s"\\$RBRACK", "]")
       .replaceAllLiterally("|", ALT)
       .replaceAllLiterally(s"\\$ALT", "|")
-      // .replaceAllLiterally("+", OOM)
-      // .replaceAllLiterally(s"\\$OOM", "+")
+      .replaceAllLiterally("+", OOM)
+      .replaceAllLiterally(s"\\$OOM", "+")
       .replaceAllLiterally("*", ZOM)
       .replaceAllLiterally(s"\\$ZOM", "*")
-      // .replaceAllLiterally("?", ZOO)
-      // .replaceAllLiterally(s"\\$ZOO", "?")
+      .replaceAllLiterally("?", ZOO)
+      .replaceAllLiterally(s"\\$ZOO", "?")
       .replaceAllLiterally(".", DOT)
       .replaceAllLiterally(s"\\$DOT", ".")
       .replaceAllLiterally(s"$NEW_LINE", "\n")
@@ -321,7 +341,8 @@ object Regex {
     }
 
     if (stack.length != 1) {
-      throw RegexParseException()
+      throw RegexNFAConversionException(
+        s"'$postfix': unexpected stack size for stack $stack")
     }
     stack.head
   }

@@ -107,6 +107,17 @@ class RegexParseTestSuite extends FunSuite {
   //   val r = "(1)⨁(2)⨂(3)⁇(4∪5)"
   //   assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
   // }
+
+  test("Preprocess ranges") {
+    val regex = "([a-d]|[X-Z]|[7-9]|_|$)*"
+    assert(Regex.preProcess(regex).equals("⦅⦅a∪b∪c∪d⦆∪⦅X∪Y∪Z⦆∪⦅7∪8∪9⦆∪_∪$⦆⨂"))
+  }
+
+  test("Preprocess escape special chars") {
+    val regex = "(\\*)* (\\() (\\)) \\++ \\?? \\[[0-0] \\][0-0]"
+    assert(Regex.preProcess(regex).equals("⦅*⦆⨂ ⦅(⦆ ⦅)⦆ +⨁ ?⁇ [⦅0⦆ ]⦅0⦆"))
+  }
+
 }
 
 class RegexPostfixToNFATestSuite extends FunSuite {

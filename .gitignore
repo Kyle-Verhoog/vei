@@ -21,3 +21,5 @@ build/
 
 #general
 *.class
+
+dfa_serialization

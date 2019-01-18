@@ -7,7 +7,6 @@ import java.util.Scanner;
 public class Empty {
     public static void main(String[] args) {
         'a'
-                '\t'
         System.out.println("Helloworld");
     }
     public static int toInt(String line, String msg) {

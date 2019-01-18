@@ -25,18 +25,20 @@ object Compiler {
 
   def scanAndSerialize(): Unit = {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
-    val testProg = Source.fromResource("testfiles/Empty.java").mkString
+    val testProg = Source.fromResource("test/Empty.java").mkString
 
     val scan = Scanner.fromConfig(tokenDefn)
-    println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
+    println("generated tokens :\n" + scan.scan(testProg))
+    // println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
     Scanner.serializeDfa(scan.dfa, "dfa_serialization")
   }
 
   def scanWithoutSerializing(): Unit = {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
-    val testProg = Source.fromResource("testfiles/Empty.java").mkString
+    val testProg = Source.fromResource("test/Empty.java").mkString
 
     val scan = new Scanner()
-    println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
+    println("generated tokens :\n" + scan.scan(testProg))
+    // println("generated tokens :\n" + scan.scan(testProg).takeRight(100))
   }
 }

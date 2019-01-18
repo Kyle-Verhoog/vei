@@ -28,6 +28,7 @@ VOID
 WHILE
 someIdentifier
 some4OtherIdentifier1
+$myval
 true
 false
 null

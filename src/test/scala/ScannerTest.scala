@@ -1,13 +1,146 @@
-import compiler.scanner.{Scanner, Token}
-import org.scalatest.FunSuite
-import regex.Regex
-
 import scala.collection.mutable.ListBuffer
-import scala.io.Source
+import org.scalatest.FunSuite
+import compiler.scanner.{Scanner, Token}
+
+object ScannerTestUtils {
+  def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {
+    for (i <- listA.indices) {
+      assert(listA(i) == listB(i))
+    }
+    assert(listA.length == listB.length)
+  }
+}
 
 class ScannerTest extends FunSuite {
+  test("Single token") {
+    val scanner = Scanner.fromConfig("""IF "if"""")
+    val src = "ififif"
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      tokens.toList,
+      ListBuffer[Token](
+        new Token("IF", "if"),
+        new Token("IF", "if"),
+        new Token("IF", "if"),
+      ).toList
+    )
+  }
+
+  test("Single tokens") {
+    val scanner = Scanner.fromConfig("""
+      IF "if"
+      LPAREN "\("
+      RPAREN "\)"
+      INT "(1|2)(1|2)*"
+      ID "(a|b)(a|b)*"
+      SEP ";"
+    """)
+
+    val src = "1221;aa;ab;22;()())(;if;"
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      tokens.toList,
+      ListBuffer[Token](
+        new Token("INT", "1221"),
+        new Token("SEP", ";"),
+        new Token("ID", "aa"),
+        new Token("SEP", ";"),
+        new Token("ID", "ab"),
+        new Token("SEP", ";"),
+        new Token("INT", "22"),
+        new Token("SEP", ";"),
+        new Token("LPAREN", "("),
+        new Token("RPAREN", ")"),
+        new Token("LPAREN", "("),
+        new Token("RPAREN", ")"),
+        new Token("RPAREN", ")"),
+        new Token("LPAREN", "("),
+        new Token("SEP", ";"),
+        new Token("IF", "if"),
+        new Token("SEP", ";"),
+      ).toList
+    )
+  }
+
+  test("Whitespace tokens") {
+    val scanner = Scanner.fromConfig("""
+      LPAREN "\("
+      RPAREN "\)"
+      SPACE "☃"
+      NEWLINE "☭"
+      SEP ";"
+    """)
+
+    val src = """ (
+    )    ()
+    )
+    """
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      tokens.toList,
+      ListBuffer[Token](
+        new Token("SPACE", " "),
+        new Token("LPAREN", "("),
+        new Token("NEWLINE", "\n"),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("RPAREN", ")"),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("LPAREN", "("),
+        new Token("RPAREN", ")"),
+        new Token("NEWLINE", "\n"),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("RPAREN", ")"),
+        new Token("NEWLINE", "\n"),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+        new Token("SPACE", " "),
+      ).toList
+    )
+  }
+
+  test("Whitespace stripped") {
+    val scanner = Scanner.fromConfig("""
+      LPAREN "\("
+      RPAREN "\)"
+      SPACE "☃"
+      NEWLINE "☭"
+      SEP ";"
+    """)
+
+    val src = """ (
+    )    ()
+    )
+    """
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      Token.filterTokensByType(tokens.toList, Set("NEWLINE", "SPACE")),
+      ListBuffer[Token](
+        new Token("LPAREN", "("),
+        new Token("RPAREN", ")"),
+        new Token("LPAREN", "("),
+        new Token("RPAREN", ")"),
+        new Token("RPAREN", ")"),
+      ).toList
+    )
+  }
+
+  test("Escaped char literals") {
+    // TODO: test char c = '\t'
+  }
+
   test("if statement basic") {
-    val scanner = Scanner.fromConfig(s"""IF "if"
+    val scanner = Scanner.fromConfig(s"""
+      IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
       EQ "=="
@@ -16,15 +149,33 @@ class ScannerTest extends FunSuite {
       LPAREN "\\("
       RPAREN "\\)"
       LBRACE "{"
-      RBRACE "}"""")
-    var tokens = scanner.scan(s"""if (ab == 112) {
-      ab = baaaaa;
-    }""")
-    // println(tokens)
+      RBRACE "}"
+    """)
+
+    val src = "if(ab==112){ab=baaaaa;}"
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      tokens.toList,
+      List(
+        new Token("IF", "if"),
+        new Token("LPAREN", "("),
+        new Token("ID", "ab"),
+        new Token("EQ", "=="),
+        new Token("INT", "112"),
+        new Token("RPAREN", ")"),
+        new Token("LBRACE", "{"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baaaaa"),
+        new Token("SEMI", ";"),
+        new Token("RBRACE", "}"),
+      )
+    )
   }
 
   test("if statement and OR, bitwise-OR") {
-    val scanner = Scanner.fromConfig(s"""IF "if"
+    val scanner = Scanner.fromConfig(s"""
+      IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
       LESSEREQ "<="
@@ -37,26 +188,46 @@ class ScannerTest extends FunSuite {
       LPAREN "\\("
       RPAREN "\\)"
       LBRACE "{"
-      RBRACE "}"""")
+      RBRACE "}"
+      SPACE "☃"
+      NEWLINE "☭"
+    """)
     val tokens = scanner.scan(s"""if (ab >= 112 || ab <= 122) {
       ab = baa | baaa;
       ab = baaaaa;
     }""")
-    //println(tokens)
-  }
-
-  test("preprocess ranges") {
-    val regex = "([a-d]|[X-Z]|[7-9]|_|$)*"
-    assert(Regex.preProcess(regex).equals("⦅⦅a∪b∪c∪d⦆∪⦅X∪Y∪Z⦆∪⦅7∪8∪9⦆∪_∪$⦆⨂"))
-  }
-
-  test("preprocess escape special chars") {
-    val regex = "(\\*)* (\\() (\\)) \\++ \\?? \\[[0-0] \\][0-0]"
-    assert(Regex.preProcess(regex).equals("⦅*⦆⨂ ⦅(⦆ ⦅)⦆ +⨁ ?⁇ [⦅0⦆ ]⦅0⦆"))
+    ScannerTestUtils.assertTokenListsMatch(
+      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+      List(
+        new Token("IF", "if"),
+        new Token("LPAREN", "("),
+        new Token("ID", "ab"),
+        new Token("GREATEREQ", ">="),
+        new Token("INT", "112"),
+        new Token("OR", "||"),
+        new Token("ID", "ab"),
+        new Token("LESSEREQ", "<="),
+        new Token("INT", "122"),
+        new Token("RPAREN", ")"),
+        new Token("LBRACE", "{"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baa"),
+        new Token("BITOR", "|"),
+        new Token("ID", "baaa"),
+        new Token("SEMI", ";"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baaaaa"),
+        new Token("SEMI", ";"),
+        new Token("RBRACE", "}"),
+      )
+    )
   }
 
   test("if statement and AND and bitwise-AND") {
-    val scanner = Scanner.fromConfig(s"""IF "if"
+    val scanner = Scanner.fromConfig(s"""
+      IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
       LESSEREQ "<="
@@ -68,113 +239,48 @@ class ScannerTest extends FunSuite {
       LPAREN "\\("
       RPAREN "\\)"
       LBRACE "{"
-      RBRACE "}"""")
+      RBRACE "}"
+      SPACE "☃"
+      NEWLINE "☭"
+    """)
     val tokens = scanner.scan(s"""if (ab >= 112 && ab <= 1222) {
       ab = baa & baaa;
       ab = baaaaa;
     }""")
-    // println(tokens)
+
+    assertTokenListsMatch(
+      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+      List(
+        new Token("IF", "if"),
+        new Token("LPAREN", "("),
+        new Token("ID", "ab"),
+        new Token("GREATEREQ", ">="),
+        new Token("INT", "112"),
+        new Token("AND", "&&"),
+        new Token("ID", "ab"),
+        new Token("LESSEREQ", "<="),
+        new Token("INT", "1222"),
+        new Token("RPAREN", ")"),
+        new Token("LBRACE", "{"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baa"),
+        new Token("BITAND", "&"),
+        new Token("ID", "baaa"),
+        new Token("SEMI", ";"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baaaaa"),
+        new Token("SEMI", ";"),
+        new Token("RBRACE", "}"),
+      )
+    )
   }
 
-  test("Scan basic tokens") {
-    // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
-    val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
-    // val scanner = Scanner.fromConfig(Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString)
-
-    var tokens =
-      scanner.scan(Source.fromResource("testfiles/CorrectTokens.txt").mkString)
-    tokens = tokens.filter(
-      token =>
-        !token.tokenType.equals("NEWLINE") && !token.tokenType
-          .equals("WHITESPACE")
-    )
-
-    var verifyingTokens = ListBuffer[Token](
-      new Token("ABSTRACT", "abstract"),
-      new Token("BOOLEAN", "boolean"),
-      new Token("BYTE", "byte"),
-      new Token("CHAR", "char"),
-      new Token("CLASS", "class"),
-      new Token("ELSE", "else"),
-      new Token("EXTENDS", "extends"),
-      new Token("FINAL", "final"),
-      new Token("FOR", "for"),
-      new Token("IF", "if"),
-      new Token("IMPLEMENTS", "implements"),
-      new Token("IMPORT", "import"),
-      new Token("INSTANCEOF", "instanceof"),
-      new Token("INT", "int"),
-      new Token("INTERFACE", "interface"),
-      new Token("NATIVE", "native"),
-      new Token("NEW", "new"),
-      new Token("PACKAGE", "package"),
-      new Token("PRIVATE", "private"),
-      new Token("PROTECTED", "protected"),
-      new Token("PUBLIC", "public"),
-      new Token("RETURN", "return"),
-      new Token("SHORT", "short"),
-      new Token("STATIC", "static"),
-      new Token("SUPER", "super"),
-      new Token("THIS", "this"),
-      new Token("VOID", "void"),
-      new Token("WHILE", "while"),
-      new Token("~", "~"),
-      new Token("!", "!"),
-      new Token("%", "%"),
-      new Token("&", "&"),
-      new Token("&&", "&&"),
-      new Token(",", ","),
-      new Token("-", "-"),
-      new Token(".", "."),
-      new Token("/", "/"),
-      new Token(":", ":"),
-      new Token(";", ";"),
-      new Token("<", "<"),
-      new Token("=", "="),
-      new Token("!=", "!="),
-      new Token(">", ">"),
-      new Token("==", "=="),
-      new Token("?", "?"),
-      new Token("[", "["),
-      new Token("]", "]"),
-      new Token("{", "{"),
-      new Token("}", "}"),
-      new Token("^", "^"),
-      new Token("*", "*"),
-      new Token("(", "("),
-      new Token(")", ")"),
-      new Token("+", "+"),
-      new Token("|", "|"),
-      new Token("||", "||")
-    )
-
-    assertTokenListsMatch(tokens.toList, verifyingTokens.toList)
-  }
-
-  test("Scan crazy literals") {
-    // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
-    //val scanner = Scanner.fromConfig(Source.fromResource("tokens.lex").mkString)
-    val scanner = Scanner.fromConfig(
-      Source.fromResource("testfiles/testTokensSmallRanges.lex").mkString
-    )
-    var tokens = scanner.scan(
-      Source.fromResource("testfiles/CorrectLiterals.txt").mkString
-    )
-    tokens = tokens.filter(
-      token =>
-        !token.tokenType.equals("NEWLINE") && !token.tokenType
-          .equals("WHITESPACE")
-    )
-    // TODO actually verify
-  }
-
-  def assertTokenListsMatch(lista: List[Token], listb: List[Token]): Unit = {
-    assert(lista.size == listb.size)
-    for (i <- 0 until lista.size) {
-      println(lista(i))
-      println(listb(i))
-      assert(lista(i).tokenType.equals(listb(i).tokenType))
-      assert(lista(i).value.equals(listb(i).value))
+  def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {
+    for (i <- listA.indices) {
+      assert(listA(i) == listB(i))
     }
+    assert(listA.length == listB.length)
   }
 }

@@ -128,7 +128,7 @@ class NFA[TTrans](
           }
         }
       } catch {
-        case e: TransitionNonExistentException => {}
+        case _: TransitionNonExistentException =>
       }
     }
 

@@ -1,3 +1,13 @@
+/**
+  * Scanner which accepts a configuration of tokens given in the following
+  * schema:
+  *
+  * tokens.lex:
+  * <TOKEN1> "regular expression1"
+  * <TOKEN2> "regular expression2"
+  * ...
+  * <TOKENN> "regular expressionN"
+  */
 package compiler.scanner
 import java.io._
 import java.util.Base64
@@ -5,8 +15,13 @@ import java.util.Base64
 import compiler.{DFA, NFA}
 import regex.Regex
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 import scala.io.Source
+
+final case class ScanException(
+    private val message: String = "Scanning failed somewhere in the source.",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
 
 object TokenEngine {
   def fromRegex(regex: String, token: Token): TokenEngine = {
@@ -17,22 +32,33 @@ object TokenEngine {
     }
     new TokenEngine(nfa)
   }
+
+  def newEmptyEngine(): TokenEngine = {
+    new TokenEngine(
+      NFA.newStringNFA(
+        states = Set[NFA.T](),
+        acceptingStates = Set[NFA.T](),
+        startStates = Set[NFA.T](),
+        transitionTable = new mutable.HashMap[(NFA.T, String), Set[NFA.T]]()
+      )
+    )
+  }
 }
 
 class TokenEngine(val nfa: NFA[String]) {
   def addRegex(regex: String, token: Token): TokenEngine = {
     val nfa2 = TokenEngine.fromRegex(regex, token).nfa
 
-    var transitionTable = Regex.mergeMaps(
+    val transitionTable = Regex.mergeMaps(
       nfa.transitionTable,
       nfa2.transitionTable
     )
 
     val s = NFA.newState()
-    var states = Set(s) | nfa.states | nfa2.states
-    var acceptingStates = nfa.acceptingStates | nfa2.acceptingStates
-    var startStates = Set(s)
-    var tokenStates = Regex.mergeMaps(nfa.tokenStates, nfa2.tokenStates)
+    val states = Set(s) | nfa.states | nfa2.states
+    val acceptingStates = nfa.acceptingStates | nfa2.acceptingStates
+    val startStates = Set(s)
+    val tokenStates = Regex.mergeMaps(nfa.tokenStates, nfa2.tokenStates)
 
     var newNfa = new NFA(
       states,
@@ -51,14 +77,12 @@ class TokenEngine(val nfa: NFA[String]) {
 
 object Scanner {
   def fromConfig(s: String): Scanner = {
-    // TODO: support spaces/special chars in config
-    var engine = TokenEngine.fromRegex("\n", new Token("NEWLINE", " "))
-    engine = engine.addRegex(" ", new Token("WHITESPACE", " "))
+    var engine = TokenEngine.newEmptyEngine()
 
     var tokenNumber = 0
-    for (l <- s.split("\n").map(_.trim)) {
+    for (l <- s.trim.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
-      val token = new Token(rawConf(0), "some value", tokenNumber) // TODO fix this
+      val token = new Token(rawConf(0), "", tokenNumber) // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length - 1)
       engine = engine.addRegex(regex, token)
       tokenNumber += 1
@@ -98,6 +122,7 @@ object Scanner {
 
     si.readObject().asInstanceOf[DFA[String]]
   }
+
 }
 
 class Scanner(val dfa: DFA[String], val fileName: String) {
@@ -116,11 +141,8 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
     this(Scanner.deserializeDfa())
   }
 
-  def scan(src: String): ListBuffer[Token] = {
-    var tokens = ListBuffer[Token]()
-    // TODO: HACK
-    // NFA -> DFA accepting states in NFA should be in DFA
-    // it seems like it's possible that accepting states don't have entries added to the tokenStates map
+  def scan(src: String): mutable.ListBuffer[Token] = {
+    var tokens = mutable.ListBuffer[Token]()
     var curDFA = dfa
     var curTokenVal = ""
     var lastDFA = curDFA
@@ -129,12 +151,11 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
     var isComplete = false
 
     var i = 0
-    /* Inadvertant maximal-munch scanning.
-     * Loop over the src string with a DFA. For each character that
-     * results in a final DFA state, update `lastDFA`, `i` and `lastv`.
-     * Then continue forward updating if necessary. If an exception
-     * is raised (token scanned is not in the DFA) then use `lastDFA`
-     * to get the token.
+    /* Inadvertent maximal-munch scanning.
+     * Loop over the src string with a DFA. For each character that results in a
+     * final DFA state, update `lastDFA`, `i` and `lastTokenVal`.
+     * Then continue forward updating if necessary. If an exception is raised
+     * (token scanned is not in the DFA) then use `lastDFA` to get the token.
      */
     while (i < src.length()) {
       var c = src.charAt(i)
@@ -153,29 +174,24 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
         }
         i += 1
       } catch {
-        case _: Throwable => {
+        case e: Throwable =>
           if (isComplete) {
-            var token = lastDFA.getCurrentToken()
-            var ttype = token.tokenType
-            // token.value = lastTokenVal
+            val token = lastDFA.getCurrentToken()
             tokens += new Token(
-              ttype,
+              token.tokenType,
               lastTokenVal,
-              lastDFA.getCurrentToken().tokenNumber
+              token.tokenNumber,
             )
             curDFA = dfa
             curTokenVal = ""
             // move back to just after the matched text
             i = lastTokenEnd + 1
           } else {
-            // TODO: throw new LexException
-            println(
-              s"LEX ERROR on char '$c', parsed '$curTokenVal' at position $i"
+            throw ScanException(
+              s"Scan failed on char '$c', parsed '$curTokenVal' at position $i with the error ($e)"
             )
-            i = src.length() // break out of loop
           }
           isComplete = false
-        }
       }
     }
     // TODO HACK this will make it throw if not finish
