@@ -8,13 +8,47 @@ import scala.io.Source
 
 object Parser {
   class CFG(
-             val terminals: ListBuffer[String],
-             val nonterminal: ListBuffer[String],
-             val prodRules: mutable.HashMap[String, ListBuffer[Array[String]]],
-             val shiftActions: mutable.HashMap[Int, mutable.HashMap[String, Int]],
-             val reduceActions: mutable.HashMap[Int, mutable.HashMap[String, Int]])
+      val terminals: ListBuffer[String],
+      val nonterminal: ListBuffer[String],
+      val prodRules: mutable.HashMap[String, ListBuffer[Array[String]]],
+      val shiftActions: mutable.HashMap[Int, mutable.HashMap[String, Int]],
+      val reduceActions: mutable.HashMap[Int, mutable.HashMap[String, Int]]
+  )
+
+  class Tree[T](
+      val token: T,
+      val children: ListBuffer[Tree[T]] = ListBuffer[Tree[T]]()
+  )
 
   def parse(cfg: CFG, tokens: ListBuffer[Token]): Unit = {
+    val nodeStack = ListBuffer[Tree[Token]]()
+    val stateStack = ListBuffer[Int]()
+
+    // start algorithm
+    nodeStack.append(new Tree[Token](new Token("START", "none")))
+    stateStack.append(0, -1) // TODO need -1 state
+    for (token <- tokens) {
+
+      // TODO other condition
+      while (cfg.reduceActions.contains(stateStack.last)) {
+        val newState = cfg.reduceActions(stateStack.last)(token.value)
+        val A = 
+
+
+
+
+
+        val tokens = cfg.reduceActions(stateStack.last)
+        val gamma = tokens.size
+
+        // pop things off the nodestack
+        val childNodes = nodeStack.takeRight(gamma).reverse
+        nodeStack.remove(nodeStack.size - gamma, gamma)
+
+        // TODO add stuff
+        //nodeStack.append(new Tree[Token](, childNodes))
+      }
+    }
 
   }
 
@@ -60,6 +94,7 @@ object Parser {
 
     // ---- process actions ----
     count = lines(1).toInt
+    lines = lines.takeRight(lines.length - 2)
     val shiftingMap = mutable.HashMap[Int, mutable.HashMap[String, Int]]()
     val reduceMap = mutable.HashMap[Int, mutable.HashMap[String, Int]]()
 

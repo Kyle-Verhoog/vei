@@ -718,6 +718,32 @@ public class Jlalr1 {
             }
         }
     }
+
+
+
+    // TODO copied main to take in string
+    public static final void parseLr1(String cfg) {
+        Scanner scanner = new Scanner(cfg);
+        Grammar grammar;
+        try {
+            grammar = Util.readGrammar(scanner);
+            Util.writeGrammar(grammar);
+        } catch(Error e) {
+            System.err.println("Error reading grammar: "+e);
+            System.exit(1);
+            return;
+        }
+        Generator jlr = new Generator(grammar);
+        try {
+            jlr.computeFirstFollowNullable();
+            jlr.generateLR1Table();
+            jlr.generateOutput();
+        } catch(Error e) {
+            System.err.println("Error performing LR(1) construction: "+e);
+            System.exit(1);
+            return;
+        }
+    }
 }
 /** A production in the grammar. */
 class Production {

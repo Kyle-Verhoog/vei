@@ -7,7 +7,7 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    generateTable()
+    generateTableLR1()
     //scanWithoutSerializing()
 
     if (args.length.equals(0)) {
@@ -17,10 +17,16 @@ object Compiler {
     println("File given: " + args(0))
   }
 
-  def generateTable(): Unit = {
+  def generateTableLALR1(): Unit = {
     val cfg = Source.fromResource("grammar.cfg").mkString
     println(cfg)
     Jlalr1.parse(cfg)
+  }
+
+  def generateTableLR1(): Unit = {
+    val cfg = Source.fromResource("grammar.cfg").mkString
+    println(cfg)
+    Jlalr1.parseLr1(cfg)
   }
 
   def scanAndSerialize(): Unit = {
