@@ -39,7 +39,8 @@ object Parser {
     nodeStack.append(new Tree[Token](tokens.head))
     tokens = tokens.takeRight(tokens.length - 1)
 
-    for (token <- tokens) {
+    for (i <- tokens.indices) {
+      val token = tokens(i)
 
       while (cfg.reduceActions.contains(stateStack.last) && cfg
                .reduceActions(stateStack.last)
@@ -63,6 +64,7 @@ object Parser {
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg
               .shiftActions(stateStack.last)
               .contains(A)) {
+          println(tokens.take(10))
           throw new RuntimeException("bad parsing 1") // TODO better error
         }
 
@@ -75,8 +77,8 @@ object Parser {
       if (!cfg.shiftActions.contains(stateStack.last) || !cfg
             .shiftActions(stateStack.last)
             .contains(token.tokenType)) {
-        println(stateStack.last)
-        println(token)
+        println("Cant find shift transition from state: " + stateStack.last + " on token: " + token)
+        println("Prev 10 tokens: " + tokens.slice(i-10, i))
         throw new RuntimeException("bad parsing 2") // TODO better error
       }
 
