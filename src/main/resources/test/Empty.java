@@ -8,6 +8,14 @@ public class Empty {
     public static void main(String[] args) {
         System.out.println("Helloworld");
     }
+
+    // ientrasneiarsteinneirst/
+
+    /* *  **srtrsrsttsrtsrstr
+     *
+     *
+     * *     *    */
+
     public static int toInt(String line, String msg) {
         return new Integer(line);
     }
@@ -15,19 +23,19 @@ public class Empty {
         Grammar grammar = new Grammar();
         String line = readLine(in, "Expecting number of non-terminals");
         int nterm = toInt(line, "number of non-terminals");
-        for(int i = 0; i < nterm; i++) {
+        for(int i = 0; i < nterm; i=i+1) {
             String term = readLine(in, "Expecting a non-terminal").intern();
         }
 
         line = readLine(in, "Expecting number of non-terminals");
         int nnonterm = toInt(line, "number of non-terminals");
-        for(int i = 0; i < nnonterm; i++) {
+        for(int i = 0; i < nnonterm; i=i+1) {
             String nonterm = readLine(in, "Expecting a non-terminal").intern();
         }
 
         line = readLine(in, "Expecting number of productions");
         int nprods = toInt(line, "number of productions");
-        for(int i = 0; i < nprods; i++) {
+        for(int i = 0; i < nprods; i=i+1) {
             Production prod = readProduction(readLine(in, "Expecting production"), grammar);
         }
         if(in.hasNextLine()) {

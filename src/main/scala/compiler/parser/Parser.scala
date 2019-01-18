@@ -53,12 +53,14 @@ object Parser {
 
         // pop |gamma| child nodes, and |gama| states
         val childNodes = ListBuffer[Tree[Token]]()
-        for (i <- 0 until gamma.length) {
+        for (i <- gamma.indices) {
           childNodes.append(nodeStack.last)
           nodeStack = nodeStack.take(nodeStack.length - 1)
           stateStack = stateStack.take(stateStack.length - 1)
         }
 
+        // TODO should childNodes be reversed?
+        // TODO something other than non-leaf might be useful
         nodeStack.append(new Tree[Token](new Token(A, "non-leaf"), childNodes))
 
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg

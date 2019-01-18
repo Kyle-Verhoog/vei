@@ -220,8 +220,10 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
           isComplete = false
       }
     }
-    // TODO HACK this will make it throw if not finish
-    //curDFA.getCurrentToken()
-    tokens
+
+  if (dfa != curDFA) {
+    curDFA.getCurrentToken() // TODO HACK this will make it throw if not finish, since no tokens will exist
   }
+ tokens
+}
 }

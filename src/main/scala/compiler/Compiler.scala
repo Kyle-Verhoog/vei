@@ -9,58 +9,88 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
+    //serialize()
     //generateTableLR1()
-
-    // filter whitespace
-    val tokens = scanWithoutSerializing().filter(
-      token =>
-        !token.tokenType.equals("NEWLINE") && !token.tokenType
-          .equals("WHITESPACE")
-    )
-
-    // add BOF and EOF for parsing
-    tokens.prepend(new Token("BOF", "bof"))
-    tokens.append(new Token("EOF", "eof"))
-
-    val cfg =
-      Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-    Parser.parse(cfg, tokens)
-
     if (args.length.equals(0)) {
       println("Must supply a file!")
-      return
+      //System.exit(1) // TODO error codes?
     }
-    println("File given: " + args(0))
+
+    try {
+      //val file = Source.fromFile(args(0)).mkString
+      val file = Source.fromResource("test/Empty.java").mkString
+      println("Read in file: " + file)
+      println("Scanning...")
+      val tokens = scanWithoutSerializing(file)
+
+      // add BOF and EOF for parsing
+      tokens.prepend(new Token("BOF", "bof"))
+      tokens.append(new Token("EOF", "eof"))
+
+      println("Parsing...")
+      val cfg =
+        Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
+      Parser.parse(cfg, tokens)
+
+      println("Parsed!")
+    } catch {
+      case _: Exception => System.exit( 42)
+    }
+    System.exit(0)
   }
 
   def generateTableLALR1(): Unit = {
     val cfg = Source.fromResource("grammar.cfg").mkString
-    println(cfg)
     Jlalr1.parse(cfg)
   }
 
   def generateTableLR1(): Unit = {
     val cfg = Source.fromResource("grammar.cfg").mkString
-    println(cfg)
     Jlalr1.parseLr1(cfg)
   }
 
-  def scanAndSerialize(): Unit = {
+  def serialize(): Unit = {
     val tokenDefn = Source.fromResource("tokens.lex").mkString
-    val testProg = Source.fromResource("test/Empty.java").mkString
-
     val scan = Scanner.fromConfig(tokenDefn)
-    println("generated tokens :\n" + scan.scan(testProg))
-    // println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
     Scanner.serializeDfa(scan.dfa, "dfa_serialization")
   }
 
-  def scanWithoutSerializing(): ListBuffer[Token] = {
-    val tokenDefn = Source.fromResource("tokens.lex").mkString
-    val testProg = Source.fromResource("test/Empty.java").mkString
+  def scanWithoutSerializing(
+      fileContents: String = Source.fromResource("test/Empty.java").mkString)
+    : ListBuffer[Token] = {
+    val fileSansCOmments = removeComments(fileContents)
+    println("without " + fileSansCOmments)
 
     val scan = new Scanner()
-    //println("generated tokens :\n" + scan.scan(testProg).takeRight(10))
-    scan.scan(testProg)
+    scan
+      .scan(fileSansCOmments)
+      .filter(
+        token =>
+          !token.tokenType.equals("NEWLINE") && !token.tokenType
+            .equals("WHITESPACE")
+      )
+  }
+
+  def removeComments(input: String): String = {
+    var parsedProg = ""
+    var i = 0
+    while (i < input.toCharArray.length) {
+      if (input(i) == '/' && (i + 1 < input.toCharArray.length && input(i + 1) == '/')) { // remove single line comments
+        while (input(i) != '\n') {
+          i += 1
+        }
+      } else if (input(i) == '/' && (i + 1 < input.toCharArray.length && input(
+                   i + 1) == '*')) {
+        i += 2 // remove starting star
+        // if this fails because we go out of bounds, thats fine since comments should finish
+        while (!(input(i) == '*' && input(i + 1) == '/')) {
+          i += 1
+        }
+        i += 2 // remove ending star
+      }
+      parsedProg += input(i)
+      i += 1
+    }
+    parsedProg
   }
 }
