@@ -26,6 +26,20 @@ class ScannerTest extends FunSuite {
     )
   }
 
+  test("Single token") {
+    val scanner = Scanner.fromConfig("""IF "if"""")
+    val src = "ififif"
+    val tokens = scanner.scan(src)
+    ScannerTestUtils.assertTokenListsMatch(
+      tokens.toList,
+      ListBuffer[Token](
+        new Token("IF", "if"),
+        new Token("IF", "if"),
+        new Token("IF", "if"),
+      ).toList
+    )
+  }
+
   test("Single tokens") {
     val scanner = Scanner.fromConfig("""
       IF "if"

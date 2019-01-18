@@ -187,8 +187,34 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
             // move back to just after the matched text
             i = lastTokenEnd + 1
           } else {
+            val progress = src.substring(0, i)
+            var indent = 0
+            var lineNum = 0
+            var x = i
+            while (x > 0 && src.charAt(x) != '\n') {
+              indent += 1
+              x -= 1
+            }
+            x = i
+            while (x > 0) {
+              if (src.charAt(x) == '\n')
+                lineNum += 1
+              x -= 1
+            }
+
+            val pointer = (0 until indent - 1).toList
+              .map(_ => "-")
+              .mkString + "^"
+
             throw ScanException(
-              s"Scan failed on char '$c', parsed '$curTokenVal' at position $i with the error ($e)"
+              s"""$progress
+                 |$pointer
+                 |Scan failed on char '$c' on line ${lineNum + 1} col $indent.
+                 |
+                 |Parsed '$curTokenVal' for current token.
+                 |
+                 |Additional error information:\n
+                 |  $e\n\n""".stripMargin
             )
           }
           isComplete = false

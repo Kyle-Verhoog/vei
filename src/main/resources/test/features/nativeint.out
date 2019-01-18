@@ -1,0 +1,15 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+STATIC ┃ static
+NATIVE ┃ native
+INT ┃ int
+IDENTIFIER ┃ m
+( ┃ (
+INT ┃ int
+IDENTIFIER ┃ i
+) ┃ )
+; ┃ ;
+} ┃ }

@@ -1,0 +1,10 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PROTECTED ┃ protected
+STATIC ┃ static
+INT ┃ int
+IDENTIFIER ┃ x
+; ┃ ;
+} ┃ }

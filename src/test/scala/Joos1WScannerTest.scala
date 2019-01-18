@@ -1,11 +1,190 @@
 import org.scalatest.FunSuite
-import scala.io.Source
 
-import compiler.scanner.{Scanner, Token}
+import scala.io.Source
+import compiler.scanner.{ScanException, Scanner, Token}
+
+class Joos1WTokenRegexTestSuite extends FunSuite {
+  val whitespaceTokens = Set("WHITESPACE", "NEWLINE")
+
+  def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {
+    for (i <- listA.indices) {
+      assert(listA(i) == listB(i))
+    }
+    assert(listA.length == listB.length)
+  }
+
+  test("Operators") {
+    val scanner = Scanner.fromConfig(s"""
+      ~ "~"
+      ! "!"
+      % "%"
+      & "&"
+      && "&&"
+      , ","
+      - "-"
+      . "\\."
+      / "/"
+      : ":"
+      ; ";"
+      < "<"
+      > ">"
+      = "="
+      != "!="
+      <= "<="
+      >= ">="
+      == "=="
+      ? "\\?"
+      [ "\\["
+      ] "\\]"
+      { "{"
+      } "}"
+      ^ "^"
+      * "\\*"
+      ( "\\("
+      ) "\\)"
+      + "\\+"
+      | "\\|"
+      || "\\|\\|"
+      WHITESPACE "☃"
+      NEWLINE "☭""""")
+    val src =
+      "~ ! % & && , - . / : ; < > = != <= >= == ? [ ] { } ^ * ( ) + | ||"
+    val tokens = scanner.scan(src).toList
+    assertTokenListsMatch(
+      Token.filterTokensByType(tokens, whitespaceTokens),
+      List(
+        new Token("~", "~"),
+        new Token("!", "!"),
+        new Token("%", "%"),
+        new Token("&", "&"),
+        new Token("&&", "&&"),
+        new Token(",", ","),
+        new Token("-", "-"),
+        new Token(".", "."),
+        new Token("/", "/"),
+        new Token(":", ":"),
+        new Token(";", ";"),
+        new Token("<", "<"),
+        new Token(">", ">"),
+        new Token("=", "="),
+        new Token("!=", "!="),
+        new Token("<=", "<="),
+        new Token(">=", ">="),
+        new Token("==", "=="),
+        new Token("?", "?"),
+        new Token("[", "["),
+        new Token("]", "]"),
+        new Token("{", "{"),
+        new Token("}", "}"),
+        new Token("^", "^"),
+        new Token("*", "*"),
+        new Token("(", "("),
+        new Token(")", ")"),
+        new Token("+", "+"),
+        new Token("|", "|"),
+        new Token("||", "||"),
+      )
+    )
+  }
+
+  test("String literals") {
+    val scanner = Scanner.fromConfig(s"""
+      STRING_LITERAL ""(!|[#-~]|\"|☃|☘)*""
+      WHITESPACE "☃"
+      NEWLINE "☭"""")
+    val tokens = scanner.scan("""
+        "$!@#!@#!#@$#@%#@%"
+        "\"hi there\""
+        "\n \t \v"
+        """).toList
+    assertTokenListsMatch(
+      Token.filterTokensByType(tokens, whitespaceTokens),
+      List(
+        new Token("STRING_LITERAL", """"$!@#!@#!#@$#@%#@%""""),
+        new Token("STRING_LITERAL", """"\"hi there\"""""),
+        new Token("STRING_LITERAL", """"\n \t \v""""),
+      )
+    )
+  }
+
+  test("Literals") {
+    val scanner = Scanner.fromConfig(s"""
+      ~ "~"
+      ! "!"
+      % "%"
+      & "&"
+      && "&&"
+      , ","
+      - "-"
+      . "\\."
+      / "/"
+      : ":"
+      ; ";"
+      < "<"
+      > ">"
+      = "="
+      != "!="
+      <= "<="
+      >= ">="
+      == "=="
+      ? "\\?"
+      [ "\\["
+      ] "\\]"
+      { "{"
+      } "}"
+      ^ "^"
+      * "\\*"
+      ( "\\("
+      ) "\\)"
+      + "\\+"
+      | "\\|"
+      || "\\|\\|"
+      BOOLEAN_LITERAL "(true)|(false)"
+      NULL_LITERAL "null"
+      INTEGER_LITERAL "0|((1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)"
+      CHAR_LITERAL "'[!-~]'"
+      STRING_LITERAL ""(!|[#-~]|\"|☃|☘)*""
+      IDENTIFIER "([a-z]|[A-Z]|_|$$)([a-z]|[A-Z]|[0-9]|_|$$)*"
+      WHITESPACE "☃"
+      NEWLINE "☭""""")
+    // TODO: finish this test
+    val tokens = scanner.scan("i = 0123;").toList
+    // TODO: test negative integers
+    // val tokens = scanner.scan("int i = -123;").toList
+    assertTokenListsMatch(
+      Token.filterTokensByType(tokens, whitespaceTokens),
+      List(
+        new Token("INTE", "||"),
+      )
+    )
+  }
+
+  test("Error: Unclosed string") {
+    val scanner = Scanner.fromConfig(s"""
+      PUBLIC "public"
+      CLASS "class"
+      { "{"
+      ) "\\)"
+      ( "\\("
+      } "}"
+      STRING_LITERAL ""(!|[o-s]|\"|☃|☘)*""
+      ; ";"
+      = "="
+      STRING "String"
+      IDENTIFIER "A|i|s"
+      WHITESPACE "☃"
+      NEWLINE "☭"""")
+
+    assertThrows[ScanException](scanner.scan("""public class A() {
+                   |  String s = "ooopssss
+                   |}""".stripMargin).toList)
+  }
+}
 
 class Joos1WScannerTest extends FunSuite {
   val tokensFile = Source.fromResource("tokens.lex")
   val scanner = Scanner.fromConfig(tokensFile.mkString)
+  // val scanner = Scanner.fromConfig("""SOMETHING "a"""")
   val whitespaceTokens = Set("WHITESPACE", "NEWLINE")
 
   def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {
@@ -85,7 +264,6 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("Scan literals") {
-    // TODO THIS IS REALLY JUST A NOTE: Run it with this one if you want to really test it (it takes longer)
     val rawTokens = scanner.scan(
       Source.fromResource("test/CorrectLiterals").mkString
     )
@@ -133,5 +311,32 @@ class Joos1WScannerTest extends FunSuite {
         new Token("INTEGER_LITERAL", "23420480"),
       )
     )
+  }
+
+  def parseTokens(src: String): List[Token] = {
+    src.trim
+      .split('\n')
+      .map(line => {
+        val split = line.split('┃')
+        new Token(split(0).trim, split(1).trim)
+      })
+      .toList
+  }
+
+  def testFile(name: String) {
+    // Uncomment for debugging
+    // println(s"Testing $name:")
+    val src = Source.fromResource(s"test/features/$name.java").mkString
+    val out = Source.fromResource(s"test/features/$name.out").mkString
+
+    val rawTokens = scanner.scan(src)
+    val actTokens = Token.filterTokensByType(rawTokens.toList, whitespaceTokens)
+    val expTokens = parseTokens(out)
+
+    assertTokenListsMatch(actTokens, expTokens)
+  }
+
+  test("Feature tests") {
+    Joos1WTestUtils.featureTestFiles().foreach(testFile)
   }
 }

@@ -1,0 +1,9 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PROTECTED ┃ protected
+IDENTIFIER ┃ double
+IDENTIFIER ┃ x
+; ┃ ;
+} ┃ }

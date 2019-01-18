@@ -1,0 +1,18 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+PROTECTED ┃ protected
+INT ┃ int
+IDENTIFIER ┃ x
+= ┃ =
+INTEGER_LITERAL ┃ 42
+; ┃ ;
+} ┃ }
+

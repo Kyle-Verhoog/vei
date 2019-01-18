@@ -1,0 +1,27 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+PUBLIC ┃ public
+INT ┃ int
+IDENTIFIER ┃ m
+( ┃ (
+BYTE ┃ byte
+IDENTIFIER ┃ x
+) ┃ )
+{ ┃ {
+RETURN ┃ return
+( ┃ (
+INT ┃ int
+) ┃ )
+IDENTIFIER ┃ x
+; ┃ ;
+} ┃ }
+} ┃ }
+

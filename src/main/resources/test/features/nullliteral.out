@@ -1,0 +1,17 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+PROTECTED ┃ protected
+IDENTIFIER ┃ A
+IDENTIFIER ┃ x
+= ┃ =
+NULL_LITERAL ┃ null
+; ┃ ;
+} ┃ }

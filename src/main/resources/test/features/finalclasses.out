@@ -1,0 +1,12 @@
+PUBLIC ┃ public
+FINAL ┃ final
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+} ┃ }

@@ -1,0 +1,13 @@
+PUBLIC ┃ public
+ABSTRACT ┃ abstract
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+ABSTRACT ┃ abstract
+INT ┃ int
+IDENTIFIER ┃ m
+( ┃ (
+) ┃ )
+; ┃ ;
+} ┃ }

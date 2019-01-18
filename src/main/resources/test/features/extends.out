@@ -1,0 +1,17 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+EXTENDS ┃ extends
+IDENTIFIER ┃ java
+. ┃ .
+IDENTIFIER ┃ lang
+. ┃ .
+IDENTIFIER ┃ Thread
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+} ┃ }

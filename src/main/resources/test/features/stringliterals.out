@@ -1,0 +1,23 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PUBLIC ┃ public
+IDENTIFIER ┃ A
+( ┃ (
+) ┃ )
+{ ┃ {
+} ┃ }
+PROTECTED ┃ protected
+IDENTIFIER ┃ String
+IDENTIFIER ┃ x
+= ┃ =
+STRING_LITERAL ┃ "foo"
+; ┃ ;
+PROTECTED ┃ protected
+IDENTIFIER ┃ String
+IDENTIFIER ┃ y
+= ┃ =
+STRING_LITERAL ┃ " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n\t"
+; ┃ ;
+} ┃ }

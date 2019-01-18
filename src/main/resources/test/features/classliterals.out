@@ -1,0 +1,17 @@
+PUBLIC ┃ public
+CLASS ┃ class
+IDENTIFIER ┃ A
+{ ┃ {
+PROTECTED ┃ protected
+IDENTIFIER ┃ java
+. ┃ .
+IDENTIFIER ┃ lang
+. ┃ .
+IDENTIFIER ┃ Class
+IDENTIFIER ┃ x
+= ┃ =
+IDENTIFIER ┃ A
+. ┃ .
+CLASS ┃ class
+; ┃ ;
+} ┃ }

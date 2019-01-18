@@ -144,6 +144,10 @@ object Regex {
   def toPostfix(regex: String): String = {
     val processedRegex = preProcess(regex)
 
+    if (processedRegex.isEmpty) {
+      throw RegexParseException("regex cannot be empty!")
+    }
+
     var postfix = ""
     var natom = 0
     var nalt = 0
