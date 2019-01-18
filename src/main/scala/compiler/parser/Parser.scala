@@ -10,7 +10,7 @@ object Parser {
   class CFG(
       val terminals: ListBuffer[String],
       val nonterminal: ListBuffer[String],
-      val prodRules: ListBuffer[Array[String]],
+      val prodRules: ListBuffer[List[String]],
       val shiftActions: mutable.HashMap[Int, mutable.HashMap[String, Int]],
       val reduceActions: mutable.HashMap[Int, mutable.HashMap[String, Int]]
   )
@@ -18,22 +18,34 @@ object Parser {
   class Tree[T](
       val token: T,
       val children: ListBuffer[Tree[T]] = ListBuffer[Tree[T]]()
-  )
+  ) {
+    def inorderLeafValues(): ListBuffer[T] = {
+      if (children.isEmpty) return ListBuffer(token)
 
-  def parse(cfg: CFG, tokens: ListBuffer[Token]): ListBuffer[Tree[Token]] = {
+      children.flatMap(child => { child.inorderLeafValues() })
+    }
+  }
+
+  def parse(cfg: CFG,
+            inputTokens: ListBuffer[Token]): ListBuffer[Tree[Token]] = {
+    var tokens = inputTokens
     var nodeStack = ListBuffer[Tree[Token]]()
     var stateStack = ListBuffer[Int]()
 
     // start algorithm
-    nodeStack.append(new Tree[Token](new Token("BOF", "none"))) // TODO dont hardcode BOF?
-    stateStack.append(0)
+    stateStack.append(cfg.shiftActions(0)(tokens.head.tokenType)) // push the first state
+
+    // push tokens.head to node stack and pop it from tokens
+    nodeStack.append(new Tree[Token](tokens.head))
+    tokens = tokens.takeRight(tokens.length - 1)
+
     for (token <- tokens) {
 
       while (cfg.reduceActions.contains(stateStack.last) && cfg
                .reduceActions(stateStack.last)
-               .contains(token.value)) {
+               .contains(token.tokenType)) {
         // get the production rule and split into parts
-        val ruleToReduce = cfg.reduceActions(stateStack.last)(token.value)
+        val ruleToReduce = cfg.reduceActions(stateStack.last)(token.tokenType)
         val prodRule = cfg.prodRules(ruleToReduce)
         val A = prodRule(0) // look up the nonterminal that this production rule is
         val gamma = prodRule.takeRight(prodRule.length - 1)
@@ -48,7 +60,9 @@ object Parser {
 
         nodeStack.append(new Tree[Token](new Token(A, "non-leaf"), childNodes))
 
-        if (!cfg.shiftActions.contains(stateStack.last) || !cfg.shiftActions(stateStack.last).contains(A)) {
+        if (!cfg.shiftActions.contains(stateStack.last) || !cfg
+              .shiftActions(stateStack.last)
+              .contains(A)) {
           throw new RuntimeException("bad parsing 1") // TODO better error
         }
 
@@ -58,18 +72,22 @@ object Parser {
       nodeStack.append(new Tree[Token](token))
 
       // Error check
-      if (!cfg.shiftActions.contains(stateStack.last) || !cfg.shiftActions(stateStack.last).contains(token.value)) {
+      if (!cfg.shiftActions.contains(stateStack.last) || !cfg
+            .shiftActions(stateStack.last)
+            .contains(token.tokenType)) {
+        println(stateStack.last)
+        println(token)
         throw new RuntimeException("bad parsing 2") // TODO better error
       }
 
-      stateStack.append(cfg.shiftActions(stateStack.last)(token.value))
+      stateStack.append(cfg.shiftActions(stateStack.last)(token.tokenType))
     }
 
     nodeStack
   }
 
-  def readInLr1(file: String): Unit = {
-    var lines = Source.fromResource("grammar.lr1").getLines().toArray
+  def readInLr1(fileLines: Array[String]): CFG = {
+    var lines = fileLines
 
     // ---- process terminals ----
     var count = lines(0).toInt
@@ -91,13 +109,16 @@ object Parser {
       lines = lines.takeRight(lines.length - 1)
     }
 
+    // ---- ignore start symbol ----
+    lines = lines.takeRight(lines.length - 1)
+
     // ---- process production rules ----
     count = lines(0).toInt
-    val prodRules = ListBuffer[Array[String]]()
+    val prodRules = ListBuffer[List[String]]()
     lines = lines.takeRight(lines.length - 1)
 
     for (i <- 0 until count) {
-      prodRules.append(lines(0).split(" "))
+      prodRules.append(lines(0).split(" ").toList)
       lines = lines.takeRight(lines.length - 1)
     }
 
