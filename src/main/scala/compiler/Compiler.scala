@@ -7,8 +7,8 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    //generateTable()
-    scanWithoutSerializing()
+    generateTable()
+    //scanWithoutSerializing()
 
     if (args.length.equals(0)) {
       println("Must supply a file!")
