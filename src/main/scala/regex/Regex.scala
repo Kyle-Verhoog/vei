@@ -58,6 +58,7 @@ object Regex {
   val SPACE = "☃"
   val TAB = "☘"
   val DOT = "ø"
+  val NOT = "¬"
 
   val escapeMapping = Map(
     ALT -> "|",
@@ -106,7 +107,6 @@ object Regex {
 
   def replaceDot(regex: String): String = {
     val allChars = (0 to 127).map(i => i.toChar.toString).mkString(ALT)
-
     regex.replaceAllLiterally(DOT, LPAREN + allChars + RPAREN)
   }
 
@@ -201,7 +201,7 @@ object Regex {
           nalt = par.nalt
           natom = par.natom
           natom += 1
-        case o if o == ZOM || o == OOM || o == ZOO =>
+        case o if o == ZOM || o == OOM || o == ZOO || o == NOT =>
           if (natom == 0) {
             throw RegexParseException(
               s"'$regex': missing operand for ${escapeMapping(o)} operator at position $x")
@@ -256,6 +256,43 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
+        case NOT =>
+          /**
+            * The NOT operator only applies to atoms. We want to replace
+            * the transition on the transition token with a transition on each
+            * other character in the alphabet.
+            *
+            * Visually:
+            *          a
+            * (start) -> (accepting)
+            *
+            * Becomes
+            *         b, c, d, ...
+            * (start) -----------> (accepting)
+            */
+          val e = stack.remove(stack.length - 1)
+          if (e.states.size != 2 ||
+              e.transitionTable.size != 1 ||
+              e.acceptingStates.size != 1 ||
+              e.startStates.size != 1) {
+            throw RegexParseException(s"$NOT operator only applies to atoms.")
+          }
+
+          val token: String = e.transitionTable.head._1._2
+          var nfa = NFA.newStringNFA(
+            e.states,
+            e.acceptingStates,
+            e.startStates,
+            new mutable.HashMap[(NFA.T, String), Set[NFA.T]]()
+          )
+
+          val start = e.startStates.head
+          val accept = e.acceptingStates.head
+
+          for (c <- nfa.alphabet if c != token) {
+            nfa.addTransitions((start, c), Set(accept))
+          }
+          stack += nfa
         case ZOM =>
           val e = stack.remove(stack.length - 1)
 

@@ -50,10 +50,10 @@ object Parser {
         // get the production rule and split into parts
         val ruleToReduce = cfg.reduceActions(stateStack.last)(token.tokenType)
         val prodRule = cfg.prodRules(ruleToReduce)
-        val A = prodRule(0) // look up the nonterminal that this production rule is
+        val A = prodRule.head // look up the nonterminal that this production rule is
         val gamma = prodRule.takeRight(prodRule.length - 1)
 
-        // pop |gamma| child nodes, and |gama| states
+        // pop |gamma| child nodes, and |gamma| states
         val childNodes = ListBuffer[ParseTreeNode[Token]]()
         for (i <- gamma.indices) {
           childNodes.append(nodeStack.last)

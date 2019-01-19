@@ -103,6 +103,11 @@ class RegexParseTestSuite extends FunSuite {
     assert(Regex.toPostfix(r) == "ab∪⁇")
   }
 
+  test("Not operator") {
+    val r = "a¬"
+    assert(Regex.toPostfix(r) == "a¬")
+  }
+
   test("All operators") {
     val r = "(1)+(2)*(3)?(4∪5)"
     assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
@@ -287,6 +292,41 @@ class RegexTestSuite extends FunSuite {
   test("Bad String regex") {
     val re = Regex.createEngine("\"(!|[#-~]|\\\"|☃|☘)*\"")
     assert(!re.matches("\"ab\"a"))
+  }
+
+  test("Invalid not regex") {
+    Regex.createEngine(s"a*${Regex.NOT}")
+    assertThrows[RegexParseException](Regex.createEngine(s"a${Regex.NOT}"))
+  }
+
+  test("Not regex") {
+    val re = Regex.createEngine(s"a${Regex.NOT}")
+    assert(!re.matches("a"))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
+    assert(re.matches("d"))
+    assert(re.matches("\n"))
+    assert(re.matches("\t"))
+  }
+
+  test("Not regex multi") {
+    val re = Regex.createEngine(s"b${Regex.NOT}c*")
+    assert(re.matches("accccc"))
+    assert(re.matches("a"))
+    assert(re.matches("acccc"))
+    assert(!re.matches("bccccc"))
+    assert(!re.matches("b"))
+    assert(re.matches("cccc"))
+  }
+
+  test("Not regex concat") {
+    val re = Regex.createEngine(s"b${Regex.NOT}c*")
+    assert(re.matches("accccc"))
+    assert(re.matches("a"))
+    assert(re.matches("acccc"))
+    assert(!re.matches("bccccc"))
+    assert(!re.matches("b"))
+    assert(re.matches("cccc"))
   }
 
   test("Large regex") {

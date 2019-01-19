@@ -1,6 +1,8 @@
 import org.scalatest.FunSuite
 import compiler.scanner.{Scanner, Token}
 
+import regex.Regex
+
 object ScannerTestUtils {
   def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {
     for (i <- listA.indices) {
@@ -163,6 +165,63 @@ class ScannerTest extends FunSuite {
         new Token("INT", "112"),
         new Token("RPAREN", ")"),
         new Token("LBRACE", "{"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baaaaa"),
+        new Token("SEMI", ";"),
+        new Token("RBRACE", "}"),
+      )
+    )
+  }
+
+  test("comments") {
+    val scanner = Scanner.fromConfig(s"""
+      IF "if"
+      INT "(1|2)(1|2)*"
+      ID "(a|b)(a|b)*"
+      LESSEREQ "<="
+      GREATEREQ ">="
+      ASSIGN "="
+      AND "&&"
+      OR "\\|\\|"
+      BITOR "\\|"
+      SEMI ";"
+      LPAREN "\\("
+      RPAREN "\\)"
+      LBRACE "{"
+      RBRACE "}"
+      LINE_COMMENT "//☭¬*☭"
+      BLOCK_COMMENT "/* j"
+      SPACE "☃"
+      NEWLINE "☭"
+    """)
+    val tokens = scanner.scan(s"""if (ab >= 112 || ab <= 122) {
+      ab = baa | baaa; // testing 1 2 3
+      // comment 2
+      ab = baaaaa;
+    }""")
+    assertTokenListsMatch(
+      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+      List(
+        new Token("IF", "if"),
+        new Token("LPAREN", "("),
+        new Token("ID", "ab"),
+        new Token("GREATEREQ", ">="),
+        new Token("INT", "112"),
+        new Token("OR", "||"),
+        new Token("ID", "ab"),
+        new Token("LESSEREQ", "<="),
+        new Token("INT", "122"),
+        new Token("RPAREN", ")"),
+        new Token("LBRACE", "{"),
+        new Token("ID", "ab"),
+        new Token("ASSIGN", "="),
+        new Token("ID", "baa"),
+        new Token("BITOR", "|"),
+        new Token("ID", "baaa"),
+        new Token("SEMI", ";"),
+        new Token("COMMENT", "// testing 1 2 3\n"),
+        new Token("COMMENT", "// comment 2\n"),
         new Token("ID", "ab"),
         new Token("ASSIGN", "="),
         new Token("ID", "baaaaa"),
