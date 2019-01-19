@@ -191,7 +191,7 @@ class ScannerTest extends FunSuite {
       LBRACE "{"
       RBRACE "}"
       LINE_COMMENT "//☭¬*☭"
-      BLOCK_COMMENT "/* j"
+      BLOCK_COMMENT "/\\*(\\*/)¬*\\*/"
       SPACE "☃"
       NEWLINE "☭"
     """)
@@ -199,7 +199,12 @@ class ScannerTest extends FunSuite {
       ab = baa | baaa; // testing 1 2 3
       // comment 2
       ab = baaaaa;
+      /*
+      this is a block comment
+      */
+      ba = b; /* another block */
     }""")
+    println(tokens)
     assertTokenListsMatch(
       Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
       List(
@@ -220,8 +225,8 @@ class ScannerTest extends FunSuite {
         new Token("BITOR", "|"),
         new Token("ID", "baaa"),
         new Token("SEMI", ";"),
-        new Token("COMMENT", "// testing 1 2 3\n"),
-        new Token("COMMENT", "// comment 2\n"),
+        new Token("LINE_COMMENT", "// testing 1 2 3\n"),
+        new Token("LINE_COMMENT", "// comment 2\n"),
         new Token("ID", "ab"),
         new Token("ASSIGN", "="),
         new Token("ID", "baaaaa"),

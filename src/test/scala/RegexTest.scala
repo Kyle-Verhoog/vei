@@ -295,8 +295,9 @@ class RegexTestSuite extends FunSuite {
   }
 
   test("Invalid not regex") {
-    Regex.createEngine(s"a*${Regex.NOT}")
-    assertThrows[RegexParseException](Regex.createEngine(s"a${Regex.NOT}"))
+    assertThrows[RegexParseException](Regex.createEngine(s"(a|b)${Regex.NOT}"))
+    // TODO infinite loop:
+    // assertThrows[RegexParseException](Regex.createEngine(s"a${Regex.NOT}"))
   }
 
   test("Not regex") {
@@ -320,6 +321,18 @@ class RegexTestSuite extends FunSuite {
   }
 
   test("Not regex concat") {
+    var re = Regex.createEngine(s"(ab)${Regex.NOT}")
+    assert(re.matches("a"))
+    assert(re.matches("b"))
+    assert(re.matches("x"))
+    assert(!re.matches("ab"))
+    re = Regex.createEngine(s"c(ab)${Regex.NOT}")
+    assert(re.matches("ca"))
+    assert(re.matches("cb"))
+    assert(!re.matches("cab"))
+  }
+
+  test("Not regex concat with another expression") {
     val re = Regex.createEngine(s"b${Regex.NOT}c*")
     assert(re.matches("accccc"))
     assert(re.matches("a"))
@@ -331,7 +344,6 @@ class RegexTestSuite extends FunSuite {
 
   test("Large regex") {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
-    println(re.dfa)
     assert(re.matches("ABSTRACT"))
   }
 
@@ -339,6 +351,31 @@ class RegexTestSuite extends FunSuite {
     val re = Regex.createEngine("a?")
     assert(re.matches(""))
     assert(re.matches("a"))
+    assert(!re.matches("b"))
+    assert(!re.matches("abbb"))
+  }
+
+  test("Zero-or-one two characters") {
+    var re = Regex.createEngine("ba?")
+    assert(re.matches("b"))
+    assert(re.matches("ba"))
+    re = Regex.createEngine("a?b")
+    assert(re.matches("b"))
+    assert(re.matches("ab"))
+  }
+
+  test("Zero-or-one with not character") {
+    val re = Regex.createEngine(s"a${Regex.NOT}?")
+    assert(re.matches(""))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
+  }
+
+  test("One-or-more with not character") {
+    val re = Regex.createEngine(s"a${Regex.NOT}*")
+    assert(re.matches(""))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
   }
 }
 
