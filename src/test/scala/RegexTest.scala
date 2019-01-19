@@ -13,7 +13,7 @@ class RegexPreprocessTestSuite extends FunSuite {
 
 class RegexParseTestSuite extends FunSuite {
   test("Empty regex") {
-    Regex.toPostfix("")
+    assertThrows[RegexParseException](Regex.toPostfix(""))
   }
 
   test("Error: missing closing paren") {
@@ -73,15 +73,15 @@ class RegexParseTestSuite extends FunSuite {
     assert(Regex.toPostfix(r) == "ab·⨂")
   }
 
-  // test("One-or-more operator grouped") {
-  //   val r = "(ab)⨁"
-  //   assert(Regex.toPostfix(r) == "ab·⨁")
-  // }
+  test("One-or-more operator grouped") {
+    val r = "(ab)⨁"
+    assert(Regex.toPostfix(r) == "ab·⨁")
+  }
 
-  // test("Zero-or-one operator grouped") {
-  //   val r = "(ab)⁇"
-  //   assert(Regex.toPostfix(r) == "ab·⁇")
-  // }
+  test("Zero-or-one operator grouped") {
+    val r = "(ab)⁇"
+    assert(Regex.toPostfix(r) == "ab·⁇")
+  }
 
   test("Alternate operator") {
     val r = "a∪b"
@@ -98,15 +98,15 @@ class RegexParseTestSuite extends FunSuite {
     assert(Regex.toPostfix(r) == "abc∪∪")
   }
 
-  // test("Alternate 0 or 1") {
-  //   val r = "(a∪b)⁇"
-  //   assert(Regex.toPostfix(r) == "ab∪⁇")
-  // }
+  test("Alternate 0 or 1") {
+    val r = "(a∪b)⁇"
+    assert(Regex.toPostfix(r) == "ab∪⁇")
+  }
 
-  // test("All operators") {
-  //   val r = "(1)⨁(2)⨂(3)⁇(4∪5)"
-  //   assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
-  // }
+  test("All operators") {
+    val r = "(1)+(2)*(3)?(4∪5)"
+    assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
+  }
 
   test("Preprocess ranges") {
     val regex = "([a-d]|[X-Z]|[7-9]|_|$)*"
@@ -293,6 +293,12 @@ class RegexTestSuite extends FunSuite {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
     println(re.dfa)
     assert(re.matches("ABSTRACT"))
+  }
+
+  test("Zero-or-one single character") {
+    val re = Regex.createEngine("a?")
+    assert(re.matches(""))
+    assert(re.matches("a"))
   }
 }
 

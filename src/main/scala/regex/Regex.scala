@@ -201,7 +201,7 @@ object Regex {
           nalt = par.nalt
           natom = par.natom
           natom += 1
-        case o if o == ZOM /* || o == OOM || o == ZOO */ =>
+        case o if o == ZOM || o == OOM || o == ZOO =>
           if (natom == 0) {
             throw RegexParseException(
               s"'$regex': missing operand for ${escapeMapping(o)} operator at position $x")
@@ -275,6 +275,26 @@ object Regex {
           for (as <- e.acceptingStates) {
             nfa = nfa.addTransitions((as, "ε"), Set(s))
           }
+          stack += nfa
+        case ZOO =>
+          val e = stack.remove(stack.length - 1)
+
+          val s = NFA.newState()
+          val newE = NFA.newState()
+          val states = Set(s) | Set(newE) | e.states
+          val startStates = Set(s)
+          val acceptingStates = Set(s) | e.acceptingStates
+
+          var nfa = NFA.newStringNFA(
+            states,
+            acceptingStates,
+            startStates,
+            e.transitionTable
+          )
+
+          nfa = nfa.addTransitions((newE, "ε"), e.startStates)
+          nfa = nfa.addTransitions((s, "ε"), e.startStates)
+          nfa = nfa.addTransitions((s, p), Set(newE))
           stack += nfa
         case ALT =>
           val e2 = stack.remove(stack.length - 1)

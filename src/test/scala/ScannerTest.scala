@@ -1,4 +1,3 @@
-import scala.collection.mutable.ListBuffer
 import org.scalatest.FunSuite
 import compiler.scanner.{Scanner, Token}
 
@@ -18,25 +17,11 @@ class ScannerTest extends FunSuite {
     val tokens = scanner.scan(src)
     ScannerTestUtils.assertTokenListsMatch(
       tokens.toList,
-      ListBuffer[Token](
+      List(
         new Token("IF", "if"),
         new Token("IF", "if"),
         new Token("IF", "if"),
-      ).toList
-    )
-  }
-
-  test("Single token") {
-    val scanner = Scanner.fromConfig("""IF "if"""")
-    val src = "ififif"
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
-      tokens.toList,
-      ListBuffer[Token](
-        new Token("IF", "if"),
-        new Token("IF", "if"),
-        new Token("IF", "if"),
-      ).toList
+      )
     )
   }
 
@@ -54,7 +39,7 @@ class ScannerTest extends FunSuite {
     val tokens = scanner.scan(src)
     ScannerTestUtils.assertTokenListsMatch(
       tokens.toList,
-      ListBuffer[Token](
+      List(
         new Token("INT", "1221"),
         new Token("SEP", ";"),
         new Token("ID", "aa"),
@@ -72,7 +57,7 @@ class ScannerTest extends FunSuite {
         new Token("SEP", ";"),
         new Token("IF", "if"),
         new Token("SEP", ";"),
-      ).toList
+      )
     )
   }
 
@@ -92,7 +77,7 @@ class ScannerTest extends FunSuite {
     val tokens = scanner.scan(src)
     ScannerTestUtils.assertTokenListsMatch(
       tokens.toList,
-      ListBuffer[Token](
+      List(
         new Token("SPACE", " "),
         new Token("LPAREN", "("),
         new Token("NEWLINE", "\n"),
@@ -118,7 +103,7 @@ class ScannerTest extends FunSuite {
         new Token("SPACE", " "),
         new Token("SPACE", " "),
         new Token("SPACE", " "),
-      ).toList
+      )
     )
   }
 
@@ -138,13 +123,13 @@ class ScannerTest extends FunSuite {
     val tokens = scanner.scan(src)
     ScannerTestUtils.assertTokenListsMatch(
       Token.filterTokensByType(tokens.toList, Set("NEWLINE", "SPACE")),
-      ListBuffer[Token](
+      List(
         new Token("LPAREN", "("),
         new Token("RPAREN", ")"),
         new Token("LPAREN", "("),
         new Token("RPAREN", ")"),
         new Token("RPAREN", ")"),
-      ).toList
+      )
     )
   }
 

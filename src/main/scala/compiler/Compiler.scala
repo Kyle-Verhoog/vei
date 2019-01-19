@@ -11,6 +11,7 @@ object Compiler {
   def main(args: Array[String]) {
     //serialize()
     //generateTableLR1()
+
     if (args.length.equals(0)) {
       println("Must supply a file!")
       //System.exit(1) // TODO error codes?
@@ -34,7 +35,7 @@ object Compiler {
 
       println("Parsed!")
     } catch {
-      case _: Exception => System.exit( 42)
+      case _: Exception => System.exit(42)
     }
     System.exit(0)
   }
