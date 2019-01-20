@@ -103,6 +103,11 @@ class RegexParseTestSuite extends FunSuite {
     assert(Regex.toPostfix(r) == "ab∪⁇")
   }
 
+  test("Not operator") {
+    val r = "a¬"
+    assert(Regex.toPostfix(r) == "a¬")
+  }
+
   test("All operators") {
     val r = "(1)+(2)*(3)?(4∪5)"
     assert(Regex.toPostfix(r) == "1⨁2⨂·3⁇·45∪·")
@@ -289,9 +294,56 @@ class RegexTestSuite extends FunSuite {
     assert(!re.matches("\"ab\"a"))
   }
 
+  test("Invalid not regex") {
+    assertThrows[RegexParseException](Regex.createEngine(s"(a|b)${Regex.NOT}"))
+    // TODO infinite loop:
+    // assertThrows[RegexParseException](Regex.createEngine(s"a${Regex.NOT}"))
+  }
+
+  test("Not regex") {
+    val re = Regex.createEngine(s"a${Regex.NOT}")
+    assert(!re.matches("a"))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
+    assert(re.matches("d"))
+    assert(re.matches("\n"))
+    assert(re.matches("\t"))
+  }
+
+  test("Not regex multi") {
+    val re = Regex.createEngine(s"b${Regex.NOT}c*")
+    assert(re.matches("accccc"))
+    assert(re.matches("a"))
+    assert(re.matches("acccc"))
+    assert(!re.matches("bccccc"))
+    assert(!re.matches("b"))
+    assert(re.matches("cccc"))
+  }
+
+  test("Not regex concat") {
+    var re = Regex.createEngine(s"(ab)${Regex.NOT}")
+    assert(re.matches("a"))
+    assert(re.matches("b"))
+    assert(re.matches("x"))
+    assert(!re.matches("ab"))
+    re = Regex.createEngine(s"c(ab)${Regex.NOT}")
+    assert(re.matches("ca"))
+    assert(re.matches("cb"))
+    assert(!re.matches("cab"))
+  }
+
+  test("Not regex concat with another expression") {
+    val re = Regex.createEngine(s"b${Regex.NOT}c*")
+    assert(re.matches("accccc"))
+    assert(re.matches("a"))
+    assert(re.matches("acccc"))
+    assert(!re.matches("bccccc"))
+    assert(!re.matches("b"))
+    assert(re.matches("cccc"))
+  }
+
   test("Large regex") {
     val re = Regex.createEngine("([a-z]|[A-Z]|_|$)([a-z]|[A-Z]|[0-9]|_|$)*")
-    println(re.dfa)
     assert(re.matches("ABSTRACT"))
   }
 
@@ -299,6 +351,53 @@ class RegexTestSuite extends FunSuite {
     val re = Regex.createEngine("a?")
     assert(re.matches(""))
     assert(re.matches("a"))
+    assert(!re.matches("b"))
+    assert(!re.matches("abbb"))
+  }
+
+  test("Zero-or-one two characters") {
+    var re = Regex.createEngine("ba?")
+    assert(re.matches("b"))
+    assert(re.matches("ba"))
+    re = Regex.createEngine("a?b")
+    assert(re.matches("b"))
+    assert(re.matches("ab"))
+  }
+
+  test("Zero-or-one with not character") {
+    val re = Regex.createEngine(s"a${Regex.NOT}?")
+    assert(re.matches(""))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
+  }
+
+  test("One-or-more with not character") {
+    val re = Regex.createEngine(s"a${Regex.NOT}*")
+    assert(re.matches(""))
+    assert(re.matches("b"))
+    assert(re.matches("c"))
+  }
+
+  test("Comment regex") {
+    val re = Regex.createEngine(s"<\\*(>\\*)${Regex.NOT}*\\*>")
+    assert(re.matches("<* comment *>"))
+    assert(re.matches("<* \n \t *>"))
+    assert(re.matches("<* \n \t *>"))
+  }
+
+  test("C comment regex") {
+    val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
+    assert(re.matches("/* comment */"))
+    assert(re.matches("/**/"))
+    assert(!re.matches("/**/ */"))
+    assert(!re.matches("/**/*/"))
+    assert(!re.matches("/* comment */ ljfdsk\nljkfdsadlkjfa"))
+    assert(!re.matches("something /* \n \t */ woah"))
+    assert(re.matches("/* \n \t */"))
+    // assert(re.matches(s""" <*
+    //      | comment
+    //      | *>
+    //    """.stripMargin))
   }
 }
 

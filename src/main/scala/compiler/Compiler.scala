@@ -41,7 +41,9 @@ object Compiler {
       println(ast)
       println("Converted to ast")
     } catch {
-      case _: Exception => System.exit(42)
+      case e: Exception =>
+        println(e)
+        System.exit(42)
     }
     System.exit(0)
   }
@@ -94,9 +96,10 @@ object Compiler {
           i += 1
         }
         i += 2 // remove ending star
+      } else {
+        parsedProg += input(i)
+        i += 1
       }
-      parsedProg += input(i)
-      i += 1
     }
     parsedProg
   }

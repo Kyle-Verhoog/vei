@@ -160,6 +160,9 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
     while (i < src.length()) {
       var c = src.charAt(i)
 
+      // println(s"""
+      //      | $i $c $curTokenVal
+      //    """.stripMargin)
       try {
         curDFA = curDFA.next(c.toString)
         curTokenVal += c
@@ -221,9 +224,10 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
       }
     }
 
-  if (dfa != curDFA) {
-    curDFA.getCurrentToken() // TODO HACK this will make it throw if not finish, since no tokens will exist
+    if (dfa != curDFA) {
+      curDFA
+        .getCurrentToken() // TODO HACK this will make it throw if not finish, since no tokens will exist
+    }
+    tokens
   }
- tokens
-}
 }

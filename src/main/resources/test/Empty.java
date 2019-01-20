@@ -11,8 +11,12 @@ public class Empty {
 
     // ientrasneiarsteinneirst/
 
+    /*
+    */// /*
     /* *  **srtrsrsttsrtsrstr
-     *
+     // this is a test
+     /*     */// /*
+    /*
      *
      * *     *    */
 
@@ -33,7 +37,7 @@ public class Empty {
             String nonterm = readLine(in, "Expecting a non-terminal").intern();
         }
 
-        line = readLine(in, "Expecting number of productions");
+        line = readLine(in, "Expect/*ing number of productions");
         int nprods = toInt(line, "number of productions");
         for(int i = 0; i < nprods; i=i+1) {
             Production prod = readProduction(readLine(in, "Expecting production"), grammar);

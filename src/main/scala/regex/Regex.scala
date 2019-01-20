@@ -58,6 +58,7 @@ object Regex {
   val SPACE = "☃"
   val TAB = "☘"
   val DOT = "ø"
+  val NOT = "¬"
 
   val escapeMapping = Map(
     ALT -> "|",
@@ -106,7 +107,6 @@ object Regex {
 
   def replaceDot(regex: String): String = {
     val allChars = (0 to 127).map(i => i.toChar.toString).mkString(ALT)
-
     regex.replaceAllLiterally(DOT, LPAREN + allChars + RPAREN)
   }
 
@@ -201,7 +201,7 @@ object Regex {
           nalt = par.nalt
           natom = par.natom
           natom += 1
-        case o if o == ZOM || o == OOM || o == ZOO =>
+        case o if o == ZOM || o == OOM || o == ZOO || o == NOT =>
           if (natom == 0) {
             throw RegexParseException(
               s"'$regex': missing operand for ${escapeMapping(o)} operator at position $x")
@@ -256,6 +256,83 @@ object Regex {
       val p = postfix.charAt(x).toString
 
       p match {
+        case NOT =>
+          /**
+            * The NOT operator can only be applied to concatenated atoms.
+            *
+            * Visually:
+            *          a      b      ...
+            * (start) -> (1) -> (2) ----> (())
+            *
+            * Becomes
+            *            Σ\{a}
+            * (start) -----------> (())
+                    |  a         b        ...
+            *       +-----> (()) -> (()) -----> ()
+            */
+          val e = stack.remove(stack.length - 1)
+
+          val startState = NFA.newState()
+          var states = Set[NFA.T]()
+          var acceptingStates = Set[NFA.T]()
+          val startStates = Set(startState)
+          val transitionTable =
+            new mutable.HashMap[(NFA.T, String), Set[NFA.T]]()
+
+          // Current state when looping through e, the old NFA
+          var eCurState = e.startStates.head
+          // Current state of the new NFA
+          var newCurState = startState
+
+          // TODO:
+          // This loop can spin infinitely if there are circular transitions
+          while (e.transitionTable.exists(t => t._1._1 == eCurState)) {
+            val transitions = e.transitionTable.filter(t => {
+              t._1._1 == eCurState
+            })
+            if (transitions.size != 1) {
+              throw RegexParseException(
+                s"$NOT operator can only be applied to concatenated atoms")
+            }
+
+            val transition = transitions.head
+            val token = transition._1._2
+            val eNextStates = transition._2
+
+            if (eNextStates.size > 1) {
+              throw RegexParseException(
+                s"$NOT operator can only be applied to concatenated atoms")
+            }
+
+            val eNextState = eNextStates.head
+
+            // Handle the start case matching all other characters
+            if (eCurState == e.startStates.head) {
+              val nextState = NFA.newState()
+              acceptingStates = acceptingStates | Set(nextState)
+              states = states | Set(nextState)
+              for (c <- e.alphabet - token) {
+                transitionTable += ((newCurState, c) -> Set(nextState))
+              }
+            } else {
+              acceptingStates = acceptingStates | Set(newCurState)
+            }
+
+            val newNextState = NFA.newState()
+            states = states | Set(newNextState)
+            transitionTable += ((newCurState, token) -> Set(newNextState))
+            eCurState = eNextState
+            newCurState = newNextState
+          }
+
+          var nfa = NFA.newStringNFA(
+            states = states,
+            acceptingStates = acceptingStates,
+            startStates = startStates,
+            transitionTable = transitionTable,
+          )
+
+          stack += nfa
         case ZOM =>
           val e = stack.remove(stack.length - 1)
 
@@ -277,11 +354,15 @@ object Regex {
           }
           stack += nfa
         case ZOO =>
+          /**
+            *   [e1]
+            *          ε
+            *   ((s)) -> [e1]
+            */
           val e = stack.remove(stack.length - 1)
 
           val s = NFA.newState()
-          val newE = NFA.newState()
-          val states = Set(s) | Set(newE) | e.states
+          val states = Set(s) | e.states
           val startStates = Set(s)
           val acceptingStates = Set(s) | e.acceptingStates
 
@@ -292,9 +373,7 @@ object Regex {
             e.transitionTable
           )
 
-          nfa = nfa.addTransitions((newE, "ε"), e.startStates)
           nfa = nfa.addTransitions((s, "ε"), e.startStates)
-          nfa = nfa.addTransitions((s, p), Set(newE))
           stack += nfa
         case ALT =>
           val e2 = stack.remove(stack.length - 1)
