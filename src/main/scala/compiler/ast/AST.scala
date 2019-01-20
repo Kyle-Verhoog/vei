@@ -12,7 +12,7 @@ object AST {
     // adds sibling to end of sibling list and sets siblings parent accordingly
     def addSiblingToEnd(sib: AST): Unit = {
       rightSibling match {
-        case Some(node) => node.addSiblingToEnd(sib)
+        case Some(node) => rightSibling.get.addSiblingToEnd(sib)
         case None => {
           sib.parent = parent
           rightSibling = Some(sib)
@@ -31,9 +31,8 @@ object AST {
     }
 
     override def toString = {
-      s""" (AST Type): $getClass)
-        $rightSibling
-        $leftChild
+      s"""\t$getClass $rightSibling
+        \t$leftChild
        """.stripMargin
     }
   }
@@ -42,6 +41,8 @@ object AST {
                        parent: Option[AST] = None): AST = {
     val children = parseTree.children
     var ast: AST = new AST()
+
+    println(parseTree.token.tokenType)
 
     // build new node
     parseTree.token.tokenType match {

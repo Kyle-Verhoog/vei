@@ -1,5 +1,6 @@
 package compiler
 
+import compiler.ast.AST
 import compiler.parser.Parser
 import compiler.scanner.{Scanner, Token}
 import jlalr.Jlalr1
@@ -17,6 +18,7 @@ object Compiler {
       //System.exit(1) // TODO error codes?
     }
 
+    /** ? */
     try {
       //val file = Source.fromFile(args(0)).mkString
       val file = Source.fromResource("test/Empty.java").mkString
@@ -31,9 +33,13 @@ object Compiler {
       println("Parsing...")
       val cfg =
         Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-      Parser.parse(cfg, tokens)
+      val parseTree = Parser.parse(cfg, tokens)
+      println("Parsed")
 
-      println("Parsed!")
+      println("Converting to ast....")
+      val ast = AST.convertParseTree(parseTree(1))
+      println(ast)
+      println("Converted to ast")
     } catch {
       case _: Exception => System.exit(42)
     }

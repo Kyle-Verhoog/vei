@@ -64,7 +64,7 @@ object Parser {
         // TODO should childNodes be reversed?
         // TODO something other than non-leaf might be useful
         nodeStack.append(
-          new ParseTreeNode[Token](new Token(A, "non-leaf"), childNodes))
+          new ParseTreeNode[Token](new Token(A, "non-leaf"), childNodes.reverse))
 
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg
               .shiftActions(stateStack.last)
