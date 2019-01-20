@@ -377,6 +377,28 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches("b"))
     assert(re.matches("c"))
   }
+
+  test("Comment regex") {
+    val re = Regex.createEngine(s"<\\*(>\\*)${Regex.NOT}*\\*>")
+    assert(re.matches("<* comment *>"))
+    assert(re.matches("<* \n \t *>"))
+    assert(re.matches("<* \n \t *>"))
+  }
+
+  test("C comment regex") {
+    val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
+    assert(re.matches("/* comment */"))
+    assert(re.matches("/**/"))
+    assert(!re.matches("/**/ */"))
+    assert(!re.matches("/**/*/"))
+    assert(!re.matches("/* comment */ ljfdsk\nljkfdsadlkjfa"))
+    assert(!re.matches("something /* \n \t */ woah"))
+    assert(re.matches("/* \n \t */"))
+    // assert(re.matches(s""" <*
+    //      | comment
+    //      | *>
+    //    """.stripMargin))
+  }
 }
 
 class RegexUtils extends FunSuite {

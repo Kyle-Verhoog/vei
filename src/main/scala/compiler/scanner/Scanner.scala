@@ -160,6 +160,9 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
     while (i < src.length()) {
       var c = src.charAt(i)
 
+      // println(s"""
+      //      | $i $c $curTokenVal
+      //    """.stripMargin)
       try {
         curDFA = curDFA.next(c.toString)
         curTokenVal += c
