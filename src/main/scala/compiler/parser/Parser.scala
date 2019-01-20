@@ -15,9 +15,10 @@ object Parser {
       val reduceActions: mutable.HashMap[Int, mutable.HashMap[String, Int]]
   )
 
-  class Tree[T](
+  class ParseTreeNode[T](
       val token: T,
-      val children: ListBuffer[Tree[T]] = ListBuffer[Tree[T]]()
+      val children: ListBuffer[ParseTreeNode[T]] =
+        ListBuffer[ParseTreeNode[T]]()
   ) {
     def inorderLeafValues(): ListBuffer[T] = {
       if (children.isEmpty) return ListBuffer(token)
@@ -26,17 +27,18 @@ object Parser {
     }
   }
 
-  def parse(cfg: CFG,
-            inputTokens: ListBuffer[Token]): ListBuffer[Tree[Token]] = {
+  def parse(
+      cfg: CFG,
+      inputTokens: ListBuffer[Token]): ListBuffer[ParseTreeNode[Token]] = {
     var tokens = inputTokens
-    var nodeStack = ListBuffer[Tree[Token]]()
+    var nodeStack = ListBuffer[ParseTreeNode[Token]]()
     var stateStack = ListBuffer[Int]()
 
     // start algorithm
     stateStack.append(cfg.shiftActions(0)(tokens.head.tokenType)) // push the first state
 
     // push tokens.head to node stack and pop it from tokens
-    nodeStack.append(new Tree[Token](tokens.head))
+    nodeStack.append(new ParseTreeNode[Token](tokens.head))
     tokens = tokens.takeRight(tokens.length - 1)
 
     for (i <- tokens.indices) {
@@ -52,7 +54,7 @@ object Parser {
         val gamma = prodRule.takeRight(prodRule.length - 1)
 
         // pop |gamma| child nodes, and |gama| states
-        val childNodes = ListBuffer[Tree[Token]]()
+        val childNodes = ListBuffer[ParseTreeNode[Token]]()
         for (i <- gamma.indices) {
           childNodes.append(nodeStack.last)
           nodeStack = nodeStack.take(nodeStack.length - 1)
@@ -61,7 +63,8 @@ object Parser {
 
         // TODO should childNodes be reversed?
         // TODO something other than non-leaf might be useful
-        nodeStack.append(new Tree[Token](new Token(A, "non-leaf"), childNodes))
+        nodeStack.append(
+          new ParseTreeNode[Token](new Token(A, "non-leaf"), childNodes))
 
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg
               .shiftActions(stateStack.last)
@@ -73,14 +76,15 @@ object Parser {
         stateStack.append(cfg.shiftActions(stateStack.last)(A))
       }
 
-      nodeStack.append(new Tree[Token](token))
+      nodeStack.append(new ParseTreeNode[Token](token))
 
       // Error check
       if (!cfg.shiftActions.contains(stateStack.last) || !cfg
             .shiftActions(stateStack.last)
             .contains(token.tokenType)) {
-        println("Cant find shift transition from state: " + stateStack.last + " on token: " + token)
-        println("Prev 10 tokens: " + tokens.slice(i-10, i))
+        println(
+          "Cant find shift transition from state: " + stateStack.last + " on token: " + token)
+        println("Prev 10 tokens: " + tokens.slice(i - 10, i))
         throw new RuntimeException("bad parsing 2") // TODO better error
       }
 
