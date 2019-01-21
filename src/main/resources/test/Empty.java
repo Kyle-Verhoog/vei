@@ -36,4 +36,21 @@ public class Empty {
         }
         return grammar;
     }
+
+    public static void test_if_statements() {
+        int i = 1;
+        int j = 2;
+
+        if (i == j)
+            return i;
+
+        if (i == j)
+            return i;
+        else
+            return j;
+
+        if (i == j) {
+        }
+    }
 }
+

@@ -1,7 +1,5 @@
 package compiler.ast
 
-import compiler.ast.AST.AST
-
 class Assignment extends AST {
 
   def getLHS: AST = {

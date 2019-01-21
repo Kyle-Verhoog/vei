@@ -1,7 +1,15 @@
 package compiler.ast
 
-import compiler.ast.AST.AST
+import compiler.parser.Parser.ParseTreeNode
+import compiler.scanner.Token
 
-class ClassDeclaration(modifiers: List[String], name: String) extends AST {
-
+object ClassDeclaration {
+  def fromParseTreeNode(modifiers: ParseTreeNode[Token],
+                        identifier: ParseTreeNode[Token]): ClassDeclaration = {
+    new ClassDeclaration(modifiers = AST.getValueList(modifiers),
+                         identifier = AST.getValue(identifier))
+  }
 }
+
+class ClassDeclaration(modifiers: List[String], identifier: String)
+    extends AST {}

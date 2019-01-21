@@ -1,7 +1,18 @@
 package compiler.ast
 
-import compiler.ast.AST.AST
+import compiler.parser.Parser.ParseTreeNode
+import compiler.scanner.Token
 
-class InterfaceDeclaration extends AST {
-
+object InterfaceDeclaration {
+  def fromParseTreeNode(
+      modifiers: ParseTreeNode[Token],
+      identifier: ParseTreeNode[Token]): InterfaceDeclaration = {
+    new InterfaceDeclaration(
+      modifiers = AST.getValueList(modifiers),
+      identifier = AST.getValue(identifier)
+    )
+  }
 }
+
+class InterfaceDeclaration(modifiers: List[String], identifier: String)
+    extends AST {}
