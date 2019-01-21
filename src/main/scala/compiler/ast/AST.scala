@@ -65,6 +65,42 @@ object AST {
                     "assignment_expression") =>
             recurseOnChildren(parseTree, ast, List(0, 2))
         }
+      case "import_declaration" =>
+        parseTree.childrenTypes match {
+          case List("single_type_import_declaration") | List(
+                "type_import_on_demand_declaration") =>
+            ast = new ImportDeclaration()
+            recurseOnChildren(parseTree, ast, List(0))
+        }
+      case "import_declarations" =>
+        parseTree.childrenTypes match {
+          case List("import_declarations", "import_declaration") =>
+            recurseOnChildren(parseTree, ast, List(1))
+          case List() =>
+        }
+      case "package_declaration" =>
+        parseTree.childrenTypes match {
+          case List("PACKAGE", "name", ";") =>
+            ast = new PackageDeclaration()
+            recurseOnChildren(parseTree, ast, List(1))
+          case List() =>
+        }
+      case "interface_type_list" =>
+        parseTree.childrenTypes match {
+          case List("interface_type_list", ",", "interface_type") =>
+            recurseOnChildren(parseTree, ast, List(1))
+        }
+      case "class_body" =>
+        parseTree.childrenTypes match {
+          case List("{", "class_body_declarations", "}") =>
+            recurseOnChildren(parseTree, ast, List(1))
+        }
+      case "class_body_declarations" =>
+        parseTree.childrenTypes match {
+          case List("class_body_declarations", "class_body_declaration") =>
+            recurseOnChildren(parseTree, ast, List(0, 1))
+          case List() =>
+        }
       case "method_declaration" =>
         parseTree.childrenTypes match {
           case List("method_header", "method_body") =>
@@ -169,6 +205,7 @@ object AST {
       case "if_then_statement" =>
         parseTree.childrenTypes match {
           case List("IF", "(", "expression", ")", "statement") =>
+            ast = new IfStatement()
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
       case "if_then_else_statement" =>
@@ -191,6 +228,7 @@ object AST {
                     "statement_no_short_if",
                     "ELSE",
                     "statement_no_short_if") =>
+            ast = new IfStatement()
             recurseOnChildren(parseTree, ast, List(2, 4, 6))
         }
       case "for_statement" =>
@@ -212,16 +250,19 @@ object AST {
                                                     "for_update",
                                                     ")",
                                                     "statement") =>
+            ast = new ForStatement()
             recurseOnChildren(parseTree, ast, List(2, 4, 6, 8))
         }
       case "while_statement" =>
         parseTree.childrenTypes match {
           case List("WHILE", "(", "expression", ")", "statement") =>
+            ast = new WhileStatement()
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
       case "while_statement_no_short_if" =>
         parseTree.childrenTypes match {
           case List("WHILE", "(", "expression", ")", "statement_no_short_if") =>
+            ast = new WhileStatement()
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
       case "primary_no_new_array" => {
