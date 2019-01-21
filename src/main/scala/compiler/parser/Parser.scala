@@ -25,6 +25,17 @@ object Parser {
 
       children.flatMap(child => { child.inorderLeafValues() })
     }
+
+    def tokenType: String = {
+      token match {
+        case t: Token => t.tokenType
+        case _ => throw new RuntimeException("Cant get token type of non-token parse tree")
+      }
+    }
+
+    def childrenTypes: List[String] = {
+      children.map(child => child.tokenType).toList
+    }
   }
 
   def parse(
@@ -64,7 +75,8 @@ object Parser {
         // TODO should childNodes be reversed?
         // TODO something other than non-leaf might be useful
         nodeStack.append(
-          new ParseTreeNode[Token](new Token(A, "non-leaf"), childNodes.reverse))
+          new ParseTreeNode[Token](new Token(A, "non-leaf"),
+                                   childNodes.reverse))
 
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg
               .shiftActions(stateStack.last)

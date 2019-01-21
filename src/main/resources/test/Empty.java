@@ -9,17 +9,6 @@ public class Empty {
         System.out.println("Helloworld");
     }
 
-    // ientrasneiarsteinneirst/
-
-    /*
-    */// /*
-    /* *  **srtrsrsttsrtsrstr
-     // this is a test
-     /*     */// /*
-    /*
-     *
-     * *     *    */
-
     public static int toInt(String line, String msg) {
         return new Integer(line);
     }
@@ -37,7 +26,7 @@ public class Empty {
             String nonterm = readLine(in, "Expecting a non-terminal").intern();
         }
 
-        line = readLine(in, "Expect/*ing number of productions");
+        line = readLine(in, "Expecting number of productions");
         int nprods = toInt(line, "number of productions");
         for(int i = 0; i < nprods; i=i+1) {
             Production prod = readProduction(readLine(in, "Expecting production"), grammar);

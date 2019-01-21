@@ -48,7 +48,10 @@ object AST {
     parseTree.token.tokenType match {
       case "compilation_unit" => {
         ast = new CompilationUnit
-        recurseOnChildren(parseTree, ast)
+
+        parseTree.childrenTypes match {
+          case List("package_declaration", "import_declarations", "type_declaration") => recurseOnChildren(parseTree, ast)
+        }
       }
       case "type_declaration" => {
         ast = new TypeDeclaration
@@ -61,7 +64,10 @@ object AST {
       case "field_declaration" => {
         ast = new FieldDeclaration(getValueList(children.head),
                                        getValue(children(1)))
-        recurseOnChildren(parseTree, ast, List(2))
+
+        parseTree.childrenTypes match {
+          case List("modifiers", "type", "variable_declarator", ";") => recurseOnChildren(parseTree, ast, List(2))
+        }
       }
       case "variable_declarator" => {
         ast = new VariableDeclarator(getValue(children.head))
