@@ -324,8 +324,7 @@ object AST {
           case List("BOOLEAN_LITERAL") =>
             ast = new BooleanLiteral(getValue(children.head).toBoolean)
           case List("CHARACTER_LITERAL") =>
-            ast = new CharacterLiteral(
-              getValue(children.head).asInstanceOf[Char])
+            ast = new CharacterLiteral(getValue(children.head))
           case List("STRING_LITERAL") =>
             ast = new StringLiteral(getValue(children.head))
           case List("NULL_LITERAL") =>

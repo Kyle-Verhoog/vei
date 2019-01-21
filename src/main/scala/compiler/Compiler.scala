@@ -12,16 +12,40 @@ object Compiler {
   def main(args: Array[String]) {
     //serialize()
     //generateTableLR1()
+    //runActual(args)
+    runTestFile()
+  }
 
+  def runTestFile(): Unit = {
+    val file = Source.fromResource("test/Empty.java").mkString
+    println("Read in file: " + file)
+    println("Scanning...")
+    val tokens = scanWithoutSerializing(file)
+
+    // add BOF and EOF for parsing
+    tokens.prepend(new Token("BOF", "bof"))
+    tokens.append(new Token("EOF", "eof"))
+
+    println("Parsing...")
+    val cfg =
+      Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
+    val parseTree = Parser.parse(cfg, tokens)
+    println("Parsed")
+
+    println("Converting to ast....")
+    val ast = AST.convertParseTree(parseTree(1))
+    println(ast)
+    println("Converted to ast")
+  }
+
+  def runActual(args: Array[String]): Unit = {
     if (args.length.equals(0)) {
       println("Must supply a file!")
-      //System.exit(1) // TODO error codes?
+      System.exit(1) // TODO error codes?
     }
 
-    /** ? */
     try {
-      //val file = Source.fromFile(args(0)).mkString
-      val file = Source.fromResource("test/Empty.java").mkString
+      val file = Source.fromFile(args(0)).mkString
       println("Read in file: " + file)
       println("Scanning...")
       val tokens = scanWithoutSerializing(file)

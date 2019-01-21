@@ -2,6 +2,7 @@ package compiler.ast.literals
 
 import compiler.ast.AST
 
-class CharacterLiteral(value: Char) extends AST {
+// TODO find a nice way to convert strings to characters, or just manually do something weird
+class CharacterLiteral(value: String) extends AST {
 
 }

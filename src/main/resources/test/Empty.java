@@ -4,9 +4,14 @@ import jlalr.Production;
 
 import java.util.Scanner;
 
+// testing the // single
+// line
 public class Empty {
+    // comments  public static void main(String[] args)
+
     public static void main(String[] args) {
         int i = 0;
+        char a = 'a';
         String kevin = "kevin";
         boolean b = true;
         String test = null;
