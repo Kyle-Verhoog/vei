@@ -70,7 +70,7 @@ public class Empty {
     // TODO(test case): Not allowed - abstract static
     // abstract final void method() { }
     // TODO(test case): Not allowed - static final
-    static final void method() { }
+    // static final void method() { }
 
     // TODO(test case): Not allowed - constructor does not have name of class
     // method() {}
