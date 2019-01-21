@@ -6,10 +6,6 @@ import compiler.scanner.Token
 object MethodHeader {
   def fromParseTreeNode(modifiers: ParseTreeNode[Token],
                         ttype: ParseTreeNode[Token]): MethodHeader = {
-    // if (ttype.token.tokenType == "VOID") {
-    //   ttype =
-    // }
-
     new MethodHeader(
       modifiers = AST.getValueList(modifiers),
       ttype = AST.getValue(ttype)
@@ -17,4 +13,17 @@ object MethodHeader {
   }
 }
 
-class MethodHeader(modifiers: List[String], ttype: String) extends AST {}
+class MethodHeader(modifiers: List[String], ttype: String) extends AST {
+  // method validation
+  if (modifiers.contains("abstract")) {
+    if (modifiers.contains("static") || modifiers.contains("final")) {
+      throw SemanticException(
+        "An abstract method cannot be 'static' or 'final'.")
+    }
+  }
+  if (modifiers.contains("static")) {
+    if (modifiers.contains("final")) {
+      throw SemanticException("A static method cannot be 'final'.")
+    }
+  }
+}

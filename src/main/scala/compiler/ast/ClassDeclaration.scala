@@ -12,4 +12,9 @@ object ClassDeclaration {
 }
 
 class ClassDeclaration(modifiers: List[String], identifier: String)
-    extends AST {}
+    extends AST {
+
+  if (modifiers.contains("abstract") && modifiers.contains("final")) {
+    throw SemanticException("A class cannot be both 'abstract' and 'final'")
+  }
+}
