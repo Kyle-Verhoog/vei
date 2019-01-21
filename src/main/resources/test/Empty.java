@@ -6,6 +6,10 @@ import java.util.Scanner;
 
 public class Empty {
     public static void main(String[] args) {
+        int i = 0;
+        String kevin = "kevin";
+        boolean b = true;
+        String test = null;
         System.out.println("Helloworld");
     }
 
