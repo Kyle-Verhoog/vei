@@ -224,6 +224,134 @@ object AST {
           case List("WHILE", "(", "expression", ")", "statement_no_short_if") =>
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
+      case "primary_no_new_array" => {
+        parseTree.childrenTypes match {
+          case List("literal") | List("THIS") | List(
+                "class_instance_creation_expression") | List("field_access") |
+              List("method_invocation") | List("array") =>
+            recurseOnChildren(parseTree, parent.get)
+          case List("(", "expression", ")") =>
+            recurseOnChildren(parseTree, parent.get, List(1))
+        }
+      }
+      case "class_instance_creation_expression" => {
+        parseTree.childrenTypes match {
+          case List("NEW", "class_type", "(", "argument_list", ")") =>
+            ast = new ClassInstanceCreation(getValue(children(1)))
+            recurseOnChildren(parseTree, parent.get, List(3))
+        }
+      }
+      case "argument_list" => {
+        parseTree.childrenTypes match {
+          case List() =>
+          case List("argument_list", ",", "expression") =>
+            ast = new ArgumentList()
+            recurseOnChildren(parseTree, ast, List(0, 2))
+          case List("expression") =>
+            ast = new ArgumentList()
+            recurseOnChildren(parseTree, ast, List(0))
+        }
+      }
+      case "array_creation_expression" => {
+        parseTree.childrenTypes match {
+          case List("NEW", "primitive_type", "dim_exprs", "dims_opt") |
+              List("NEW", "class_or_interface_type", "dim_exprs", "dims_opt") =>
+            ast = new ArrayCreationExpression(getValue(children(1)))
+            recurseOnChildren(parseTree, ast, List(2, 3))
+        }
+      }
+      case "dim_exprs" => {
+        // TODO figure out if multi dimensions are needed, if not simplify
+        throw new RuntimeException("TODO")
+      }
+      case "dim_expr" => {
+        // TODO figure out if multi dimensions are needed, if not simplify
+        throw new RuntimeException("TODO")
+      }
+      case "dims" => {
+        // TODO figure out if multi dimensions are needed, if not simplify
+        throw new RuntimeException("TODO")
+      }
+      case "dims_opt" => {
+        // TODO figure out if multi dimensions are needed, if not simplify
+        throw new RuntimeException("TODO")
+      }
+      case "field_access" => {
+        parseTree.childrenTypes match {
+          case List("primary", ".", "IDENTIFIER") =>
+            ast = new FieldAccess(getValue(children(2)))
+            recurseOnChildren(parseTree, ast, List(0))
+        }
+      }
+      case "method_invocation" => {
+        parseTree.childrenTypes match {
+          case List("name", "(", "argument_list", ")") =>
+            ast = new MethodInvocation()
+            recurseOnChildren(parseTree, ast, List(0))
+          case List("primary", ".", "IDENTIFIER", "(", "argument_list", ")") =>
+            ast = new MethodInvocation(Some(getValue(children(2))))
+            recurseOnChildren(parseTree, ast, List(0, 4))
+        }
+      }
+      case "array_access" => {
+        parseTree.childrenTypes match {
+          case List("name", "[", "expression", "]") =>
+            ast = new ArrayAccess(Some(getValue(children(0))))
+            recurseOnChildren(parseTree, ast, List(2))
+          case List("primary_no_new_array", "[", "expression", "]") =>
+            ast = new ArrayAccess(None)
+            recurseOnChildren(parseTree, ast, List(0, 2))
+        }
+      }
+      case "conditional_expression" => {
+        parseTree.childrenTypes match {
+          case List("conditional_or_expression") =>
+            recurseOnChildren(parseTree, parent.get, List(0))
+          case List("conditional_or_expression",
+                    "?",
+                    "expression",
+                    ":",
+                    "conditional_expression") =>
+            ast = new ConditionalExpression()
+            recurseOnChildren(parseTree, ast, List(2, 4))
+        }
+      }
+      // TODO maybe case match like the rest, but im lazy now :)
+      case "conditional_or_expression" | "conditional_and_expression" |
+          "inclusive_or_expression" | "exclusive_or_expression" |
+          "and_expression" | "equality_expression" | "relational_expression" |
+          "shift_expression" | "additive_expression" |
+          "multiplicative_expression" | "unary_expression" => {
+        // TODO evaluate this approah
+        if (children.isEmpty) {
+          // TODO nothing to do? should never happen, throw?
+          throw new RuntimeException("what is going on ???")
+        } else if (children.length == 1) {
+          recurseOnChildren(parseTree, parent.get, List(0))
+        } else if (children.length == 2) {
+          ast = new GeneralExpression(Some(getValue(children(0))))
+          recurseOnChildren(parseTree, ast, List(1))
+        } else if (children.length == 3) {
+          ast = new GeneralExpression(Some(getValue(children(1))))
+          recurseOnChildren(parseTree, ast, List(0, 2))
+        }
+      }
+      case "unary_expression_not_plus_minus" => {
+        parseTree.childrenTypes match {
+          case List("postfix_expression") | List("cast_expression") =>
+            recurseOnChildren(parseTree, parent.get)
+          case List("~ unary_expression") | List("~ unary_expression") => {
+            recurseOnChildren(parseTree, ast, List(1))
+          }
+        }
+      }
+      case "postfix_expression" => {
+        parseTree.childrenTypes match {
+          case List("primary") | List("name") =>
+            recurseOnChildren(parseTree, parent.get)
+        }
+      }
+      case "cast_expression" => {} // TODO
       case _ => {
         children.length match {
           case 0 => ast = new AST()
