@@ -50,32 +50,59 @@ object AST {
         ast = new CompilationUnit
 
         parseTree.childrenTypes match {
-          case List("package_declaration", "import_declarations", "type_declaration") => recurseOnChildren(parseTree, ast)
+          case List("package_declaration",
+                    "import_declarations",
+                    "type_declaration") =>
+            recurseOnChildren(parseTree, ast)
         }
       }
       case "type_declaration" => {
         ast = new TypeDeclaration
-        recurseOnChildren(parseTree, ast)
-      }
-      case "class_declaration" => {
-        ast = new ClassDeclaration(getValue(children(2)))
-        recurseOnChildren(parseTree, ast, List(5))
-      }
-      case "field_declaration" => {
-        ast = new FieldDeclaration(getValueList(children.head),
-                                       getValue(children(1)))
 
         parseTree.childrenTypes match {
-          case List("modifiers", "type", "variable_declarator", ";") => recurseOnChildren(parseTree, ast, List(2))
+          case List("class_declaration") | List("interface_declaration") =>
+            recurseOnChildren(parseTree, ast)
+          case List(";") | List() =>
+        }
+      }
+      case "class_declaration" => {
+        parseTree.childrenTypes match {
+          case List("modifiers",
+                    "CLASS",
+                    "IDENTIFIER",
+                    "super",
+                    "interfaces",
+                    "class_body") =>
+            ast = new ClassDeclaration(getValueList(children(0)),
+                                       getValue(children(2)))
+            recurseOnChildren(parseTree, ast, List(5))
+        }
+      }
+      case "field_declaration" => {
+        parseTree.childrenTypes match {
+          case List("modifiers", "type", "variable_declarator", ";") =>
+            ast = new FieldDeclaration(getValueList(children.head),
+                                       getValue(children(1)))
+            recurseOnChildren(parseTree, ast, List(2))
         }
       }
       case "variable_declarator" => {
         ast = new VariableDeclarator(getValue(children.head))
-        recurseOnChildren(parseTree, ast, List(2))
+
+        parseTree.childrenTypes match {
+          case List("variable_declarator_id") =>
+          case List("variable_declarator_id", "=", "variable_initializer") =>
+            recurseOnChildren(parseTree, ast, List(2))
+        }
       }
       case "assignment" => {
         ast = new Assignment()
-        recurseOnChildren(parseTree, ast, List(0,2))
+        parseTree.childrenTypes match {
+          case List("left_hand_side",
+                    "assignment_operator",
+                    "assignment_expression") =>
+            recurseOnChildren(parseTree, ast, List(0, 2))
+        }
       }
       case _ => {
         children.length match {
@@ -134,5 +161,9 @@ object AST {
         convertParseTree(parentParsTree.children(i), Some(parentAST))
       )
     })
+  }
+
+  def throws(): Unit = {
+    throw new RuntimeException("Unmatched children!")
   }
 }
