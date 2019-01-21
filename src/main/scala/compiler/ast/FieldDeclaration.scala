@@ -14,4 +14,8 @@ object FieldDeclaration {
 }
 
 // TODO determine how we want to handle modifiers, type and stuff
-class FieldDeclaration(modifiers: List[String], fieldType: String) extends AST {}
+class FieldDeclaration(modifiers: List[String], fieldType: String) extends AST {
+  if (modifiers.contains("final")) {
+    throw SemanticException("No field can be 'final'.")
+  }
+}

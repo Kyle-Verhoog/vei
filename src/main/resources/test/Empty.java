@@ -6,6 +6,9 @@ import java.util.Scanner;
 
 // testing the // single
 // line
+
+// TODO(test case): Not allowed
+// abstract final class Empty {
 public class Empty {
     // comments  public static void main(String[] args)
 
@@ -61,5 +64,15 @@ public class Empty {
         if (i == j) {
         }
     }
+
+    // TODO(test case): Not allowed - abstract static
+    // abstract static void method() { }
+    // TODO(test case): Not allowed - abstract static
+    // abstract final void method() { }
+    // TODO(test case): Not allowed - static final
+    static final void method() { }
+
+    // TODO(test case): Not allowed - constructor does not have name of class
+    // method() {}
 }
 

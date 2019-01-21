@@ -160,6 +160,7 @@ object AST {
             recurseOnChildren(parseTree, parent.get, List(0, 2))
           case List("formal_parameter") =>
             recurseOnChildren(parseTree, parent.get, List(0))
+          case List() =>
         }
       case "formal_parameter" =>
         parseTree.childrenTypes match {
@@ -176,8 +177,8 @@ object AST {
       case "constructor_declarator" =>
         parseTree.childrenTypes match {
           case List("simple_name", "(", "formal_parameter_list", ")") =>
-            ast = new ConstructorDeclarator()
-            recurseOnChildren(parseTree, ast, List(0, 2))
+            ast = ConstructorDeclarator.fromParseTreeNode(children.head)
+            recurseOnChildren(parseTree, ast, List(2))
         }
       case "interface_declaration" =>
         parseTree.childrenTypes match {
