@@ -83,16 +83,6 @@ object Regex {
         val range =
           (regex.charAt(i + 1) to regex.charAt(i + 3))
             .map(ch => ch.toString)
-            // have to escape characters produced by the range
-            .map {
-              case "(" => "\\("
-              case ")" => "\\)"
-              case "+" => "\\+"
-              case "*" => "\\*"
-              case "?" => "\\?"
-              case "|" => "\\|"
-              case x   => x
-            }
             .mkString(ALT)
         processedRegex += LPAREN + range + RPAREN
         i += 4
@@ -138,6 +128,7 @@ object Regex {
   def preProcess(regex: String): String = {
     val unicodeRegex = addUnicode(regex)
     val rangedRegex = expandRanges(unicodeRegex)
+    //println(replaceDot(rangedRegex))
     replaceDot(rangedRegex)
   }
 

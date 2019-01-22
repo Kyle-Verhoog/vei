@@ -10,15 +10,15 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    //serialize()
+    serialize()
     //generateTableLR1()
     //runActual(args)
-    runTestFile()
+    //runTestFile()
   }
 
-  def runTestFile(): Unit = {
-    val file = Source.fromResource("test/Empty.java").mkString
-    println("Read in file: " + file)
+  def runTestFile(testFile: String = "test/Empty.java"): Unit = {
+    val file = Source.fromResource(testFile).mkString
+    println("Running file: " + testFile)
     println("Scanning...")
     val tokens = scanWithoutSerializing(file)
 
@@ -30,12 +30,9 @@ object Compiler {
     val cfg =
       Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
     val parseTree = Parser.parse(cfg, tokens)
-    println("Parsed")
 
     println("Converting to ast....")
     val ast = AST.convertParseTree(parseTree(1))
-    println(ast)
-    println("Converted to ast")
   }
 
   def runActual(args: Array[String]): Unit = {
@@ -58,12 +55,10 @@ object Compiler {
       val cfg =
         Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
       val parseTree = Parser.parse(cfg, tokens)
-      println("Parsed")
 
       println("Converting to ast....")
       val ast = AST.convertParseTree(parseTree(1))
       println(ast)
-      println("Converted to ast")
     } catch {
       case e: Exception =>
         println(e)
@@ -92,7 +87,7 @@ object Compiler {
       fileContents: String = Source.fromResource("test/Empty.java").mkString)
     : ListBuffer[Token] = {
     val fileSansCOmments = removeComments(fileContents)
-    println("without " + fileSansCOmments)
+    //println("without " + fileSansCOmments)
 
     val scan = new Scanner()
     scan

@@ -385,6 +385,24 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches("<* \n \t *>"))
   }
 
+  test("negative and non negative numbers") {
+    val re = Regex.createEngine(s"-?(0|((1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*))")
+    assert(re.matches("123"))
+    assert(re.matches("0"))
+    assert(re.matches("-142"))
+  }
+
+  test("special characters in char") {
+    val re = Regex.createEngine(s"'[!-a]*'")
+    assert(re.matches("'*'"))
+    assert(re.matches("')'"))
+    assert(re.matches("'('"))
+    assert(re.matches("']'"))
+    assert(re.matches("'['"))
+    assert(re.matches("'?'"))
+    assert(re.matches("'+'"))
+  }
+
   test("C comment regex") {
     val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
     assert(re.matches("/* comment */"))

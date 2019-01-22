@@ -10,4 +10,14 @@ object Joos1WTestUtils {
       .distinct
       .toList
   }
+
+  def marmosetTestFiles(assignmentVersion: String): List[String] = {
+    Source
+      .fromResource("test/marmoset/" + assignmentVersion)
+      .mkString
+      .split('\n')
+      .map(s => s.split('.')(0))
+      .distinct
+      .toList
+  }
 }

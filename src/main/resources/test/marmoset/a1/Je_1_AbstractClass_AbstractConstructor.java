@@ -3,6 +3,7 @@
 // JAVAC:UNKNOWN
 /**
  * Parser/weeder:
+ * \]
  * - A constructor must not be abstract.
  */
 public abstract class Je_1_AbstractClass_AbstractConstructor{

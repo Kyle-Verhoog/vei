@@ -1,5 +1,5 @@
 package compiler.ast
 
-class ClassInstanceCreation(classType: String) extends AST {
+class ClassInstanceCreation extends AST {
 
 }
