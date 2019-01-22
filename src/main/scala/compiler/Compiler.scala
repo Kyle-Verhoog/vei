@@ -11,9 +11,9 @@ import scala.io.Source
 object Compiler {
   def main(args: Array[String]) {
     //serialize()
-    generateTableLR1()
+    //generateTableLR1()
     //runActual(args)
-    //runTestFile()
+    runTestFile()
   }
 
   def runTestFile(testFile: String = "test/Empty.java"): Unit = {
@@ -86,17 +86,37 @@ object Compiler {
   def scanWithoutSerializing(
       fileContents: String = Source.fromResource("test/Empty.java").mkString)
     : ListBuffer[Token] = {
-    val fileSansCOmments = removeComments(fileContents)
-    //println("without " + fileSansCOmments)
 
     val scan = new Scanner()
-    scan
-      .scan(fileSansCOmments)
+    val tokens = scan
+      .scan(fileContents)
       .filter(
         token =>
           !token.tokenType.equals("NEWLINE") && !token.tokenType
             .equals("WHITESPACE")
       )
+
+    removeCommentTokens(tokens)
+  }
+
+  def removeCommentTokens(tokens: ListBuffer[Token]): ListBuffer[Token] = {
+    val newTokens = ListBuffer[Token]()
+    var i = 0
+    while (i < tokens.length) {
+      var token = tokens(i)
+
+      if (token.tokenType != "LINE_COMMENT" && token.tokenType != "START_MULTI_COMMENT") {
+        newTokens.append(token)
+      } else if (token.tokenType == "START_MULTI_COMMENT") {
+        while (token.tokenType != "END_MULTI_COMMENT") {
+          i += 1
+          token = tokens(i)
+        }
+      }
+      i += 1
+    }
+
+    newTokens
   }
 
   def removeComments(input: String): String = {
