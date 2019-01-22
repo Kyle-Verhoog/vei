@@ -1,6 +1,5 @@
-package compiler
+package compiler.scanner
 
-import compiler.scanner.{Token}
 import exceptions.TransitionNonExistentException
 import exceptions.NoTokenOnAcceptingStateException
 

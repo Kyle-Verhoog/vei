@@ -8,7 +8,12 @@ object Token {
 }
 
 @SerialVersionUID(100L)
-class Token(val tokenType: String, var value: String, val tokenNumber: Int = 0)
+class Token(val tokenType: String,
+            var value: String,
+            val tokenNumber: Int = 0,
+            val fileName: String = "",
+            val lineNum: Integer = -1,
+            val col: Integer = -1)
     extends Serializable {
   override def toString = {
     s"""TOKEN(TYPE : $tokenType VALUE: $value)\n"""

@@ -1,8 +1,5 @@
 package compiler.scanner
 
-import compiler.NFA
-import exceptions.TransitionNonExistentException
-
 import scala.collection.mutable
 
 object Cache {

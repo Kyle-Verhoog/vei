@@ -1,7 +1,5 @@
-package compiler
+package compiler.scanner
 
-import compiler.scanner.Cache
-import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
 
 import scala.collection.mutable

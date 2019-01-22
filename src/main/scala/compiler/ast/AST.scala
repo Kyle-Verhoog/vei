@@ -17,6 +17,7 @@ object AST {
     (0 until sibNum).foreach(_ => {
       sib match {
         case Some(n: AST) => sib = n.rightSibling
+        case None         => sib = None
       }
     })
     sib
@@ -32,6 +33,7 @@ object AST {
     (0 until depth).foreach(_ => {
       desc match {
         case Some(n: AST) => desc = n.leftChild
+        case None         => desc = None
       }
     })
     desc

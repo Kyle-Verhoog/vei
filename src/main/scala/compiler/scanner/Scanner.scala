@@ -9,14 +9,17 @@
   * <TOKENN> "regular expressionN"
   */
 package compiler.scanner
-import java.io._
-import java.util.Base64
 
-import compiler.{DFA, NFA}
 import regex.Regex
 
+import java.io.{
+  ByteArrayInputStream,
+  ByteArrayOutputStream,
+  ObjectInputStream,
+  ObjectOutputStream,
+}
+import java.util.Base64
 import scala.collection.mutable
-import scala.io.Source
 
 final case class ScanException(
     private val message: String = "Scanning failed somewhere in the source.",
@@ -76,11 +79,15 @@ class TokenEngine(val nfa: NFA[String]) {
 }
 
 object Scanner {
-  def fromConfig(s: String): Scanner = {
+
+  /**
+    * Generates a new Scanner from a .lex configuration file.
+    */
+  def fromConfig(cfg: String): Scanner = {
     var engine = TokenEngine.newEmptyEngine()
 
     var tokenNumber = 0
-    for (l <- s.trim.split("\n").map(_.trim)) {
+    for (l <- cfg.trim.split("\n").map(_.trim)) {
       val rawConf = l.split(" ")
       val token = new Token(rawConf(0), "", tokenNumber) // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length - 1)
@@ -90,58 +97,32 @@ object Scanner {
     new Scanner(engine.nfa.toDFA())
   }
 
-  def serializeDfa(dfa: DFA[String], filePath: String): Unit = {
+  /**
+    * Generates a Scanner which has been previously serialized to a file.
+    */
+  def fromSerializedDFA(serializedDFA: String): Scanner = {
+    val bytes = Base64.getDecoder.decode(serializedDFA)
+    val bi = new ByteArrayInputStream(bytes)
+    val si = new ObjectInputStream(bi)
+
+    val dfa = si.readObject().asInstanceOf[DFA[String]]
+    new Scanner(dfa)
+  }
+
+  def serializeDFA(dfa: DFA[String], filePath: String): String = {
     val bo = new ByteArrayOutputStream()
     val so = new ObjectOutputStream(bo)
     so.writeObject(dfa)
     so.flush()
     so.close()
 
-    val file = new File(filePath)
-    println("writing to " + filePath)
-    val pw = new PrintWriter(file)
-    pw.write(Base64.getEncoder.encodeToString(bo.toByteArray))
-    pw.close()
+    Base64.getEncoder.encodeToString(bo.toByteArray)
   }
-
-  def deserializeDfa(): DFA[String] = {
-    val fileContents =
-      Source.fromResource("serializations/dfa_serialization").mkString
-    val bytes = Base64.getDecoder.decode(fileContents)
-    val bi = new ByteArrayInputStream(bytes)
-    val si = new ObjectInputStream(bi)
-
-    si.readObject().asInstanceOf[DFA[String]]
-  }
-
-  def deserializeDfa(filePath: String): DFA[String] = {
-    val fileContents = Source.fromFile(filePath).mkString
-    val bytes = Base64.getDecoder.decode(fileContents)
-    val bi = new ByteArrayInputStream(bytes)
-    val si = new ObjectInputStream(bi)
-
-    si.readObject().asInstanceOf[DFA[String]]
-  }
-
 }
 
-class Scanner(val dfa: DFA[String], val fileName: String) {
-  // constructor if only given dfa.txt
-  def this(dfa: DFA[String]) {
-    this(dfa, "")
-  }
-
-  // constructor if only given file to deserialize
-  def this(fileToDeserializeDfa: String) {
-    this(Scanner.deserializeDfa(fileToDeserializeDfa))
-  }
-
-  // constructor if given nothing (use default serialization place
-  def this() {
-    this(Scanner.deserializeDfa())
-  }
-
-  def scan(src: String): mutable.ListBuffer[Token] = {
+class Scanner(val dfa: DFA[String]) {
+  def scan(src: String,
+           fileName: Option[String] = None): mutable.ListBuffer[Token] = {
     var tokens = mutable.ListBuffer[Token]()
     var curDFA = dfa
     var curTokenVal = ""
@@ -151,18 +132,15 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
     var isComplete = false
 
     var i = 0
-    /* Inadvertent maximal-munch scanning.
+    /* Maximal-munch scanning.
      * Loop over the src string with a DFA. For each character that results in a
      * final DFA state, update `lastDFA`, `i` and `lastTokenVal`.
      * Then continue forward updating if necessary. If an exception is raised
      * (token scanned is not in the DFA) then use `lastDFA` to get the token.
      */
-    while (i < src.length()) {
+    while (i < src.length) {
       var c = src.charAt(i)
 
-      // println(s"""
-      //      | $i $c $curTokenVal
-      //    """.stripMargin)
       try {
         curDFA = curDFA.next(c.toString)
         curTokenVal += c
@@ -172,7 +150,7 @@ class Scanner(val dfa: DFA[String], val fileName: String) {
           isComplete = true
           lastDFA = curDFA
           // hack: to handle when a DFA is matched on the last character
-          if (i == src.length() - 1)
+          if (i == src.length - 1)
             throw new Exception()
         }
         i += 1

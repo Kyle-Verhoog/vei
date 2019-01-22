@@ -13,9 +13,9 @@
   */
 package regex
 import scala.collection.mutable
-import compiler.{DFA, NFA}
+import compiler.scanner.{DFA, NFA}
 
-case class Paren(val nalt: Integer, val natom: Integer) {}
+case class Paren(nalt: Integer, natom: Integer) {}
 
 final case class RegexParseException(
     private val message: String = "An error occurred while parsing regex",
