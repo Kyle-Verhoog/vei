@@ -5,7 +5,7 @@ import scala.io.Source
 
 class MarmosetTestRunner extends FunSuite {
   test("a1") {
-    val files = Joos1WTestUtils.marmosetTestFiles("a1").takeRight(59)
+    val files = Joos1WTestUtils.marmosetTestFiles("a1").takeRight(248)
     var i = 0
 
     for (file <- files) {
