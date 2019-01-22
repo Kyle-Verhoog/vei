@@ -10,8 +10,8 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    serialize()
-    //generateTableLR1()
+    //serialize()
+    generateTableLR1()
     //runActual(args)
     //runTestFile()
   }

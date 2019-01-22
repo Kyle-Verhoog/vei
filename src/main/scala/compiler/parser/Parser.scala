@@ -1,5 +1,6 @@
 package compiler.parser
 
+import compiler.ast.SemanticException
 import compiler.scanner.Token
 
 import scala.collection.mutable
@@ -20,6 +21,30 @@ object Parser {
       val children: ListBuffer[ParseTreeNode[T]] =
         ListBuffer[ParseTreeNode[T]]()
   ) {
+    // ensure tokens are well formed (perform weeding on literals)
+    token match {
+      case t: Token => {
+        t.tokenType match {
+          case "IDENTIFIER" => {
+            t.value match {
+              case "goto" | "double" | "float" | "long" =>
+                throw SemanticException(
+                  "illegal value for IDENTIFIER: " + t.value)
+              case _ =>
+            }
+          }
+          case "STRING_LITERAL" | "CHARACTER_LITERAL" => {
+            if (t.value.contains("\\u")) {
+              throw SemanticException(
+                "Unicode values are not valid: " + t.value)
+            }
+          }
+          case _ =>
+        }
+      }
+      case _ =>
+    }
+
     def inorderLeafValues(): ListBuffer[T] = {
       if (children.isEmpty) return ListBuffer(token)
 
@@ -29,7 +54,9 @@ object Parser {
     def tokenType: String = {
       token match {
         case t: Token => t.tokenType
-        case _ => throw new RuntimeException("Cant get token type of non-token parse tree")
+        case _ =>
+          throw new RuntimeException(
+            "Cant get token type of non-token parse tree")
       }
     }
 

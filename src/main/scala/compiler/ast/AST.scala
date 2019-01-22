@@ -485,6 +485,7 @@ object AST {
   // gets value recursively, will throw error if not a direct path
   def getValue(parseTreeNode: ParseTreeNode[Token]): String = {
     if (parseTreeNode.children.isEmpty) {
+      if (parseTreeNode.token.value == "non-leaf") return null
       return parseTreeNode.token.value
     } else if (parseTreeNode.children.length == 1) {
       return getValue(parseTreeNode.children.head)
@@ -496,6 +497,7 @@ object AST {
   // gets value recursively, will throw error if too many children
   def getValueList(parseTreeNode: ParseTreeNode[Token]): List[String] = {
     if (parseTreeNode.children.isEmpty) {
+      if (parseTreeNode.token.value == "non-leaf") return List()
       return List(parseTreeNode.token.value)
     } else if (parseTreeNode.children.length == 1) {
       return getValueList(parseTreeNode.children.head)
