@@ -99,7 +99,6 @@ object Parser {
           stateStack = stateStack.take(stateStack.length - 1)
         }
 
-        // TODO should childNodes be reversed?
         // TODO something other than non-leaf might be useful
         nodeStack.append(
           new ParseTreeNode[Token](new Token(A, "non-leaf"),

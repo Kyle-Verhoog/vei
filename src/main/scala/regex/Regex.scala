@@ -60,6 +60,8 @@ object Regex {
   val DOT = "ø"
   val NOT = "¬"
 
+  val asciiAlphabet = (0 to 127).map(i => i.toChar.toString).toSet
+
   val escapeMapping = Map(
     ALT -> "|",
     "|" -> ALT,
@@ -73,6 +75,8 @@ object Regex {
     "[" -> LBRACK,
     RBRACK -> "]",
     "]" -> RBRACK,
+    NOT -> "^",
+    "^" -> NOT,
   )
 
   def expandRanges(regex: String): String = {
@@ -128,7 +132,6 @@ object Regex {
   def preProcess(regex: String): String = {
     val unicodeRegex = addUnicode(regex)
     val rangedRegex = expandRanges(unicodeRegex)
-    //println(replaceDot(rangedRegex))
     replaceDot(rangedRegex)
   }
 
@@ -240,7 +243,8 @@ object Regex {
     map
   }
 
-  def postfixToNFA(postfix: String): NFA[String] = {
+  def postfixToNFA(postfix: String,
+                   alphabet: Set[String] = Regex.asciiAlphabet): NFA[String] = {
     var stack = new mutable.ListBuffer[NFA[String]]()
 
     for (x <- 0 until postfix.length()) {
@@ -320,6 +324,7 @@ object Regex {
             states = states,
             acceptingStates = acceptingStates,
             startStates = startStates,
+            alphabet = alphabet,
             transitionTable = transitionTable,
           )
 
@@ -336,6 +341,7 @@ object Regex {
             states,
             acceptingStates,
             startStates,
+            alphabet = alphabet,
             e.transitionTable
           )
 
@@ -361,6 +367,7 @@ object Regex {
             states,
             acceptingStates,
             startStates,
+            alphabet = alphabet,
             e.transitionTable
           )
 
@@ -389,6 +396,7 @@ object Regex {
             states,
             acceptingStates,
             startStates,
+            alphabet = alphabet,
             transitionTable
           )
           // Add the transitions from s to the start states of e1, e2
@@ -412,6 +420,7 @@ object Regex {
             newStates,
             newAcceptingStates,
             newStartStates,
+            alphabet = alphabet,
             transitionTable
           )
           for (a <- e1.acceptingStates) {
@@ -427,6 +436,7 @@ object Regex {
             Set[NFA.T](_ps, ps),
             Set[NFA.T](ps),
             Set[NFA.T](_ps),
+            alphabet = alphabet,
             mutable.HashMap((_ps, p) -> Set(ps))
           )
 
@@ -441,9 +451,10 @@ object Regex {
     stack.head
   }
 
-  def toNFA(regex: String): NFA[String] = {
+  def toNFA(regex: String,
+            alphabet: Set[String] = Regex.asciiAlphabet): NFA[String] = {
     val postfix = toPostfix(regex)
-    val nfa = postfixToNFA(postfix)
+    val nfa = postfixToNFA(postfix, alphabet)
     nfa
   }
 

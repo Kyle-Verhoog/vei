@@ -412,19 +412,44 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches("'+'"))
   }
 
+  test("C test comment regex") {
+    def escape(str: String): String = {
+      var s = str.replaceAllLiterally("/*", "<")
+      s = s.replaceAllLiterally("*/", ">")
+      s
+    }
+
+    val re =
+      Regex.createEngine(s"""<(>${Regex.NOT})*>""")
+    assert(re.matches(escape("/*asdfsklfjfj  lksdfjkfdas*/")))
+    assert(re.matches(escape("/*/**/")))
+    assert(re.matches(escape("/* this is a comment */")))
+    assert(re.matches(escape("/* comment */")))
+    assert(re.matches(escape("/*\n comment */")))
+    assert(re.matches(escape(s"""/*
+ comment */""")))
+    assert(re.matches(escape("/* this is multiline \n comment */")))
+  }
+
   test("C comment regex") {
-    val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
-    assert(re.matches("/* comment */"))
-    assert(re.matches("/**/"))
-    assert(!re.matches("/**/ */"))
-    assert(!re.matches("/**/*/"))
-    assert(!re.matches("/* comment */ ljfdsk\nljkfdsadlkjfa"))
+    val ESCAPED_START = "‹"
+    val ESCAPED_END = "›"
+
+    def escape(str: String): String = {
+      var s = str.replaceAllLiterally("/*", ESCAPED_START)
+      s = s.replaceAllLiterally("*/", ESCAPED_END)
+      s
+    }
+    //val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
+    val re =
+      Regex.createEngine(
+        s"""$ESCAPED_START($ESCAPED_END${Regex.NOT})*$ESCAPED_END""")
+    assert(re.matches(escape("/* comment */")))
+    assert(re.matches(escape("/**/")))
+    assert(!re.matches(escape("/**/ */")))
+    assert(!re.matches(escape("/**/*/")))
+    assert(!re.matches(escape("/* comment */ ljfdsk\nljkfdsadlkjfa")))
     assert(!re.matches("something /* \n \t */ woah"))
-    assert(re.matches("/* \n \t */"))
-    // assert(re.matches(s""" <*
-    //      | comment
-    //      | *>
-    //    """.stripMargin))
   }
 }
 

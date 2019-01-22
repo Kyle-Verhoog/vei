@@ -27,8 +27,10 @@ final case class ScanException(
 ) extends Exception(message, cause)
 
 object TokenEngine {
-  def fromRegex(regex: String, token: Token): TokenEngine = {
-    val nfa = Regex.toNFA(regex)
+  def fromRegex(regex: String,
+                token: Token,
+                alphabet: Set[String]): TokenEngine = {
+    val nfa = Regex.toNFA(regex, alphabet)
     // add the token states
     for (as <- nfa.acceptingStates) {
       nfa.tokenStates += (as -> token)
@@ -36,12 +38,13 @@ object TokenEngine {
     new TokenEngine(nfa)
   }
 
-  def newEmptyEngine(): TokenEngine = {
+  def newEmptyEngine(alphabet: Set[String]): TokenEngine = {
     new TokenEngine(
       NFA.newStringNFA(
         states = Set[NFA.T](),
         acceptingStates = Set[NFA.T](),
         startStates = Set[NFA.T](),
+        alphabet = alphabet,
         transitionTable = new mutable.HashMap[(NFA.T, String), Set[NFA.T]]()
       )
     )
@@ -50,7 +53,7 @@ object TokenEngine {
 
 class TokenEngine(val nfa: NFA[String]) {
   def addRegex(regex: String, token: Token): TokenEngine = {
-    val nfa2 = TokenEngine.fromRegex(regex, token).nfa
+    val nfa2 = TokenEngine.fromRegex(regex, token, nfa.alphabet).nfa
 
     val transitionTable = Regex.mergeMaps(
       nfa.transitionTable,
@@ -67,7 +70,7 @@ class TokenEngine(val nfa: NFA[String]) {
       states,
       acceptingStates,
       startStates,
-      (0 to 127).map(i => i.toChar.toString).toSet, // all ASCII chars
+      nfa.alphabet,
       transitionTable,
       tokenStates,
       nfa.epsilonSym
@@ -84,10 +87,13 @@ object Scanner {
     * Generates a new Scanner from a .lex configuration file.
     */
   def fromConfig(cfg: String): Scanner = {
-    var engine = TokenEngine.newEmptyEngine()
+    val alphaConfig = cfg.split("§")(0)
+    val tokenConfig = cfg.split("§")(1).trim.split("\n")
+    val alphabet = alphaConfig.toList.map(s => s.toString).toSet
+    var engine = TokenEngine.newEmptyEngine(alphabet)
 
     var tokenNumber = 0
-    for (l <- cfg.trim.split("\n").map(_.trim)) {
+    for (l <- tokenConfig.map(_.trim)) {
       val rawConf = l.split(" ")
       val token = new Token(rawConf(0), "", tokenNumber) // TODO fix this
       val regex = rawConf(1).substring(1, rawConf(1).length - 1)
@@ -106,6 +112,7 @@ object Scanner {
     val si = new ObjectInputStream(bi)
 
     val dfa = si.readObject().asInstanceOf[DFA[String]]
+
     new Scanner(dfa)
   }
 

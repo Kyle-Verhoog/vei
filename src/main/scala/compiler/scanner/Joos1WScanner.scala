@@ -19,6 +19,9 @@ object Joos1WScanner {
   }
 
   def saveScanner(dfaFileName: String): Unit = {
+    println("\n\n\n")
+    println(scanner.get.dfa.alphabet.contains("›"))
+    println("\n\n\n")
     val serializedDFA = Scanner.serializeDFA(scanner.get.dfa, dfaFileName)
     val file = new File(dfaFileName)
     println("writing to " + dfaFileName)
@@ -43,47 +46,14 @@ object Joos1WScanner {
   }
 
   def removeComments(input: String): String = {
-    var parsedProg = ""
-    var i = 0
-    while (i < input.toCharArray.length) {
-      if (input(i) == '/' && (i + 1 < input.toCharArray.length && input(i + 1) == '/')) { // remove single line comments
-        while (input(i) != '\n') {
-          i += 1
-        }
-      } else if (input(i) == '/' && (i + 1 < input.toCharArray.length && input(
-                   i + 1) == '*')) {
-        i += 2 // remove starting star
-        // if this fails because we go out of bounds, thats fine since comments should finish
-        while (!(input(i) == '*' && input(i + 1) == '/')) {
-          i += 1
-        }
-        i += 2 // remove ending star
-      } else {
-        parsedProg += input(i)
-        i += 1
-      }
-    }
-    parsedProg
+    val escaped =
+      input.replaceAllLiterally("/*", "‹").replaceAllLiterally("*/", "›")
+    escaped
   }
 
   def removeCommentTokens(tokens: ListBuffer[Token]): ListBuffer[Token] = {
-    val newTokens = ListBuffer[Token]()
-    var i = 0
-    while (i < tokens.length) {
-      var token = tokens(i)
-
-      if (token.tokenType != "LINE_COMMENT" && token.tokenType != "START_MULTI_COMMENT") {
-        newTokens.append(token)
-      } else if (token.tokenType == "START_MULTI_COMMENT") {
-        while (token.tokenType != "END_MULTI_COMMENT") {
-          i += 1
-          token = tokens(i)
-        }
-      }
-      i += 1
-    }
-
-    newTokens
+    tokens.filter(t =>
+      !Set("LINE_COMMENT", "MULTILINE_COMMENT").contains(t.tokenType))
   }
 
   def removeWhitespaceTokens(tokens: ListBuffer[Token]): ListBuffer[Token] = {

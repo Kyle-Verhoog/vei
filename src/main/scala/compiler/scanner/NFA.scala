@@ -14,20 +14,18 @@ object NFA {
     r
   }
 
-  // all ASCII chars
-  val charAlphabet = (0 to 127).map(i => i.toChar.toString).toSet
-
   def newStringNFA(
       states: Set[NFA.T],
       acceptingStates: Set[NFA.T],
       startStates: Set[NFA.T],
+      alphabet: Set[String],
       transitionTable: mutable.HashMap[(NFA.T, String), Set[NFA.T]]
   ): NFA[String] = {
     new NFA[String](
       states,
       acceptingStates,
       startStates,
-      charAlphabet,
+      alphabet,
       transitionTable,
       mutable.HashMap[NFA.T, Token](),
       "ε"
@@ -206,18 +204,11 @@ class NFA[TTrans](
        * Then check if we already reached each of those states, if not add them to our states, and add
        * them to the queue
        */
-      // println("Time to get to alphabet " + (System.currentTimeMillis() - prevTime))
-      // val alphaLoopTime = System.currentTimeMillis()
-
       for (alpha <- alphabet) {
-        //println("finding next states and epsilon clouser " + alpha)
         val nextStates = findNextStates(currentState, alpha)
-        //println("Time to find next states " + (System.currentTimeMillis() - prevTime))
-        //println("----")
         val nextStatesEpsilonClosure = findEpsilonClosureMultipleStates(
           nextStates
         )
-        //println("Time to find epsilon " + (System.currentTimeMillis() - prevTime))
 
         // NOTE: apparently scala has no `continue` so this is what i had to do
         if (nextStatesEpsilonClosure.nonEmpty) {
@@ -231,10 +222,9 @@ class NFA[TTrans](
           }
         }
       }
-      //println("time to finish alpha " + (System.currentTimeMillis() - prevTime))
     }
 
-    var dfa = new DFA[TTrans](
+    val dfa = new DFA[TTrans](
       states,
       accepting,
       startState,
@@ -243,23 +233,6 @@ class NFA[TTrans](
       newTokenStates
     )
 
-    // TODO: HACK
-    // NFA -> DFA accepting states in NFA should be in DFA
-    // it seems like it's possible that accepting states don't have entries added to the tokenStates map
-    // dfa.tokenStates foreach {
-    //   case (stoken, token) => {
-    //     dfa.transitionTable foreach {
-    //       case ((strans, ch), out) => {
-    //         for (i <- stra) {
-    //           println('o')
-    //           if (!(stra intersect stok).isEmpty) {
-    //             dfa.tokenStates += (stra -> token)
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
     dfa
   }
 

@@ -1,6 +1,5 @@
 package compiler.scanner
 
-import compiler.scanner.Token
 import org.scalatest.FunSuite
 
 import scala.collection.mutable

@@ -19,6 +19,8 @@ object Compiler {
     val file = Source.fromResource(testFile).mkString
     println("Running file: " + testFile)
     println("Scanning...")
+    // Joos1WScanner.generateNewScanner()
+    // Joos1WScanner.saveScanner("dfa")
     Joos1WScanner.loadSavedScanner()
     val tokens = Joos1WScanner.scanFile("src/main/resources/test/Empty.java")
 
