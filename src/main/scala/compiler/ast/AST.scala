@@ -73,8 +73,6 @@ object AST {
           case List("package_declaration",
                     "import_declarations",
                     "type_declaration") =>
-            println(
-              "compilation_unit" + parseTree.children.map(child => child.token))
             recurseOnChildren(parseTree, ast)
         }
       }
@@ -98,6 +96,13 @@ object AST {
             ast = ClassDeclaration.fromParseTreeNode(children.head, children(2))
             recurseOnChildren(parseTree, ast, List(3, 4, 5))
         }
+      case "super" => {
+        parseTree.childrenTypes match {
+          case List("EXTENDS", "class_type") =>
+            recurseOnChildren(parseTree, parent.get, List(1))
+          case List() =>
+        }
+      }
       case "field_declaration" =>
         parseTree.childrenTypes match {
           case List("modifiers", "type", "variable_declarator", ";") =>
@@ -132,6 +137,11 @@ object AST {
           case List("IMPORT", "name", ";") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
+      case "array_type" =>
+        parseTree.childrenTypes match {
+          case List("primitive_type", "[", "]") | List("name", "[", "]") =>
+            recurseOnChildren(parseTree, parent.get, List(0))
+        }
       case "name" =>
         parseTree.childrenTypes match {
           case List("simple_name") =>
@@ -160,13 +170,19 @@ object AST {
         parseTree.childrenTypes match {
           case List("PACKAGE", "name", ";") =>
             ast = new PackageDeclaration()
-            println("package_declaration" + parseTree.children.map(child =>
-              child.token))
             recurseOnChildren(parseTree, ast, List(1))
+          case List() =>
+        }
+      case "interfaces" =>
+        parseTree.childrenTypes match {
+          case List("IMPLEMENTS", "interface_type_list") =>
+            recurseOnChildren(parseTree, parent.get, List(1))
           case List() =>
         }
       case "interface_type_list" =>
         parseTree.childrenTypes match {
+          case List("interface_type") =>
+            recurseOnChildren(parseTree, parent.get, List(0))
           case List("interface_type_list", ",", "interface_type") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
@@ -212,7 +228,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("type", "variable_declarator_id") =>
             ast = FormalParameter.fromParseTreeNode(children.head)
-            recurseOnChildren(parseTree, ast, List(1, 2))
+            recurseOnChildren(parseTree, ast, List(1))
         }
       case "constructor_declaration" =>
         parseTree.childrenTypes match {
@@ -231,7 +247,7 @@ object AST {
           case List("modifiers",
                     "INTERFACE",
                     "IDENTIFIER",
-                    "extends_interface",
+                    "extends_interfaces",
                     "interface_body") =>
             ast =
               InterfaceDeclaration.fromParseTreeNode(children.head, children(2))
@@ -243,6 +259,7 @@ object AST {
             throw new NotImplementedException("extends interface")
           case List("extends_interfaces", ",", "interface_type") =>
             throw new NotImplementedException("extends interface")
+          case List() =>
         }
       case "interface_body" =>
         parseTree.childrenTypes match {
@@ -280,8 +297,8 @@ object AST {
       case "local_variable_declaration" =>
         parseTree.childrenTypes match {
           case List("type", "variable_declarator") =>
-            ast = new LocalVariableDeclaration(getValue(children.head))
-            recurseOnChildren(parseTree, ast, List(1))
+            ast = new LocalVariableDeclaration()
+            recurseOnChildren(parseTree, ast)
         }
       case "expression_statement" =>
         parseTree.childrenTypes match {
@@ -318,6 +335,7 @@ object AST {
             recurseOnChildren(parseTree, ast, List(2, 4, 6))
         }
       case "for_statement" =>
+      case "for_statement_no_short_if" =>
         parseTree.childrenTypes match {
           case List("FOR",
                     "(",
@@ -355,19 +373,19 @@ object AST {
         parseTree.childrenTypes match {
           case List("literal") | List("THIS") | List(
                 "class_instance_creation_expression") | List("field_access") |
-              List("method_invocation") | List("array") =>
+              List("method_invocation") | List("array") | List(
+                "array_access") =>
             recurseOnChildren(parseTree, parent.get)
           case List("(", "expression", ")") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
       }
       case "literal" => {
-        println(getValue(children.head))
         parseTree.childrenTypes match {
           // TODO verify
           // perform cast, this should handle lots of things without us checking anywhere else :)
           case List("INTEGER_LITERAL") =>
-            ast = new IntegerLiteral(getValue(children.head).toInt)
+            ast = new IntegerLiteral(getValue(children.head))
           case List("BOOLEAN_LITERAL") =>
             ast = new BooleanLiteral(getValue(children.head).toBoolean)
           case List("CHARACTER_LITERAL") =>
@@ -381,8 +399,8 @@ object AST {
       case "class_instance_creation_expression" => {
         parseTree.childrenTypes match {
           case List("NEW", "class_type", "(", "argument_list", ")") =>
-            ast = new ClassInstanceCreation(getValue(children(1)))
-            recurseOnChildren(parseTree, parent.get, List(3))
+            ast = new ClassInstanceCreation()
+            recurseOnChildren(parseTree, parent.get, List(1, 3))
         }
       }
       case "argument_list" => {
@@ -398,27 +416,21 @@ object AST {
       }
       case "array_creation_expression" => {
         parseTree.childrenTypes match {
-          case List("NEW", "primitive_type", "dim_exprs", "dims_opt") |
-              List("NEW", "class_or_interface_type", "dim_exprs", "dims_opt") =>
+          case List("NEW", "primitive_type", "dim_exprs") |
+              List("NEW", "class_or_interface_type", "dim_exprs") =>
             ast = new ArrayCreationExpression(getValue(children(1)))
-            recurseOnChildren(parseTree, ast, List(2, 3))
+            recurseOnChildren(parseTree, ast, List(2))
         }
       }
       case "dim_exprs" => {
-        // TODO figure out if multi dimensions are needed, if not simplify
-        throw new RuntimeException("TODO")
-      }
-      case "dim_expr" => {
-        // TODO figure out if multi dimensions are needed, if not simplify
-        throw new RuntimeException("TODO")
+        parseTree.childrenTypes match {
+          case List("[", "expression", "]") =>
+            recurseOnChildren(parseTree, parent.get, List(1))
+        }
       }
       case "dims" => {
-        // TODO figure out if multi dimensions are needed, if not simplify
-        throw new RuntimeException("TODO")
-      }
-      case "dims_opt" => {
-        // TODO figure out if multi dimensions are needed, if not simplify
-        throw new RuntimeException("TODO")
+        // TODO verify this is what we want
+        // Do nothing for dims
       }
       case "field_access" => {
         parseTree.childrenTypes match {
@@ -471,7 +483,6 @@ object AST {
           // TODO nothing to do? should never happen, throw?
           throw new RuntimeException("what is going on ???")
         } else if (children.length == 1) {
-          println("going down")
           recurseOnChildren(parseTree, parent.get)
         } else if (children.length == 2) {
           ast = new GeneralExpression(Some(getValue(children(0))))
@@ -487,7 +498,8 @@ object AST {
         parseTree.childrenTypes match {
           case List("postfix_expression") | List("cast_expression") =>
             recurseOnChildren(parseTree, parent.get)
-          case List("~ unary_expression") | List("~ unary_expression") => {
+          case List("~", "unary_expression") |
+              List("!", "unary_expression") => {
             recurseOnChildren(parseTree, parent.get, List(1))
           }
         }
@@ -495,19 +507,31 @@ object AST {
       case "postfix_expression" => {
         parseTree.childrenTypes match {
           case List("primary") | List("name") =>
-            println(
-              "postfix " + parseTree.token.tokenType + " " + parseTree.childrenTypes)
             recurseOnChildren(parseTree, parent.get)
         }
       }
-      case "cast_expression" => {} // TODO
+      case "cast_expression" => {
+        parseTree.childrenTypes match {
+          case List("(", "primitive_type", ")", "unary_expression") |
+              List("(", "expression", ")", "unary_expression_not_plus_minus") =>
+            ast = new CastExpression()
+            recurseOnChildren(parseTree, ast, List(1, 3))
+          case List("(", "primitive_type", "dims", ")", "unary_expression") |
+              List("(",
+                   "name",
+                   "dims",
+                   ")",
+                   "unary_expression_not_plus_minus") =>
+            ast = new CastExpression()
+            recurseOnChildren(parseTree, ast, List(1, 2, 4))
+        }
+
+      } // TODO
       case _ => {
         children.length match {
-          case 0 => println("ignoring empty " + parseTree.token.tokenType)
+          case 0 =>
           case 1 =>
             ast = convertParseTree(parseTree.children.head, parent)
-            println(
-              "thing: " + parseTree.token.tokenType + " children" + parseTree.childrenTypes)
           case _ => {
             throw new RuntimeException(
               "Too many children to process, make a rule for this type: " + parseTree.token.tokenType)
@@ -522,17 +546,20 @@ object AST {
   // gets value recursively, will throw error if not a direct path
   def getValue(parseTreeNode: ParseTreeNode[Token]): String = {
     if (parseTreeNode.children.isEmpty) {
+      if (parseTreeNode.token.value == "non-leaf") return null
       return parseTreeNode.token.value
     } else if (parseTreeNode.children.length == 1) {
       return getValue(parseTreeNode.children.head)
     }
 
-    throw new RuntimeException("Too many children to get value")
+    throw new RuntimeException(
+      "Too many children to get value " + parseTreeNode.token)
   }
 
   // gets value recursively, will throw error if too many children
   def getValueList(parseTreeNode: ParseTreeNode[Token]): List[String] = {
     if (parseTreeNode.children.isEmpty) {
+      if (parseTreeNode.token.value == "non-leaf") return List()
       return List(parseTreeNode.token.value)
     } else if (parseTreeNode.children.length == 1) {
       return getValueList(parseTreeNode.children.head)
@@ -541,7 +568,8 @@ object AST {
                          getValueList(parseTreeNode.children(1)))
     }
 
-    throw new RuntimeException("Too many children to get value list")
+    throw new RuntimeException(
+      "Too many children to get value list" + parseTreeNode.token)
   }
 
   def recurseOnChildren(parentParsTree: ParseTreeNode[Token],

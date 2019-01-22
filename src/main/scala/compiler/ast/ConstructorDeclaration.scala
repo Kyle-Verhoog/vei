@@ -12,4 +12,6 @@ object ConstructorDeclaration {
   }
 }
 
-class ConstructorDeclaration(modifiers: List[String]) extends AST {}
+class ConstructorDeclaration(modifiers: List[String]) extends AST {
+  MethodHeader.validateModifiers(modifiers)
+}

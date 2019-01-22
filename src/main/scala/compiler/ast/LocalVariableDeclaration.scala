@@ -1,3 +1,3 @@
 package compiler.ast
 
-class LocalVariableDeclaration(lvType: String) extends AST {}
+class LocalVariableDeclaration() extends AST {}

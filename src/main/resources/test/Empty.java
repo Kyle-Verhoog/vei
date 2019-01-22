@@ -3,7 +3,12 @@ import jlalr.Grammar;
 import jlalr.Production;
 
 import java.util.Scanner;
-
+/*
+/*******
+some multi line
+ */
+/**/
+/*****/
 // testing the // single
 // line
 
@@ -15,7 +20,7 @@ public class Empty {
     public static void main(String[] args) {
         int i = 0;
         char a = 'a';
-        String kevin = "kevin";
+        String kevin = "kevin /* */";
         boolean b = true;
         String test = null;
         System.out.println("Helloworld");
@@ -65,6 +70,24 @@ public class Empty {
         }
     }
 
+    /*
+    public static void test_if_statements() {
+        int i = 1;
+        int j = 2;
+
+        if (i == j)
+            return i;
+
+        if (i == j)
+            return i;
+        else
+            return j;
+
+        if (i == j) {
+        }
+    }
+     */
+
     // TODO(test case): Not allowed - abstract static
     // abstract static void method() { }
     // TODO(test case): Not allowed - abstract static
@@ -75,4 +98,5 @@ public class Empty {
     // TODO(test case): Not allowed - constructor does not have name of class
     // method() {}
 }
+
 
