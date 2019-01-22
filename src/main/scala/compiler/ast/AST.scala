@@ -385,7 +385,7 @@ object AST {
           // TODO verify
           // perform cast, this should handle lots of things without us checking anywhere else :)
           case List("INTEGER_LITERAL") =>
-            ast = new IntegerLiteral(getValue(children.head))
+            ast = new IntegerLiteral(getValue(children.head).toInt)
           case List("BOOLEAN_LITERAL") =>
             ast = new BooleanLiteral(getValue(children.head).toBoolean)
           case List("CHARACTER_LITERAL") =>

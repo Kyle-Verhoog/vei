@@ -20,7 +20,9 @@ public class Empty {
     public static void main(String[] args) {
         int i = 0;
         char a = 'a';
+        char a = '\r';
         String kevin = "kevin /* */";
+        String kevin = "kevin \n /* */";
         boolean b = true;
         String test = null;
         System.out.println("Helloworld");

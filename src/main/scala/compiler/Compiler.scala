@@ -1,6 +1,6 @@
 package compiler
 
-import compiler.ast.AST
+import compiler.ast.{AST, Weeder}
 import compiler.parser.Parser
 import compiler.scanner.{Scanner, Token}
 import jlalr.Jlalr1
@@ -33,6 +33,8 @@ object Compiler {
 
     println("Converting to ast....")
     val ast = AST.convertParseTree(parseTree(1))
+    println("Weeding...")
+    Weeder.weed(ast)
   }
 
   def runActual(args: Array[String]): Unit = {
@@ -59,6 +61,8 @@ object Compiler {
       println("Converting to ast....")
       val ast = AST.convertParseTree(parseTree(1))
       println(ast)
+      println("Weeding...")
+      Weeder.weed(ast)
     } catch {
       case e: Exception =>
         println(e)

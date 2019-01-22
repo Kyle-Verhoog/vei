@@ -30,7 +30,6 @@ object MethodDeclaration {
 }
 
 class MethodDeclaration() extends AST {
-
   def returnType: String = {
     this.getDescendant(1) match {
       case Some(n: MethodHeader) => n.returnType
