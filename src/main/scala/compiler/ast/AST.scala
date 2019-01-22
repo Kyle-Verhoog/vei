@@ -251,8 +251,8 @@ object AST {
       case "local_variable_declaration" =>
         parseTree.childrenTypes match {
           case List("type", "variable_declarator") =>
-            ast = new LocalVariableDeclaration(getValue(children.head))
-            recurseOnChildren(parseTree, ast, List(1))
+            ast = new LocalVariableDeclaration()
+            recurseOnChildren(parseTree, ast)
         }
       case "expression_statement" =>
         parseTree.childrenTypes match {
