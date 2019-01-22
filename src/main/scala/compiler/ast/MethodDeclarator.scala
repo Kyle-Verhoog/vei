@@ -11,4 +11,4 @@ object MethodDeclarator {
   }
 }
 
-class MethodDeclarator(identifier: String) extends AST {}
+class MethodDeclarator(val identifier: String) extends AST {}

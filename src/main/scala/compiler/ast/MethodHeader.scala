@@ -8,12 +8,13 @@ object MethodHeader {
                         ttype: ParseTreeNode[Token]): MethodHeader = {
     new MethodHeader(
       modifiers = AST.getValueList(modifiers),
-      ttype = AST.getValue(ttype)
+      returnType = AST.getValue(ttype)
     )
   }
 }
 
-class MethodHeader(modifiers: List[String], ttype: String) extends AST {
+class MethodHeader(val modifiers: List[String], val returnType: String)
+    extends AST {
   // method validation
   if (modifiers.contains("abstract")) {
     if (modifiers.contains("static") || modifiers.contains("final")) {

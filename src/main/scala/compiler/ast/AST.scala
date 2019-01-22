@@ -5,7 +5,53 @@ import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 import jdk.jshell.spi.ExecutionControl.NotImplementedException
 
+final case class MalformedASTException(
+    private val message: String = "Malformed AST error.",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
+
 object AST {
+
+  def getNthSibling(node: AST, sibNum: Integer): Option[AST] = {
+    var sib = Option(node)
+    (0 until sibNum).foreach(_ => {
+      sib match {
+        case Some(n: AST) => sib = n.rightSibling
+      }
+    })
+    sib
+  }
+
+  def getNthChild(node: AST, childNum: Integer): Option[AST] = {
+    val child = node.leftChild.get
+    getNthSibling(child, childNum)
+  }
+
+  def getNthDescendant(node: AST, depth: Integer): Option[AST] = {
+    var desc = Option(node)
+    (0 until depth).foreach(_ => {
+      desc match {
+        case Some(n: AST) => desc = n.leftChild
+      }
+    })
+    desc
+  }
+
+  /**
+    * Gets a descendant node in the following structure:
+    * (0, None) node
+    * (1, None)/(1, 0) child0   (1, 1) child1   (1, 2) child2
+    */
+  def getDescendant(node: AST,
+                    depth: Integer,
+                    childNum: Option[Integer] = None): Option[AST] = {
+    val desc = AST.getNthDescendant(node, depth)
+
+    childNum match {
+      case Some(i) => getNthSibling(desc.get, i)
+      case None    => desc
+    }
+  }
 
   // TODO this method will return null if it gets converted to nothing (the empty branch cases)
   def convertParseTree(parseTree: ParseTreeNode[Token],
@@ -420,7 +466,7 @@ object AST {
           "and_expression" | "equality_expression" | "relational_expression" |
           "shift_expression" | "additive_expression" |
           "multiplicative_expression" | "unary_expression" => {
-        // TODO evaluate this approah
+        // TODO evaluate this approach
         if (children.isEmpty) {
           // TODO nothing to do? should never happen, throw?
           throw new RuntimeException("what is going on ???")
@@ -563,5 +609,14 @@ class AST(var parent: Option[AST] = None,
     if (rightSibling.isDefined)
       line += rightSibling.get.printNicelyFormattedTree(depth)
     line
+  }
+
+  def getChild(n: Integer): Option[AST] = {
+    AST.getNthChild(this, n)
+  }
+
+  def getDescendant(depth: Integer,
+                    childNum: Option[Integer] = None): Option[AST] = {
+    AST.getDescendant(this, depth, childNum)
   }
 }

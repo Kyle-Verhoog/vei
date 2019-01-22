@@ -385,6 +385,11 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches("<* \n \t *>"))
   }
 
+  test("Special characters regex") {
+    val re = Regex.createEngine(s"\\*\\(\\)")
+    assert(re.matches("*()"))
+  }
+
   test("C comment regex") {
     val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
     assert(re.matches("/* comment */"))
