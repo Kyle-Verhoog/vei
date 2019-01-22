@@ -19,9 +19,6 @@ object Joos1WScanner {
   }
 
   def saveScanner(dfaFileName: String): Unit = {
-    println("\n\n\n")
-    println(scanner.get.dfa.alphabet.contains("›"))
-    println("\n\n\n")
     val serializedDFA = Scanner.serializeDFA(scanner.get.dfa, dfaFileName)
     val file = new File(dfaFileName)
     println("writing to " + dfaFileName)
