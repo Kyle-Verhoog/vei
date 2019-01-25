@@ -409,6 +409,15 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches("'+'"))
   }
 
+  test("character regex") {
+    val re = Regex.createEngine(s"'((\')|[!-&]|[\\(-~])*'")
+    assert(re.matches("''"))
+    assert(re.matches("'a'"))
+    assert(re.matches("'Z'"))
+    assert(re.matches("'az'"))
+    assert(!re.matches("'2' + '4' + \"\" + '2' + '4'"))
+  }
+
   test("C comment regex") {
     val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
     assert(re.matches("/* comment */"))

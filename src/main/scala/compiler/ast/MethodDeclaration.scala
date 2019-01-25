@@ -6,7 +6,7 @@ import compiler.scanner.Token
 object MethodDeclaration {
 
   def fromParseTreeNode(
-  /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
+      /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
     // children.childrenTypes match {
     //   case List("method_header", "method_body") =>
     //     val methodHeaderPTN = parseTree.children.head
@@ -37,6 +37,10 @@ class MethodDeclaration() extends AST {
         throw MalformedASTException(
           s"Method leftChild is not a MethodHeader (got $e).")
     }
+  }
+
+  def body: MethodBody = {
+    this.getDescendant(1, Some(1)).get.asInstanceOf[MethodBody]
   }
 
   def modifiers: List[String] = {

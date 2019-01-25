@@ -203,6 +203,14 @@ object AST {
             ast = MethodDeclaration.fromParseTreeNode()
             recurseOnChildren(parseTree, ast, List(0, 1))
         }
+      case "method_body" =>
+        parseTree.childrenTypes match {
+          case List("block") =>
+            ast = new MethodBody(true)
+            recurseOnChildren(parseTree, ast, List(0))
+          case List(";") =>
+            ast = new MethodBody(false)
+        }
       case "method_header" =>
         parseTree.childrenTypes match {
           case List("modifiers", "type", "method_declarator") |
@@ -385,7 +393,7 @@ object AST {
           // TODO verify
           // perform cast, this should handle lots of things without us checking anywhere else :)
           case List("INTEGER_LITERAL") =>
-            ast = new IntegerLiteral(getValue(children.head).toInt)
+            ast = new IntegerLiteral(getValue(children.head))
           case List("BOOLEAN_LITERAL") =>
             ast = new BooleanLiteral(getValue(children.head).toBoolean)
           case List("CHARACTER_LITERAL") =>
