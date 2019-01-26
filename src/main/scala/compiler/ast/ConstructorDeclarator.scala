@@ -11,6 +11,6 @@ object ConstructorDeclarator {
   }
 }
 
-class ConstructorDeclarator(name: String) extends AST {
+class ConstructorDeclarator(val name: String) extends AST {
   // TODO: vet that the constructor name matches the encompassing class name
 }

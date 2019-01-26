@@ -235,8 +235,7 @@ object AST {
       case "formal_parameter" =>
         parseTree.childrenTypes match {
           case List("type", "variable_declarator_id") =>
-            ast = FormalParameter.fromParseTreeNode(children.head)
-            recurseOnChildren(parseTree, ast, List(1))
+            ast = FormalParameter.fromParseTreeNode(parseTree)
         }
       case "constructor_declaration" =>
         parseTree.childrenTypes match {

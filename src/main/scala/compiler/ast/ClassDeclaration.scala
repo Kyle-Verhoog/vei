@@ -11,7 +11,7 @@ object ClassDeclaration {
   }
 }
 
-class ClassDeclaration(modifiers: List[String], identifier: String)
+class ClassDeclaration(val modifiers: List[String], val identifier: String)
     extends AST {
   if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers.contains("protected"))) {
     throw SemanticException("Methods must not be package private (eg. need public/private/protected)")

@@ -1,16 +1,54 @@
 package compiler
 
-import compiler.ast.{AST, CompilationUnit, VariableDeclarator}
+import compiler.ast._
 
 package object environment {
-  def buildEnvironment(ast: AST, parentEnvironment: GenericEnvironment): GenericEnvironment = {
+  def buildEnvironment(
+      ast: AST,
+      parentEnvironment: GenericEnvironment): GenericEnvironment = {
     var environment: GenericEnvironment = null // TODO null?
 
+    // TODO finish
     ast match {
       case ast: CompilationUnit =>
         environment = new RootEnvironment
+      // variables
       case ast: VariableDeclarator =>
-        parentEnvironment
+        environment = new VariableEnvironment
+        parentEnvironment.insertLocalVariable(ast.name, ast)
+      case ast: FormalParameter =>
+        environment = new VariableEnvironment
+        parentEnvironment.insertLocalVariable(ast.name, ast)
+      // class/interfaces
+      case ast: ClassDeclaration =>
+        environment = new ClassEnvironment
+        parentEnvironment.insertClass(ast.identifier, ast)
+      // methods
+      case ast: MethodDeclarator =>
+        environment = new MethodEnvironment
+        parentEnvironment.insertMethod(ast.identifier, ast)
+      case ast: ConstructorDeclarator =>
+        environment = new MethodEnvironment
+        parentEnvironment.insertMethod(ast.name, ast)
+      // other blocks (for, while, etc...)
+      case ast: ForStatement =>
+        environment = new BlockEnvironment
+      case ast: WhileStatement =>
+        environment = new BlockEnvironment
+      case _ =>
+    }
+
+    // recurse across
+    if (ast.rightSibling.isDefined)
+      buildEnvironment(ast.rightSibling.get, parentEnvironment)
+
+    // recurse down
+    if (ast.leftChild.isDefined) {
+      if (environment != null) {
+        buildEnvironment(ast.leftChild.get, environment)
+      } else { // if null we want to add to parent environment
+        buildEnvironment(ast.leftChild.get, parentEnvironment)
+      }
     }
 
     environment

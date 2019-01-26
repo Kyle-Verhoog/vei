@@ -35,6 +35,9 @@ object Compiler {
     val ast = AST.convertParseTree(parseTree(1))
     println("Weeding...")
     Weeder.weed(ast)
+    println("Building environment...")
+    // TODO null?
+    //environment.buildEnvironment(ast, null)
   }
 
   def runActual(args: Array[String]): Unit = {

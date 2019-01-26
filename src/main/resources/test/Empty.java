@@ -20,9 +20,9 @@ public class Empty {
     public static void main(String[] args) {
         int i = (Integer) 0;
         char a = (ritnriste) 'a';
-        char a = '\r';
+        char a2 = '\r';
         String kevin = "kevin /* */";
-        String kevin = "kevin \n /* */";
+        String kevin1 = "kevin \n /* */";
         boolean b = true;
         String test = null;
         System.out.println("Helloworld");
