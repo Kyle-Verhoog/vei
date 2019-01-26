@@ -502,6 +502,29 @@ object AST {
           throw new RuntimeException("Too many children for an expression")
         }
       }
+      case "unary_expression" => {
+        // need to handle unary_expression - unary_expression where the second unary
+        // immediately goes to an integer literal, because in that case we must negate
+        // the integer literal to properly check integer ranges
+        parseTree.childrenTypes match {
+          case List("-", "unary_expression") =>
+            ast = new GeneralExpression(Some(getValue(children(0))))
+            recurseOnChildren(parseTree, ast, List(1))
+            // check if unary expression was IntegerLiteral, if so negate it
+            ast.getChild(0).get match {
+              case ast: IntegerLiteral =>
+                ast
+                  .getChild(0)
+                  .get
+                  .asInstanceOf[IntegerLiteral]
+                  .setNegative(true)
+              case _ =>
+            }
+          case List("unary_expression_not_plus_minus") => {
+            recurseOnChildren(parseTree, parent.get)
+          }
+        }
+      }
       case "unary_expression_not_plus_minus" => {
         parseTree.childrenTypes match {
           case List("postfix_expression") | List("cast_expression") =>
@@ -517,6 +540,9 @@ object AST {
           case List("primary") | List("name") =>
             recurseOnChildren(parseTree, parent.get)
         }
+      }
+      case "identifier" => {
+        ast = new Identifier(parseTree.token.value)
       }
       case "cast_expression" => {
         parseTree.childrenTypes match {

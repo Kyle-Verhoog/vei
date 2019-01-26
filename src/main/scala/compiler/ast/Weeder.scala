@@ -1,6 +1,6 @@
 package compiler.ast
 
-import compiler.ast.literals.{CharacterLiteral, StringLiteral}
+import compiler.ast.literals.{CharacterLiteral, IntegerLiteral, StringLiteral}
 
 import scala.collection.mutable
 
@@ -13,14 +13,18 @@ object Weeder {
         println("looking at method: " + ast.identifier)
         println(hasBody)
         println(ast.modifiers)
-        val abstractOrNative = ast.modifiers.contains("abstract") || ast.modifiers
-          .contains("native")
+        val isAbstract = ast.modifiers.contains("abstract")
+        val abstractOrNative = isAbstract || ast.modifiers.contains("native")
 
         // rules state it has a body if and only if it is neither abstract nor native
         //println(hasBody)
         //println(abstractOrNative)
         if (hasBody && abstractOrNative) {
           throw SemanticException("Method has body and is abstract/native")
+        }
+
+        if (!isAbstract && !hasBody) {
+          throw SemanticException("Non-abstract method must have body")
         }
       }
       case ast: CharacterLiteral => {
@@ -57,26 +61,40 @@ object Weeder {
         }
       }
       case ast: InterfaceDeclaration => {
-        val queue = mutable.Queue[Option[AST]](ast.leftChild)
+        val queue = mutable.Queue[Option[AST]](ast.leftChild.get.rightSibling)
 
         // search for methods, ensure not static or final
         while (queue.nonEmpty) {
           val currentAST = queue.dequeue()
-          currentAST.get match {
-            case ast: MethodDeclaration => {
-              if (ast.modifiers.contains("static") || ast.modifiers.contains(
-                    "final")) {
-                throw SemanticException(
-                  "Interface methods cannot be static or final")
+          println("looking at currentAst: " + currentAST)
+          if (currentAST.isDefined) {
+            currentAST.get match {
+              case ast: MethodDeclaration => {
+                if (ast.modifiers.contains("static") || ast.modifiers.contains(
+                  "final")) {
+                  throw SemanticException(
+                    "Interface methods cannot be static or final")
+                }
               }
+              case _ =>
             }
-            case _ =>
+            // recurse
+            queue.enqueue(ast.leftChild)
+            queue.enqueue(ast.rightSibling)
           }
-          // recurse
-          queue.enqueue(ast.leftChild)
-          queue.enqueue(ast.rightSibling)
         }
 
+      }
+      case ast: CastExpression => {
+        ast.getChild(0).get match {
+          case ast: Name =>
+          case ast: Identifier =>
+          case _ => throw SemanticException("Cast must reduce to identifier")
+        }
+      }
+      case ast: IntegerLiteral => {
+        // evaluates the integer literal, causes error to be thrown if its not in range
+        ast.integerValue
       }
       case _ =>
     }

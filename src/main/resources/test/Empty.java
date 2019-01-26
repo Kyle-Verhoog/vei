@@ -18,8 +18,8 @@ public class Empty {
     // comments  public static void main(String[] args)
 
     public static void main(String[] args) {
-        int i = 0;
-        char a = 'a';
+        int i = (Integer) 0;
+        char a = (ritnriste) 'a';
         char a = '\r';
         String kevin = "kevin /* */";
         String kevin = "kevin \n /* */";
