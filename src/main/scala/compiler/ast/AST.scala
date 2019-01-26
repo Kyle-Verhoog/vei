@@ -429,6 +429,9 @@ object AST {
             recurseOnChildren(parseTree, ast, List(2))
         }
       }
+      case "primitive_type" => {
+        ast = new PrimitiveType(getValue(children.head))
+      }
       case "dim_exprs" => {
         parseTree.childrenTypes match {
           case List("[", "expression", "]") =>
@@ -484,7 +487,7 @@ object AST {
           "inclusive_or_expression" | "exclusive_or_expression" |
           "and_expression" | "equality_expression" | "relational_expression" |
           "shift_expression" | "additive_expression" |
-          "multiplicative_expression" | "unary_expression" => {
+          "multiplicative_expression" => {
         // TODO evaluate this approach
         if (children.isEmpty) {
           // TODO nothing to do? should never happen, throw?
@@ -510,13 +513,10 @@ object AST {
             ast = new GeneralExpression(Some(getValue(children(0))))
             recurseOnChildren(parseTree, ast, List(1))
             // check if unary expression was IntegerLiteral, if so negate it
+            println(ast.getChild(0))
             ast.getChild(0).get match {
               case ast: IntegerLiteral =>
-                ast
-                  .getChild(0)
-                  .get
-                  .asInstanceOf[IntegerLiteral]
-                  .setNegative(true)
+                ast.setNegative(true)
               case _ =>
             }
           case List("unary_expression_not_plus_minus") => {

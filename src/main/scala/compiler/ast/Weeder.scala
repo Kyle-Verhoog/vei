@@ -71,7 +71,7 @@ object Weeder {
             currentAST.get match {
               case ast: MethodDeclaration => {
                 if (ast.modifiers.contains("static") || ast.modifiers.contains(
-                  "final")) {
+                      "final")) {
                   throw SemanticException(
                     "Interface methods cannot be static or final")
                 }
@@ -87,9 +87,10 @@ object Weeder {
       }
       case ast: CastExpression => {
         ast.getChild(0).get match {
-          case ast: Name =>
-          case ast: Identifier =>
-          case _ => throw SemanticException("Cast must reduce to identifier")
+          case ast: Name          =>
+          case ast: PrimitiveType =>
+          case ast: Identifier    =>
+          case _                  => throw SemanticException("Cast must reduce to identifier")
         }
       }
       case ast: IntegerLiteral => {
