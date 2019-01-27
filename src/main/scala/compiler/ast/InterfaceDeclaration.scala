@@ -14,5 +14,5 @@ object InterfaceDeclaration {
   }
 }
 
-class InterfaceDeclaration(modifiers: List[String], identifier: String)
+class InterfaceDeclaration(modifiers: List[String], val identifier: String)
     extends AST {}

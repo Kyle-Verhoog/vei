@@ -106,8 +106,8 @@ object AST {
       case "field_declaration" =>
         parseTree.childrenTypes match {
           case List("modifiers", "type", "variable_declarator", ";") =>
-            ast = FieldDeclaration.fromParseTreeNode(children.head, children(1))
-            recurseOnChildren(parseTree, ast, List(2))
+            ast = FieldDeclaration.fromParseTreeNode(children.head)
+            recurseOnChildren(parseTree, ast, List(1, 2))
         }
       case "variable_declarator" =>
         ast = new VariableDeclarator(getValue(children.head))
@@ -213,9 +213,13 @@ object AST {
         }
       case "method_header" =>
         parseTree.childrenTypes match {
-          case List("modifiers", "type", "method_declarator") |
-              List("modifiers", "VOID", "method_declarator") =>
-            ast = MethodHeader.fromParseTreeNode(children.head, children(1))
+          case List("modifiers", "type", "method_declarator") =>
+            ast = MethodHeader.fromParseTreeNode(children.head)
+            recurseOnChildren(parseTree, ast, List(1, 2))
+          case List("modifiers", "VOID", "method_declarator") =>
+            ast = MethodHeader.fromParseTreeNode(children.head)
+            // add VOID type
+            ast.addChildToEnd(Type.fromString(getValue(children(1))))
             recurseOnChildren(parseTree, ast, List(2))
         }
       case "method_declarator" =>
@@ -236,6 +240,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("type", "variable_declarator_id") =>
             ast = FormalParameter.fromParseTreeNode(parseTree)
+            recurseOnChildren(parseTree, parent.get, List(0))
         }
       case "constructor_declaration" =>
         parseTree.childrenTypes match {
@@ -307,6 +312,9 @@ object AST {
             ast = new LocalVariableDeclaration()
             recurseOnChildren(parseTree, ast)
         }
+      case "type" =>
+        // create and return the type (this will be a leaf)
+        ast = Type.fromParseTreeNode(parseTree)
       case "expression_statement" =>
         parseTree.childrenTypes match {
           case List("statement_expression", ";") =>

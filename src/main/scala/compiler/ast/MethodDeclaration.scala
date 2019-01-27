@@ -1,8 +1,5 @@
 package compiler.ast
 
-import compiler.parser.Parser.ParseTreeNode
-import compiler.scanner.Token
-
 object MethodDeclaration {
 
   def fromParseTreeNode(
@@ -53,7 +50,7 @@ class MethodDeclaration() extends AST {
   }
 
   def identifier: String = {
-    this.getDescendant(2) match {
+    this.getDescendant(2, Some(1)) match {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>
         throw MalformedASTException(

@@ -4,11 +4,9 @@ import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
 object MethodHeader {
-  def fromParseTreeNode(modifiers: ParseTreeNode[Token],
-                        ttype: ParseTreeNode[Token]): MethodHeader = {
+  def fromParseTreeNode(modifiers: ParseTreeNode[Token]): MethodHeader = {
     new MethodHeader(
-      modifiers = AST.getValueList(modifiers),
-      returnType = AST.getValue(ttype)
+      modifiers = AST.getValueList(modifiers)
     )
   }
 
@@ -37,7 +35,10 @@ object MethodHeader {
   }
 }
 
-class MethodHeader(val modifiers: List[String], val returnType: String)
-    extends AST {
+class MethodHeader(val modifiers: List[String]) extends AST {
   MethodHeader.validateModifiers(modifiers)
+
+  def returnType: String = {
+    getChild(0).asInstanceOf[Type].ttype
+  }
 }
