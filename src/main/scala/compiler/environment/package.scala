@@ -5,13 +5,18 @@ import compiler.ast._
 package object environment {
   def buildEnvironment(
       ast: AST,
-      parentEnvironment: GenericEnvironment): GenericEnvironment = {
+      parent: GenericEnvironment): GenericEnvironment = {
     var environment: GenericEnvironment = null // TODO null?
+    var parentEnvironment = parent;
 
     // TODO finish
     ast match {
       case ast: CompilationUnit =>
         environment = new RootEnvironment
+      // packages
+      case ast: PackageDeclaration =>
+        environment = new PackageEnvironment
+        parentEnvironment.insertPackage(ast.name, ast)
       // variables
       case ast: VariableDeclarator =>
         environment = new VariableEnvironment
@@ -21,6 +26,9 @@ package object environment {
         parentEnvironment.insertLocalVariable(ast.name, ast)
       // class/interfaces
       case ast: ClassDeclaration =>
+        environment = new ClassEnvironment
+        parentEnvironment.insertClass(ast.identifier, ast)
+      case ast: InterfaceDeclaration =>
         environment = new ClassEnvironment
         parentEnvironment.insertClass(ast.identifier, ast)
       // methods
@@ -36,6 +44,11 @@ package object environment {
       case ast: WhileStatement =>
         environment = new BlockEnvironment
       case _ =>
+    }
+
+    // if this is package declaration, then it will be the parent
+    if (ast.isInstanceOf[PackageDeclaration]) {
+      parentEnvironment = environment
     }
 
     // recurse across

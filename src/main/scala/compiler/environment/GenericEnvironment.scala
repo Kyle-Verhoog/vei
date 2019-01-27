@@ -8,8 +8,9 @@ import scala.collection.mutable
 class GenericEnvironment(
     val parentEnvironment: Option[GenericEnvironment] = None) {
   // TODO consider having more specific tables that return specific AST types
-  val packageTable: mutable.HashMap[String, AST] =
-    mutable.HashMap[String, AST]()
+  // packages map to a list of AST since multiple files can have same package
+  val packageTable: mutable.HashMap[String, List[AST]] =
+    mutable.HashMap[String, List[AST]]()
   val classTable: mutable.HashMap[String, AST] = mutable.HashMap[String, AST]()
   val methodTable: mutable.HashMap[String, AST] = mutable.HashMap[String, AST]()
   val variableTable: mutable.HashMap[String, AST] =
@@ -37,10 +38,11 @@ class GenericEnvironment(
   }
 
   def insertPackage(name: String, ast: AST): Unit = {
-    if (packageTable.contains(name))
-      throw EnvironmentError(
-        "Package: " + name + " already declared in current scope")
-    packageTable += name -> ast
+    if (packageTable.contains(name)) {
+      packageTable += name -> (packageTable(name) :+ ast)
+    } else {
+      packageTable += name -> List(ast)
+    }
   }
 
   // TODO mabye return one of the variable AST instead of generic AST, if possible
