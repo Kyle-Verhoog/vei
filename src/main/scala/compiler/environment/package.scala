@@ -3,9 +3,8 @@ package compiler
 import compiler.ast._
 
 package object environment {
-  def buildEnvironment(
-      ast: AST,
-      parent: GenericEnvironment): GenericEnvironment = {
+  def buildEnvironment(ast: AST,
+                       parent: GenericEnvironment): GenericEnvironment = {
     var environment: GenericEnvironment = null // TODO null?
     var parentEnvironment = parent;
 
@@ -32,12 +31,15 @@ package object environment {
         environment = new ClassEnvironment
         parentEnvironment.insertClass(ast.identifier, ast)
       // methods
-      case ast: MethodDeclarator =>
+      case ast: AbstractMethodDeclaration =>
         environment = new MethodEnvironment
         parentEnvironment.insertMethod(ast.identifier, ast)
-      case ast: ConstructorDeclarator =>
+      case ast: MethodDeclaration =>
         environment = new MethodEnvironment
-        parentEnvironment.insertMethod(ast.name, ast)
+        parentEnvironment.insertMethod(ast.identifier, ast)
+      case ast: ConstructorDeclaration =>
+        environment = new MethodEnvironment
+        parentEnvironment.insertMethod(ast.identifier, ast)
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment

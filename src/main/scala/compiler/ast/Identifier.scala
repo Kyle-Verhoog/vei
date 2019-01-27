@@ -1,5 +1,5 @@
 package compiler.ast
 
-class Identifier(name: String) extends AST {
+class Identifier(val name: String) extends AST {
 
 }

@@ -36,6 +36,7 @@ public class Empty {
         String line = readLine(in, "Expecting number of non-terminals");
         int nterm = toInt(line, "number of non-terminals");
         for(int i = 0; i < nterm; i=i+1) {
+            String line = "THIS SHOULD OVERRIDE ABOVE LINE DECLARATION";
             String term = readLine(in, "Expecting a non-terminal").intern();
         }
 

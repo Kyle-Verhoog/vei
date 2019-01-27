@@ -17,9 +17,11 @@ class GenericEnvironment(
     mutable.HashMap[String, AST]()
 
   def insertLocalVariable(name: String, ast: AST): Unit = {
-    if (variableTable.contains(name))
+    if (variableTable.contains(name)) {
+      println("the keys" + variableTable.keySet)
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
+    }
     variableTable += name -> ast
   }
 

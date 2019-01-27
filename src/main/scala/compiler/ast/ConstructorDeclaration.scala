@@ -19,4 +19,13 @@ class ConstructorDeclaration(modifiers: List[String]) extends AST {
   if (modifiers.contains("abstract")) {
     throw SemanticException("Cannot have abstract constructors!")
   }
+
+  def identifier: String = {
+    this.getChild(0) match {
+      case Some(n: Identifier) => n.name
+      case e =>
+        throw MalformedASTException(
+          s"ConsturctorDeclaration does not have identifier child (got $e.")
+    }
+  }
 }

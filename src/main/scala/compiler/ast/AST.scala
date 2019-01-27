@@ -288,6 +288,7 @@ object AST {
       case "abstract_method_declaration" =>
         parseTree.childrenTypes match {
           case List("method_header", ";") =>
+            ast = new AbstractMethodDeclaration()
             recurseOnChildren(parseTree, parent.get, List(0))
         }
       case "block" =>
@@ -461,7 +462,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("name", "(", "argument_list", ")") =>
             ast = new MethodInvocation()
-            recurseOnChildren(parseTree, ast, List(0))
+            recurseOnChildren(parseTree, ast, List(0, 2))
           case List("primary", ".", "IDENTIFIER", "(", "argument_list", ")") =>
             ast = new MethodInvocation(Some(getValue(children(2))))
             recurseOnChildren(parseTree, ast, List(0, 4))
