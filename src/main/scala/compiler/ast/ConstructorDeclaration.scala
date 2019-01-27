@@ -22,10 +22,10 @@ class ConstructorDeclaration(modifiers: List[String]) extends AST {
 
   def identifier: String = {
     this.getChild(0) match {
-      case Some(n: Identifier) => n.name
+      case Some(n: ConstructorDeclarator) => n.name
       case e =>
         throw MalformedASTException(
-          s"ConsturctorDeclaration does not have identifier child (got $e.")
+          s"ConsturctorDeclaration does not have ConstructorDeclarator child (got $e.")
     }
   }
 }

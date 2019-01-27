@@ -36,8 +36,7 @@ object Compiler {
     println("Weeding...")
     Weeder.weed(ast)
     println("Building environment...")
-    // TODO null?
-    environment.buildEnvironment(ast, null)
+    //environment.buildEnvironment(ast, null)
   }
 
   def runActual(args: Array[String]): Unit = {
