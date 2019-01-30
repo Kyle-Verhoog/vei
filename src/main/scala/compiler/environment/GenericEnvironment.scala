@@ -4,9 +4,14 @@ import compiler.ast.AST
 import exceptions.EnvironmentError
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
-class GenericEnvironment(
-    val parentEnvironment: Option[GenericEnvironment] = None) {
+class GenericEnvironment(val ast: AST,
+                         val parentEnvironment: Option[GenericEnvironment] =
+                           None) {
+  val childrenEnvironments: ListBuffer[GenericEnvironment] =
+    ListBuffer[GenericEnvironment]()
+
   // TODO consider having more specific tables that return specific AST types
   // packages map to a list of AST since multiple files can have same package
   val packageTable: mutable.HashMap[String, List[AST]] =
@@ -54,20 +59,26 @@ class GenericEnvironment(
   }
 
   def searchForVariable(name: String): Option[AST] = {
+    println("searching in env " + this + " for name: " + name)
+    println("is parent " + parentEnvironment.isDefined)
     if (variableTable.contains(name)) return variableTable.get(name)
-    if (parentEnvironment.isDefined) return searchForVariable(name)
+    if (parentEnvironment.isDefined) return parentEnvironment.get.searchForVariable(name)
     None
   }
 
   def searchForClass(name: String): Option[AST] = {
     if (classTable.contains(name)) return classTable.get(name)
-    if (parentEnvironment.isDefined) return searchForClass(name)
+    if (parentEnvironment.isDefined) return parentEnvironment.get.searchForClass(name)
     None
   }
 
   def searchForMethod(name: String): Option[AST] = {
     if (methodTable.contains(name)) return methodTable.get(name)
-    if (parentEnvironment.isDefined) return searchForMethod(name)
+    if (parentEnvironment.isDefined) return parentEnvironment.get.searchForMethod(name)
     None
+  }
+
+  def insertChild(genericEnvironment: GenericEnvironment): Unit = {
+    childrenEnvironments.append(genericEnvironment)
   }
 }

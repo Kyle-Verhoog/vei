@@ -28,4 +28,8 @@ class FieldDeclaration(modifiers: List[String]) extends AST {
   def fieldType: String = {
     getChild(0).asInstanceOf[Type].ttype
   }
+
+  def name: String = {
+    getChild(1).get.asInstanceOf[VariableDeclarator].name
+  }
 }

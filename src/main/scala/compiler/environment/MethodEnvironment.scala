@@ -1,5 +1,6 @@
 package compiler.environment
 
-class MethodEnvironment extends GenericEnvironment {
+import compiler.ast.AST
 
-}
+class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
+    extends GenericEnvironment(myAst, parent) {}

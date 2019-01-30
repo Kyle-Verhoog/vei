@@ -36,7 +36,8 @@ object Compiler {
     println("Weeding...")
     Weeder.weed(ast)
     println("Building environment...")
-    //environment.buildEnvironment(ast, null)
+    val env = environment.buildEnvironment(ast, None)
+    environment.verifyEnvironment(env)
   }
 
   def runActual(args: Array[String]): Unit = {

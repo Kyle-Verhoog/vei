@@ -1,5 +1,6 @@
 package compiler.environment
 
-class VariableEnvironment extends GenericEnvironment {
+import compiler.ast.AST
 
-}
+class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
+    extends GenericEnvironment(myAst, parent) {}
