@@ -14,8 +14,8 @@ class MarmosetTestRunner extends FunSuite {
       i += 1
       println("on test " + i + " out of " + files.length)
       println(file)
-      val filePath = "test/marmoset/a1/" + file + ".java"
-      val fileContents = Source.fromResource(filePath).mkString
+      val filePath = "src/main/resources/test/marmoset/a1/" + file + ".java"
+      val fileContents = Source.fromFile(filePath).mkString
 
       if (fileContents.contains("_EXCEPTION") || fileContents.contains(
             "INVALID")) {
@@ -27,18 +27,18 @@ class MarmosetTestRunner extends FunSuite {
   }
 
   test("a2") {
-    val files = Joos1WTestUtils.marmosetTestFiles("a2")
+    val files = TestUtils.marmosetTestFiles("a2")
     var i = 0
 
     for (file <- files) {
       i += 1
       println("on test " + i + " out of " + files.length)
       println(file)
-      val filePath = "test/marmoset/a2/" + file + ".java"
-      val fileContents = Source.fromResource(filePath).mkString
+      val filePath = "src/main/resources/test/marmoset/a2/" + file + ".java"
+      val fileContents = Source.fromFile(filePath).mkString
 
       if (fileContents.contains("_EXCEPTION") || fileContents.contains(
-        "INVALID")) {
+            "INVALID")) {
         assertThrows[Exception](runTestFile(filePath))
       } else {
         runTestFile(filePath)

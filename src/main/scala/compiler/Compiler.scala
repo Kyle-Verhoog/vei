@@ -9,20 +9,21 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    //serialize()
+    //Joos1WScanner.generateNewScanner()
+    //Joos1WScanner.saveScanner("dfa")
     //generateTableLR1()
     //runActual(args)
     runTestFile()
   }
 
-  def runTestFile(testFile: String = "test/Empty.java"): Unit = {
-    val file = Source.fromResource(testFile).mkString
+  def runTestFile(testFile: String = "src/main/resources/test/Empty.java"): Unit = {
+    val file = Source.fromFile(testFile).mkString
     println("Running file: " + testFile)
     println("Scanning...")
     // Joos1WScanner.generateNewScanner()
     // Joos1WScanner.saveScanner("dfa")
     Joos1WScanner.loadSavedScanner()
-    val tokens = Joos1WScanner.scanFile("src/main/resources/test/Empty.java")
+    val tokens = Joos1WScanner.scanFile(testFile)
 
     tokens.prepend(new Token("BOF", "bof"))
     tokens.append(new Token("EOF", "eof"))

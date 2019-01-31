@@ -14,7 +14,7 @@ object Joos1WScanner {
   }
 
   def loadSavedScanner(dfaFile: String =
-    Source.fromResource("serializations/dfa_serialization").mkString): Unit = {
+    Source.fromResource("serializations/dfa").mkString): Unit = {
     scanner = Some(Scanner.fromSerializedDFA(dfaFile))
   }
 
