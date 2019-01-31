@@ -1,4 +1,5 @@
 .PHONY: generate-executable
 	
 generate-executable:
-	./build.sh
+	sbt clean
+	sbt package

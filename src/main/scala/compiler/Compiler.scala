@@ -12,8 +12,8 @@ object Compiler {
     //Joos1WScanner.generateNewScanner()
     //Joos1WScanner.saveScanner("dfa")
     //generateTableLR1()
-    //runActual(args)
-    runTestFile()
+    runActual(args)
+    //runTestFile()
   }
 
   def runTestFile(testFile: String = "src/main/resources/test/Empty.java"): Unit = {
@@ -38,8 +38,8 @@ object Compiler {
     println("Weeding...")
     Weeder.weed(ast)
     println("Building environment...")
-    val env = environment.buildEnvironment(ast, None)
-    environment.verifyEnvironment(env)
+    //val env = environment.buildEnvironment(ast, None)
+    //environment.verifyEnvironment(env)
   }
 
   def runActual(args: Array[String]): Unit = {

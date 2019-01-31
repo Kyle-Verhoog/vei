@@ -86,12 +86,14 @@ object Scanner {
   /**
     * Generates a new Scanner from a .lex configuration file.
     */
-  def fromConfig(cfg: String): Scanner = {
-    var alphabet: Set[String] = Set()
+  def fromConfig(
+      cfg: String,
+      defaultAlphabet: Set[String] = Regex.asciiAlphabet): Scanner = {
     var rawTokens: String = ""
+    var alphabet: Set[String] = Set()
 
     if (!cfg.contains("§")) {
-      alphabet = Regex.asciiAlphabet
+      alphabet = defaultAlphabet
       rawTokens = cfg
     } else {
       val alphaConfig = cfg.split("§")(0)
