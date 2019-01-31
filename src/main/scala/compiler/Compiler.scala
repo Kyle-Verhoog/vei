@@ -36,6 +36,9 @@ object Compiler {
     val ast = AST.convertParseTree(parseTree(1))
     println("Weeding...")
     Weeder.weed(ast)
+    println("Building environment...")
+    val env = environment.buildEnvironment(ast, None)
+    environment.verifyEnvironment(env)
   }
 
   def runActual(args: Array[String]): Unit = {

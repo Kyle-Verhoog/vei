@@ -1,12 +1,9 @@
 package compiler.ast
 
-import compiler.parser.Parser.ParseTreeNode
-import compiler.scanner.Token
-
 object MethodDeclaration {
 
   def fromParseTreeNode(
-  /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
+      /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
     // children.childrenTypes match {
     //   case List("method_header", "method_body") =>
     //     val methodHeaderPTN = parseTree.children.head
@@ -39,6 +36,10 @@ class MethodDeclaration() extends AST {
     }
   }
 
+  def body: MethodBody = {
+    this.getDescendant(1, Some(1)).get.asInstanceOf[MethodBody]
+  }
+
   def modifiers: List[String] = {
     this.getDescendant(1) match {
       case Some(n: MethodHeader) => n.modifiers
@@ -49,7 +50,7 @@ class MethodDeclaration() extends AST {
   }
 
   def identifier: String = {
-    this.getDescendant(2) match {
+    this.getDescendant(2, Some(1)) match {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>
         throw MalformedASTException(

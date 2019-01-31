@@ -426,9 +426,18 @@ class RegexTestSuite extends FunSuite {
     assert(re.matches(escape("/* this is a comment */")))
     assert(re.matches(escape("/* comment */")))
     assert(re.matches(escape("/*\n comment */")))
-    assert(re.matches(escape(s"""/*
+    assert(re.matches(escape(
+      s"""/*
  comment */""")))
     assert(re.matches(escape("/* this is multiline \n comment */")))
+  }
+  test("character regex") {
+    val re = Regex.createEngine(s"'((\')|[!-&]|[\\(-~])*'")
+    assert(re.matches("''"))
+    assert(re.matches("'a'"))
+    assert(re.matches("'Z'"))
+    assert(re.matches("'az'"))
+    assert(!re.matches("'2' + '4' + \"\" + '2' + '4'"))
   }
 
   test("C comment regex") {

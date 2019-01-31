@@ -4,11 +4,16 @@ import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
 object FormalParameter {
-  def fromParseTreeNode(ttype: ParseTreeNode[Token]): FormalParameter = {
+  def fromParseTreeNode(
+      formalParameter: ParseTreeNode[Token]): FormalParameter = {
     new FormalParameter(
-      ttype = AST.getValue(ttype)
+      name = AST.getValue(formalParameter.children(1))
     )
   }
 }
 
-class FormalParameter(ttype: String) extends AST {}
+class FormalParameter(val name: String) extends AST {
+  def ttype: String = {
+    getChild(0).asInstanceOf[Type].ttype
+  }
+}

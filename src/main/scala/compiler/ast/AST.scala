@@ -108,8 +108,8 @@ object AST {
       case "field_declaration" =>
         parseTree.childrenTypes match {
           case List("modifiers", "type", "variable_declarator", ";") =>
-            ast = FieldDeclaration.fromParseTreeNode(children.head, children(1))
-            recurseOnChildren(parseTree, ast, List(2))
+            ast = FieldDeclaration.fromParseTreeNode(children.head)
+            recurseOnChildren(parseTree, ast, List(1, 2))
         }
       case "variable_declarator" =>
         ast = new VariableDeclarator(getValue(children.head))
@@ -205,11 +205,23 @@ object AST {
             ast = MethodDeclaration.fromParseTreeNode()
             recurseOnChildren(parseTree, ast, List(0, 1))
         }
+      case "method_body" =>
+        parseTree.childrenTypes match {
+          case List("block") =>
+            ast = new MethodBody(true)
+            recurseOnChildren(parseTree, ast, List(0))
+          case List(";") =>
+            ast = new MethodBody(false)
+        }
       case "method_header" =>
         parseTree.childrenTypes match {
-          case List("modifiers", "type", "method_declarator") |
-              List("modifiers", "VOID", "method_declarator") =>
-            ast = MethodHeader.fromParseTreeNode(children.head, children(1))
+          case List("modifiers", "type", "method_declarator") =>
+            ast = MethodHeader.fromParseTreeNode(children.head)
+            recurseOnChildren(parseTree, ast, List(1, 2))
+          case List("modifiers", "VOID", "method_declarator") =>
+            ast = MethodHeader.fromParseTreeNode(children.head)
+            // add VOID type
+            ast.addChildToEnd(Type.fromString(getValue(children(1))))
             recurseOnChildren(parseTree, ast, List(2))
         }
       case "method_declarator" =>
@@ -229,8 +241,8 @@ object AST {
       case "formal_parameter" =>
         parseTree.childrenTypes match {
           case List("type", "variable_declarator_id") =>
-            ast = FormalParameter.fromParseTreeNode(children.head)
-            recurseOnChildren(parseTree, ast, List(1))
+            ast = FormalParameter.fromParseTreeNode(parseTree)
+            recurseOnChildren(parseTree, parent.get, List(0))
         }
       case "constructor_declaration" =>
         parseTree.childrenTypes match {
@@ -278,6 +290,7 @@ object AST {
       case "abstract_method_declaration" =>
         parseTree.childrenTypes match {
           case List("method_header", ";") =>
+            ast = new AbstractMethodDeclaration()
             recurseOnChildren(parseTree, parent.get, List(0))
         }
       case "block" =>
@@ -302,6 +315,9 @@ object AST {
             ast = new LocalVariableDeclaration()
             recurseOnChildren(parseTree, ast)
         }
+      case "type" =>
+        // create and return the type (this will be a leaf)
+        ast = Type.fromParseTreeNode(parseTree)
       case "expression_statement" =>
         parseTree.childrenTypes match {
           case List("statement_expression", ";") =>
@@ -387,7 +403,7 @@ object AST {
           // TODO verify
           // perform cast, this should handle lots of things without us checking anywhere else :)
           case List("INTEGER_LITERAL") =>
-            ast = new IntegerLiteral(getValue(children.head).toInt)
+            ast = new IntegerLiteral(getValue(children.head))
           case List("BOOLEAN_LITERAL") =>
             ast = new BooleanLiteral(getValue(children.head).toBoolean)
           case List("CHARACTER_LITERAL") =>
@@ -424,6 +440,9 @@ object AST {
             recurseOnChildren(parseTree, ast, List(2))
         }
       }
+      case "primitive_type" => {
+        ast = new PrimitiveType(getValue(children.head))
+      }
       case "dim_exprs" => {
         parseTree.childrenTypes match {
           case List("[", "expression", "]") =>
@@ -445,7 +464,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("name", "(", "argument_list", ")") =>
             ast = new MethodInvocation()
-            recurseOnChildren(parseTree, ast, List(0))
+            recurseOnChildren(parseTree, ast, List(0, 2))
           case List("primary", ".", "IDENTIFIER", "(", "argument_list", ")") =>
             ast = new MethodInvocation(Some(getValue(children(2))))
             recurseOnChildren(parseTree, ast, List(0, 4))
@@ -479,7 +498,7 @@ object AST {
           "inclusive_or_expression" | "exclusive_or_expression" |
           "and_expression" | "equality_expression" | "relational_expression" |
           "shift_expression" | "additive_expression" |
-          "multiplicative_expression" | "unary_expression" => {
+          "multiplicative_expression" => {
         // TODO evaluate this approach
         if (children.isEmpty) {
           // TODO nothing to do? should never happen, throw?
@@ -494,6 +513,26 @@ object AST {
           recurseOnChildren(parseTree, ast, List(0, 2))
         } else {
           throw new RuntimeException("Too many children for an expression")
+        }
+      }
+      case "unary_expression" => {
+        // need to handle unary_expression - unary_expression where the second unary
+        // immediately goes to an integer literal, because in that case we must negate
+        // the integer literal to properly check integer ranges
+        parseTree.childrenTypes match {
+          case List("-", "unary_expression") =>
+            ast = new GeneralExpression(Some(getValue(children(0))))
+            recurseOnChildren(parseTree, ast, List(1))
+            // check if unary expression was IntegerLiteral, if so negate it
+            println(ast.getChild(0))
+            ast.getChild(0).get match {
+              case ast: IntegerLiteral =>
+                ast.setNegative(true)
+              case _ =>
+            }
+          case List("unary_expression_not_plus_minus") => {
+            recurseOnChildren(parseTree, parent.get)
+          }
         }
       }
       case "unary_expression_not_plus_minus" => {
@@ -511,6 +550,9 @@ object AST {
           case List("primary") | List("name") =>
             recurseOnChildren(parseTree, parent.get)
         }
+      }
+      case "identifier" => {
+        ast = new Identifier(parseTree.token.value)
       }
       case "cast_expression" => {
         parseTree.childrenTypes match {
