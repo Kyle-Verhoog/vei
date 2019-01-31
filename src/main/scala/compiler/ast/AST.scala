@@ -3,7 +3,6 @@ package compiler.ast
 import compiler.ast.literals._
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
-import jdk.jshell.spi.ExecutionControl.NotImplementedException
 
 final case class MalformedASTException(
     private val message: String = "Malformed AST error.",
@@ -270,9 +269,9 @@ object AST {
       case "extends_interfaces" =>
         parseTree.childrenTypes match {
           case List("EXTENDS", "interface_type") =>
-            throw new NotImplementedException("extends interface")
+            throw new RuntimeException("extends interface")
           case List("extends_interfaces", ",", "interface_type") =>
-            throw new NotImplementedException("extends interface")
+            throw new RuntimeException("extends interface")
           case List() =>
         }
       case "interface_body" =>
