@@ -27,13 +27,18 @@ object Joos1WScanner {
     pw.close()
   }
 
-  def scan(src: String, fileName: Option[String] = None): ListBuffer[Token] = {
+  def scan(src: String,
+           fileName: Option[String] = None,
+           keepWhitespace: Boolean = false,
+           keepComments: Boolean = false): ListBuffer[Token] = {
     val scanr = scanner.get
-    var tokens = scanr.scan(removeComments(src), fileName)
-    tokens = removeCommentTokens(tokens)
-    tokens = removeWhitespaceTokens(tokens)
-    tokens.prepend(new Token("BOF", "bof"))
-    tokens.append(new Token("EOF", "eof"))
+    var tokens = scanr.scan(escapeComments(src), fileName)
+    if (!keepComments) {
+      tokens = removeCommentTokens(tokens)
+    }
+    if (!keepWhitespace) {
+      tokens = removeWhitespaceTokens(tokens)
+    }
     tokens
   }
 
@@ -42,10 +47,9 @@ object Joos1WScanner {
     scan(src, Some(fileName))
   }
 
-  def removeComments(input: String): String = {
-    val escaped =
-      input.replaceAllLiterally("/*", "‹").replaceAllLiterally("*/", "›")
-    escaped
+  def escapeComments(input: String): String = {
+    val s = input.replaceAll("[^\\*]//\\*", s"// *")
+    s.replaceAll("((?s)/\\*.*?\\*/)", s"‹$$1›")
   }
 
   def removeCommentTokens(tokens: ListBuffer[Token]): ListBuffer[Token] = {

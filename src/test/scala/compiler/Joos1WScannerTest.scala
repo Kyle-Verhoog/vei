@@ -1,6 +1,6 @@
 package compiler
 
-import compiler.scanner.{Scanner, Token}
+import compiler.scanner.{Joos1WScanner, Token}
 import org.scalatest.FunSuite
 
 object ScannerTestUtils {
@@ -14,10 +14,10 @@ object ScannerTestUtils {
 
 class Joos1WScannerTest extends FunSuite {
   test("Single token") {
-    val scanner = Scanner.fromConfig("""IF "if"""")
+    Joos1WScanner.generateNewScanner("""IF "if"""")
     val src = "ififif"
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
+    val tokens = Joos1WScanner.scan(src)
+    assertTokenListsMatch(
       tokens.toList,
       List(
         new Token("IF", "if"),
@@ -28,7 +28,7 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("Single tokens") {
-    val scanner = Scanner.fromConfig("""
+    Joos1WScanner.generateNewScanner("""
       IF "if"
       LPAREN "\("
       RPAREN "\)"
@@ -38,8 +38,8 @@ class Joos1WScannerTest extends FunSuite {
     """)
 
     val src = "1221;aa;ab;22;()())(;if;"
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
+    val tokens = Joos1WScanner.scan(src)
+    assertTokenListsMatch(
       tokens.toList,
       List(
         new Token("INT", "1221"),
@@ -64,7 +64,7 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("Whitespace tokens") {
-    val scanner = Scanner.fromConfig("""
+    Joos1WScanner.generateNewScanner("""
       LPAREN "\("
       RPAREN "\)"
       SPACE "☃"
@@ -76,8 +76,8 @@ class Joos1WScannerTest extends FunSuite {
     )    ()
     )
     """
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
+    val tokens = Joos1WScanner.scan(src, keepWhitespace = true)
+    assertTokenListsMatch(
       tokens.toList,
       List(
         new Token("SPACE", " "),
@@ -110,10 +110,10 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("Whitespace stripped") {
-    val scanner = Scanner.fromConfig("""
+    Joos1WScanner.generateNewScanner("""
       LPAREN "\("
       RPAREN "\)"
-      SPACE "☃"
+      WHITESPACE "☃"
       NEWLINE "☭"
       SEP ";"
     """)
@@ -122,9 +122,9 @@ class Joos1WScannerTest extends FunSuite {
     )    ()
     )
     """
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
-      Token.filterTokensByType(tokens.toList, Set("NEWLINE", "SPACE")),
+    val tokens = Joos1WScanner.scan(src)
+    assertTokenListsMatch(
+      tokens.toList,
       List(
         new Token("LPAREN", "("),
         new Token("RPAREN", ")"),
@@ -140,7 +140,7 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("if statement basic") {
-    val scanner = Scanner.fromConfig(s"""
+    Joos1WScanner.generateNewScanner(s"""
       IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
@@ -154,8 +154,8 @@ class Joos1WScannerTest extends FunSuite {
     """)
 
     val src = "if(ab==112){ab=baaaaa;}"
-    val tokens = scanner.scan(src)
-    ScannerTestUtils.assertTokenListsMatch(
+    val tokens = Joos1WScanner.scan(src)
+    assertTokenListsMatch(
       tokens.toList,
       List(
         new Token("IF", "if"),
@@ -175,73 +175,82 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("comments") {
-    val scanner = Scanner.fromConfig(s"""
-      IF "if"
-      INT "(1|2)(1|2)*"
-      ID "(a|b)(a|b)*"
-      LESSEREQ "<="
-      GREATEREQ ">="
-      ASSIGN "="
-      AND "&&"
-      OR "\\|\\|"
-      BITOR "\\|"
-      SEMI ";"
-      LPAREN "\\("
-      RPAREN "\\)"
-      LBRACE "{"
-      RBRACE "}"
-      SPACE "☃"
-      NEWLINE "☭"
-      LINE_COMMENT "//☭¬*☭"
-      BLOCK_COMMENT "/\\*\\**\\*¬*\\*\\**((/\\*)¬(\\*)¬*\\*\\**)*\\*/"
-    """)
-    // BLOCK_COMMENT "/\\*\\**\\*¬*\\*\\**((/\\*)¬(\\*)¬\\*\\**)*\\*/"
-    val tokens = scanner.scan(s"""if (ab >= 112 || ab <= 122) {
+    Joos1WScanner.loadSavedScanner()
+
+    val tokens = Joos1WScanner.scan(
+      s"""if (ab >= 112 || ab <= 122) {
       ab = baa | baaa; // testing 1 2 3
+      //*
+      /**/
+      /* multiliner
+
+      on multiple lines
+      */
+      /********/
+      /*
+       *
+       *
+       */
+      somemorecode = 23;
       // comment 2
       // comment 2
-      ab = baaaaa;
-    }""")
-    //   /**/
-    //   /*
-    //   this is a block comment
-    //   */
-    //   ba = b; /* another block */
-    // }""")
+      i = 7/**/*/**/7; // tricky
+      /*l*//*d*/ //!
+    }""",
+      keepComments = true
+    )
     assertTokenListsMatch(
-      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+      tokens.toList,
       List(
         new Token("IF", "if"),
-        new Token("LPAREN", "("),
-        new Token("ID", "ab"),
-        new Token("GREATEREQ", ">="),
-        new Token("INT", "112"),
-        new Token("OR", "||"),
-        new Token("ID", "ab"),
-        new Token("LESSEREQ", "<="),
-        new Token("INT", "122"),
-        new Token("RPAREN", ")"),
-        new Token("LBRACE", "{"),
-        new Token("ID", "ab"),
-        new Token("ASSIGN", "="),
-        new Token("ID", "baa"),
-        new Token("BITOR", "|"),
-        new Token("ID", "baaa"),
-        new Token("SEMI", ";"),
+        new Token("(", "("),
+        new Token("IDENTIFIER", "ab"),
+        new Token(">=", ">="),
+        new Token("INTEGER_LITERAL", "112"),
+        new Token("||", "||"),
+        new Token("IDENTIFIER", "ab"),
+        new Token("<=", "<="),
+        new Token("INTEGER_LITERAL", "122"),
+        new Token(")", ")"),
+        new Token("{", "{"),
+        new Token("IDENTIFIER", "ab"),
+        new Token("=", "="),
+        new Token("IDENTIFIER", "baa"),
+        new Token("|", "|"),
+        new Token("IDENTIFIER", "baaa"),
+        new Token(";", ";"),
         new Token("LINE_COMMENT", "// testing 1 2 3\n"),
+        new Token("LINE_COMMENT", "// *\n"),
+        new Token("MULTILINE_COMMENT", "‹/**/›"),
+        new Token("MULTILINE_COMMENT",
+                  "‹/* multiliner\n\n      on multiple lines\n      */›"),
+        new Token("MULTILINE_COMMENT", "‹/********/›"),
+        new Token("MULTILINE_COMMENT", "‹/*\n       *\n       *\n       */›"),
+        new Token("IDENTIFIER", "somemorecode"),
+        new Token("=", "="),
+        new Token("INTEGER_LITERAL", "23"),
+        new Token(";", ";"),
         new Token("LINE_COMMENT", "// comment 2\n"),
         new Token("LINE_COMMENT", "// comment 2\n"),
-        new Token("ID", "ab"),
-        new Token("ASSIGN", "="),
-        new Token("ID", "baaaaa"),
-        new Token("SEMI", ";"),
-        new Token("RBRACE", "}"),
+        new Token("IDENTIFIER", "i"),
+        new Token("=", "="),
+        new Token("INTEGER_LITERAL", "7"),
+        new Token("MULTILINE_COMMENT", "‹/**/›"),
+        new Token("*", "*"),
+        new Token("MULTILINE_COMMENT", "‹/**/›"),
+        new Token("INTEGER_LITERAL", "7"),
+        new Token(";", ";"),
+        new Token("LINE_COMMENT", "// tricky\n"),
+        new Token("MULTILINE_COMMENT", "‹/*l*/›"),
+        new Token("MULTILINE_COMMENT", "‹/*d*/›"),
+        new Token("LINE_COMMENT", "//!\n"),
+        new Token("}", "}"),
       )
     )
   }
 
   test("if statement and OR, bitwise-OR") {
-    val scanner = Scanner.fromConfig(s"""
+    Joos1WScanner.generateNewScanner(s"""
       IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
@@ -256,15 +265,15 @@ class Joos1WScannerTest extends FunSuite {
       RPAREN "\\)"
       LBRACE "{"
       RBRACE "}"
-      SPACE "☃"
+      WHITESPACE "☃"
       NEWLINE "☭"
     """)
-    val tokens = scanner.scan(s"""if (ab >= 112 || ab <= 122) {
+    val tokens = Joos1WScanner.scan(s"""if (ab >= 112 || ab <= 122) {
       ab = baa | baaa;
       ab = baaaaa;
     }""")
-    ScannerTestUtils.assertTokenListsMatch(
-      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+    assertTokenListsMatch(
+      tokens.toList,
       List(
         new Token("IF", "if"),
         new Token("LPAREN", "("),
@@ -293,7 +302,7 @@ class Joos1WScannerTest extends FunSuite {
   }
 
   test("if statement and AND and bitwise-AND") {
-    val scanner = Scanner.fromConfig(s"""
+    Joos1WScanner.generateNewScanner(s"""
       IF "if"
       INT "(1|2)(1|2)*"
       ID "(a|b)(a|b)*"
@@ -307,16 +316,16 @@ class Joos1WScannerTest extends FunSuite {
       RPAREN "\\)"
       LBRACE "{"
       RBRACE "}"
-      SPACE "☃"
+      WHITESPACE "☃"
       NEWLINE "☭"
     """)
-    val tokens = scanner.scan(s"""if (ab >= 112 && ab <= 1222) {
+    val tokens = Joos1WScanner.scan(s"""if (ab >= 112 && ab <= 1222) {
       ab = baa & baaa;
       ab = baaaaa;
     }""")
 
     assertTokenListsMatch(
-      Token.filterTokensByType(tokens.toList, Set("SPACE", "NEWLINE")),
+      tokens.toList,
       List(
         new Token("IF", "if"),
         new Token("LPAREN", "("),
@@ -342,6 +351,37 @@ class Joos1WScannerTest extends FunSuite {
         new Token("RBRACE", "}"),
       )
     )
+  }
+
+  test("J1_hello_comment") {
+    Joos1WScanner.loadSavedScanner()
+
+    val tokens = Joos1WScanner.scan(
+      s"""
+// PARSER_WEEDER
+public/**/class/*H*/J1_hello_comment/*e*/{/*ll*/
+public/*o*/
+J1_hello_comment/*,*/
+(/* */
+)/*w*/
+{/*o*/
+}/*r*/
+/*l*//*d*/ //!
+// :-)
+/*H*/public/*o*/static/*w*/int/* */test/*a*/(/*r*/)/*e*/{//
+String/*y*/s/*o*/=/*u*/"Hello, World!"/*?*/;
+/* */System/*I*/./* */out/*a*/./*m*/println/* */(/*f*/s/*i*/)/*n*/;/*e*/
+int/*,*/r/* */=/*t*/0/*h*/;/*a*/
+for/*n*/(/*k*/int/* */i/*y*/=/*o*/0/*u*/;/*.*/i/* */</*A*/s/*n*/./*d*/length/* */(/*h*/)/*o*/;/*w*/ /* */i/*i*/=/*s*/i/* */+/*y*/1/*o*/)/*u*/ {//r
+/*   */r/*a*/=/*u*/17/*n*/*/*t*/r/*?*/+/* */s/*J*/./*o*/charAt/*l*/(/*l*/i/*y*/)/* */;/* g*/
+/*o*/}/*o*/
+/*d*/return/*.*/248113298/*.*/+/*.*/r/* */;// See
+/*y*/}/*o*/
+/*u*/}// then, goodbye.
+}""",
+    )
+    println(tokens)
+    assert(false)
   }
 
   def assertTokenListsMatch(listA: List[Token], listB: List[Token]): Unit = {

@@ -436,16 +436,21 @@ class RegexTestSuite extends FunSuite {
     val ESCAPED_END = "›"
 
     def escape(str: String): String = {
-      var s = str.replaceAllLiterally("/*", ESCAPED_START)
-      s = s.replaceAllLiterally("*/", ESCAPED_END)
-      s
+      val s = str.replaceAll("//\\*", s"// *")
+      s.replaceAll("((?s)/\\*.*?\\*/)", s"‹$$1›")
     }
-    //val re = Regex.createEngine(s"/\\*(\\*/)${Regex.NOT}*\\*/")
     val re =
       Regex.createEngine(
-        s"""$ESCAPED_START($ESCAPED_END${Regex.NOT})*$ESCAPED_END""")
+        s"""$ESCAPED_START($ESCAPED_END${Regex.NOT})*$ESCAPED_END""",
+        Regex.asciiAlphabet | Set("‹", "›"))
     assert(re.matches(escape("/* comment */")))
+    assert(re.matches(escape("/* /*comment */")))
+    assert(re.matches(escape("/*/*comment */")))
+    assert(re.matches(escape("/**comment */")))
     assert(re.matches(escape("/**/")))
+    assert(re.matches(escape("/**comment ******/")))
+    assert(!re.matches(escape("/**/*/**/")))
+    assert(!re.matches(escape("/**/*/**/")))
     assert(!re.matches(escape("/**/ */")))
     assert(!re.matches(escape("/**/*/")))
     assert(!re.matches(escape("/* comment */ ljfdsk\nljkfdsadlkjfa")))

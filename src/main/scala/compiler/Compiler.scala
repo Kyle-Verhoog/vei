@@ -24,6 +24,9 @@ object Compiler {
     Joos1WScanner.loadSavedScanner()
     val tokens = Joos1WScanner.scanFile("src/main/resources/test/Empty.java")
 
+    tokens.prepend(new Token("BOF", "bof"))
+    tokens.append(new Token("EOF", "eof"))
+
     println("Parsing...")
     val cfg =
       Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)

@@ -60,9 +60,9 @@ object Regex {
   val DOT = "ø"
   val NOT = "¬"
 
-  val asciiAlphabet = (0 to 127).map(i => i.toChar.toString).toSet
+  val asciiAlphabet: Set[String] = (0 to 127).map(i => i.toChar.toString).toSet
 
-  val escapeMapping = Map(
+  val escapeMapping: Map[String, String] = Map(
     ALT -> "|",
     "|" -> ALT,
     ZOM -> "*",
@@ -458,8 +458,9 @@ object Regex {
     nfa
   }
 
-  def createEngine(expr: String): RegexEngine = {
-    val nfa = toNFA(expr)
+  def createEngine(expr: String,
+                   alpha: Set[String] = Regex.asciiAlphabet): RegexEngine = {
+    val nfa = toNFA(expr, alpha)
     val dfa = nfa.toDFA()
     new RegexEngine(expr, dfa)
   }

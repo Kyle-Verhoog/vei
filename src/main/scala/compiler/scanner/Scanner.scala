@@ -87,9 +87,18 @@ object Scanner {
     * Generates a new Scanner from a .lex configuration file.
     */
   def fromConfig(cfg: String): Scanner = {
-    val alphaConfig = cfg.split("§")(0)
-    val tokenConfig = cfg.split("§")(1).trim.split("\n")
-    val alphabet = alphaConfig.toList.map(s => s.toString).toSet
+    var alphabet: Set[String] = Set()
+    var rawTokens: String = ""
+
+    if (!cfg.contains("§")) {
+      alphabet = Regex.asciiAlphabet
+      rawTokens = cfg
+    } else {
+      val alphaConfig = cfg.split("§")(0)
+      rawTokens = cfg.split("§")(1)
+      alphabet = alphaConfig.toList.map(s => s.toString).toSet
+    }
+    val tokenConfig = rawTokens.trim.split("\n")
     var engine = TokenEngine.newEmptyEngine(alphabet)
 
     var tokenNumber = 0
