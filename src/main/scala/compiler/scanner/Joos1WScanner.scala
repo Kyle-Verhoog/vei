@@ -2,15 +2,17 @@ package compiler.scanner
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-
 import java.io.{File, PrintWriter}
+
+import regex.Regex
 
 object Joos1WScanner {
   var scanner: Option[Scanner] = None
+  val alphabet: Set[String] = Regex.asciiAlphabet | Set("‹", "›")
 
   def generateNewScanner(
       configFile: String = Source.fromResource("tokens.lex").mkString): Unit = {
-    scanner = Some(Scanner.fromConfig(configFile))
+    scanner = Some(Scanner.fromConfig(configFile, alphabet))
   }
 
   def loadSavedScanner(dfaFile: String =
