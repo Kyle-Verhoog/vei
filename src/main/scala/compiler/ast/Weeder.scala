@@ -23,8 +23,8 @@ object Weeder {
           throw SemanticException("Method has body and is abstract/native")
         }
 
-        if (!isAbstract && !hasBody) {
-          throw SemanticException("Non-abstract method must have body")
+        if (!abstractOrNative && !hasBody) {
+          throw SemanticException("Non-abstract/non-native method must have body")
         }
       }
       case ast: CharacterLiteral => {
@@ -61,7 +61,8 @@ object Weeder {
         }
       }
       case ast: InterfaceDeclaration => {
-        val queue = mutable.Queue[Option[AST]](ast.leftChild.get.rightSibling)
+        val queue = mutable.Queue[Option[AST]]()
+        if (ast.leftChild.isDefined) queue.enqueue(ast.leftChild.get.rightSibling)
 
         // search for methods, ensure not static or final
         while (queue.nonEmpty) {
@@ -86,6 +87,8 @@ object Weeder {
 
       }
       case ast: CastExpression => {
+        println("checking cast expr")
+        println(ast)
         ast.getChild(0).get match {
           case ast: Name          =>
           case ast: PrimitiveType =>
