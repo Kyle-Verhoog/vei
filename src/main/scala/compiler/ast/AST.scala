@@ -68,7 +68,7 @@ object AST {
     // build new node
     parseTree.token.tokenType match {
       case "compilation_unit" => {
-        ast = new CompilationUnit
+        ast = new CompilationUnit(parseTree.token.value)
 
         parseTree.childrenTypes match {
           case List("package_declaration",
@@ -264,14 +264,14 @@ object AST {
                     "interface_body") =>
             ast =
               InterfaceDeclaration.fromParseTreeNode(children.head, children(2))
-            recurseOnChildren(parseTree, parent.get, List(3, 4))
+            recurseOnChildren(parseTree, ast, List(3, 4))
         }
       case "extends_interfaces" =>
         parseTree.childrenTypes match {
           case List("EXTENDS", "interface_type") =>
-            throw new RuntimeException("extends interface")
+            recurseOnChildren(parseTree, parent.get, List(1))
           case List("extends_interfaces", ",", "interface_type") =>
-            throw new RuntimeException("extends interface")
+            recurseOnChildren(parseTree, parent.get, List(0, 2))
           case List() =>
         }
       case "interface_body" =>
@@ -290,7 +290,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("method_header", ";") =>
             ast = new AbstractMethodDeclaration()
-            recurseOnChildren(parseTree, parent.get, List(0))
+            recurseOnChildren(parseTree, ast, List(0))
         }
       case "block" =>
         parseTree.childrenTypes match {
@@ -523,9 +523,12 @@ object AST {
             ast = new GeneralExpression(Some(getValue(children(0))))
             recurseOnChildren(parseTree, ast, List(1))
             // check if unary expression was IntegerLiteral, if so negate it
-            println(ast.getChild(0))
             ast.getChild(0).get match {
               case ast: IntegerLiteral =>
+                // if an integer literal isnt a direct expression, check its bounds before negating
+                if (!isDirectExpression(parseTree.children(1))) {
+                  ast.integerValue // will trigger evaluation
+                }
                 ast.setNegative(true)
               case _ =>
             }
@@ -557,7 +560,7 @@ object AST {
         parseTree.childrenTypes match {
           case List("(", "primitive_type", ")", "unary_expression") |
               List("(", "expression", ")", "unary_expression_not_plus_minus") =>
-            ast = new CastExpression()
+            ast = CastExpression.fromParseTreeNode(parseTree)
             recurseOnChildren(parseTree, ast, List(1, 3))
           case List("(", "primitive_type", "dims", ")", "unary_expression") |
               List("(",
@@ -565,7 +568,7 @@ object AST {
                    "dims",
                    ")",
                    "unary_expression_not_plus_minus") =>
-            ast = new CastExpression()
+            ast = CastExpression.fromParseTreeNode(parseTree)
             recurseOnChildren(parseTree, ast, List(1, 2, 4))
         }
 
@@ -584,6 +587,13 @@ object AST {
     }
 
     ast
+  }
+
+  def isDirectExpression(parseTreeNode: ParseTreeNode[Token]): Boolean = {
+    if (parseTreeNode.children.length > 1) return false
+    if (parseTreeNode.children.nonEmpty)
+      return isDirectExpression(parseTreeNode.children.head)
+    true
   }
 
   // gets value recursively, will throw error if not a direct path

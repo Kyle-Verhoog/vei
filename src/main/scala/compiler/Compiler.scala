@@ -31,7 +31,7 @@ object Compiler {
     println("Parsing...")
     val cfg =
       Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-    val parseTree = Parser.parse(cfg, tokens)
+    val parseTree = Parser.parse(cfg, tokens, testFile)
 
     println("Converting to ast....")
     val ast = AST.convertParseTree(parseTree(1))
@@ -49,25 +49,7 @@ object Compiler {
     }
 
     try {
-      val file = Source.fromFile(args(0)).mkString
-      println("Read in file: " + file)
-      println("Scanning...")
-      // val tokens = scanWithoutSerializing(file)
-
-      // add BOF and EOF for parsing
-      // tokens.prepend(new Token("BOF", "bof"))
-      // tokens.append(new Token("EOF", "eof"))
-
-      println("Parsing...")
-      val cfg =
-        Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-      // val parseTree = Parser.parse(cfg, tokens)
-
-      println("Converting to ast....")
-      // val ast = AST.convertParseTree(parseTree(1))
-      // println(ast)
-      println("Weeding...")
-      // Weeder.weed(ast)
+      runTestFile(args(0))
     } catch {
       case e: Exception =>
         println(e)

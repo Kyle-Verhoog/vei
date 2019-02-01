@@ -7,14 +7,39 @@ import scala.collection.mutable
 object Weeder {
   def weed(ast: AST): Unit = {
     ast match {
+      case ast: CompilationUnit => {
+        val queue = mutable.Queue[Option[AST]](ast.leftChild)
+
+        while (queue.nonEmpty) {
+          val currentAST = queue.dequeue()
+          if (currentAST.isDefined) {
+            currentAST.get match {
+              case classAst: ClassDeclaration =>
+                if (classAst.identifier != ast.fileName)
+                  throw SemanticException(
+                    "Class name: " + classAst.identifier + " doesnt match file name: " + ast.fileName)
+              case interfaceAst: InterfaceDeclaration =>
+                if (interfaceAst.identifier != ast.fileName)
+                  throw SemanticException(
+                    "Interface name: " + interfaceAst.identifier + " doesnt match file name: " + ast.fileName)
+              case _ => {
+                queue.enqueue(currentAST.get.leftChild)
+                queue.enqueue(currentAST.get.rightSibling)
+              }
+            }
+          }
+        }
+      }
       case ast: MethodDeclaration => {
         // body is necessarily defined if it has a second child
         val hasBody = ast.body.hasBody
-        println("looking at method: " + ast.identifier)
-        println(hasBody)
-        println(ast.modifiers)
+        //println("looking at method: " + ast.identifier)
+        //println(hasBody)
+        //println(ast.modifiers)
+        val isStatic = ast.modifiers.contains("static")
         val isAbstract = ast.modifiers.contains("abstract")
-        val abstractOrNative = isAbstract || ast.modifiers.contains("native")
+        val isNative = ast.modifiers.contains("native")
+        val abstractOrNative = isAbstract || isNative
 
         // rules state it has a body if and only if it is neither abstract nor native
         //println(hasBody)
@@ -24,7 +49,12 @@ object Weeder {
         }
 
         if (!abstractOrNative && !hasBody) {
-          throw SemanticException("Non-abstract/non-native method must have body")
+          throw SemanticException(
+            "Non-abstract/non-native method must have body")
+        }
+
+        if (isNative && !isStatic) {
+          throw SemanticException("Native methods must be static")
         }
       }
       case ast: CharacterLiteral => {
@@ -62,15 +92,22 @@ object Weeder {
       }
       case ast: InterfaceDeclaration => {
         val queue = mutable.Queue[Option[AST]]()
-        if (ast.leftChild.isDefined) queue.enqueue(ast.leftChild.get.rightSibling)
+
+        if (ast.leftChild.isDefined) {
+          val leftChild = ast.leftChild.get
+          if (leftChild.rightSibling.isDefined) { // this means there were extends
+            queue.enqueue(leftChild.rightSibling)
+          } else {
+            queue.enqueue(ast.leftChild)
+          }
+        }
 
         // search for methods, ensure not static or final
         while (queue.nonEmpty) {
           val currentAST = queue.dequeue()
-          println("looking at currentAst: " + currentAST)
           if (currentAST.isDefined) {
             currentAST.get match {
-              case ast: MethodDeclaration => {
+              case ast: MethodHeader => {
                 if (ast.modifiers.contains("static") || ast.modifiers.contains(
                       "final")) {
                   throw SemanticException(
@@ -80,8 +117,10 @@ object Weeder {
               case _ =>
             }
             // recurse
-            queue.enqueue(ast.leftChild)
-            queue.enqueue(ast.rightSibling)
+            if (currentAST.get.leftChild.isDefined)
+              queue.enqueue(currentAST.get.leftChild)
+            if (currentAST.get.rightSibling.isDefined)
+              queue.enqueue(currentAST.get.rightSibling)
           }
         }
 

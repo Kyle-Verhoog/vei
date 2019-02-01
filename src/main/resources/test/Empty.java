@@ -30,7 +30,7 @@ public class Empty {
             int m = alpha;
         }
 
-        char a = (ritnriste) 'a';
+        char a = (Object) 'a';
         char a2 = '\r';
         String kevin = "kevin /* */";
         String kevin1 = "kevin \n /* */";
@@ -42,4 +42,4 @@ public class Empty {
 }
 
 
-	
+

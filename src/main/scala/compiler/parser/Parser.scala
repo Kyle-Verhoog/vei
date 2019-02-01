@@ -65,9 +65,9 @@ object Parser {
     }
   }
 
-  def parse(
-      cfg: CFG,
-      inputTokens: ListBuffer[Token]): ListBuffer[ParseTreeNode[Token]] = {
+  def parse(cfg: CFG,
+            inputTokens: ListBuffer[Token],
+            compilationUnitName: String = "NO_COMPILATION_NAME"): ListBuffer[ParseTreeNode[Token]] = {
     var tokens = inputTokens
     var nodeStack = ListBuffer[ParseTreeNode[Token]]()
     var stateStack = ListBuffer[Int]()
@@ -100,9 +100,12 @@ object Parser {
         }
 
         // TODO something other than non-leaf might be useful
+        var tempToken = new Token(A, "non-leaf")
+        if (A.equals("compilation_unit")) {
+          tempToken = new Token(A, compilationUnitName);
+        }
         nodeStack.append(
-          new ParseTreeNode[Token](new Token(A, "non-leaf"),
-                                   childNodes.reverse))
+          new ParseTreeNode[Token](tempToken, childNodes.reverse))
 
         if (!cfg.shiftActions.contains(stateStack.last) || !cfg
               .shiftActions(stateStack.last)
