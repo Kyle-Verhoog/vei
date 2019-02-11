@@ -29,10 +29,11 @@ object Compiler {
     println("Parsing...")
     val cfg =
       Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-    val parseTree = Parser.parse(cfg, tokens, testFile)
+    val parseTree = Parser.parse(cfg, tokens, testFile, (token: Token) => {})
 
     println("Converting to ast....")
     val ast = AST.convertParseTree(parseTree(1))
+    println(ast)
     println("Weeding...")
     Weeder.weed(ast)
     println("Building environment...")

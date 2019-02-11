@@ -36,19 +36,42 @@ object TestUtils {
   def parseTokens(
       tokens: ListBuffer[Token]): ListBuffer[ParseTreeNode[Token]] = {
     val cfg = grammar
-    Parser.parse(cfg, tokens, "NO_COMPILATION_NAME")
+    Parser.parse(cfg, tokens, "NO_COMPILATION_NAME", (t: Token) => {})
   }
 
   def genAST(parseTree: ParseTreeNode[Token]): AST = {
     AST.convertParseTree(parseTree)
   }
 
-  def parseSrc(src: String): ListBuffer[ParseTreeNode[Token]] = {
+  def scan(src: String): ListBuffer[Token] = {
     Joos1WScanner.loadSavedScanner()
-    parseTokens(Joos1WScanner.scan(src))
+    Joos1WScanner.scan(src)
+  }
+
+  def parseSrc(src: String): ListBuffer[ParseTreeNode[Token]] = {
+    parseTokens(scan(src))
   }
 
   def ASTForSrc(src: String): AST = {
     genAST(parseSrc(src)(1))
+  }
+
+  def base(methodBody: String = "", classBody: String = ""): String = {
+    s"""
+    public class A {
+      public static int test() {
+        $methodBody
+      }
+      $classBody
+    }
+    """
+  }
+
+  def scanMethod(body: String = ""): ListBuffer[Token] = {
+    scan(base(body))
+  }
+
+  def scanClass(body: String = ""): ListBuffer[Token] = {
+    scan(base(classBody=body))
   }
 }

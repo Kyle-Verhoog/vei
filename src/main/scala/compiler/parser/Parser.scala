@@ -6,6 +6,7 @@ import compiler.scanner.Token
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+
 object Parser {
   class CFG(
       val terminals: ListBuffer[String],
@@ -18,32 +19,8 @@ object Parser {
   class ParseTreeNode[T](
       val token: T,
       val children: ListBuffer[ParseTreeNode[T]] =
-        ListBuffer[ParseTreeNode[T]]()
+        ListBuffer[ParseTreeNode[T]](),
   ) {
-    // ensure tokens are well formed (perform weeding on literals)
-    token match {
-      case t: Token =>
-        t.tokenType match {
-          case "IDENTIFIER" =>
-            t.value match {
-              case "goto" | "double" | "float" | "long" | "switch" | "case" |
-                  "throws" | "throw" | "do" | "finally" | "break" | "continue" |
-                  "default" | "synchronized" | "transient" | "volatile" |
-                  "try" | "catch" =>
-                throw SemanticException(
-                  "illegal value for IDENTIFIER: " + t.value)
-              case _ =>
-            }
-          case "STRING_LITERAL" | "CHARACTER_LITERAL" =>
-            if (t.value.contains("\\u")) {
-              throw SemanticException(
-                "Unicode values are not valid: " + t.value)
-            }
-          case _ =>
-        }
-      case _ =>
-    }
-
     def inorderLeafValues(): ListBuffer[T] = {
       if (children.isEmpty) return ListBuffer(token)
 
@@ -87,7 +64,8 @@ object Parser {
 
   def parse(cfg: CFG,
             inputTokens: ListBuffer[Token],
-            compilationUnitName: String): ListBuffer[ParseTreeNode[Token]] = {
+            compilationUnitName: String,
+            weedToken: Token => Unit): ListBuffer[ParseTreeNode[Token]] = {
     var tokens = inputTokens
     var nodeStack = ListBuffer[ParseTreeNode[Token]]()
     var stateStack = ListBuffer[Int]()
@@ -96,6 +74,7 @@ object Parser {
     stateStack.append(cfg.shiftActions(0)(tokens.head.tokenType)) // push the first state
 
     // push tokens.head to node stack and pop it from tokens
+    weedToken(tokens.head)
     nodeStack.append(new ParseTreeNode[Token](tokens.head))
     tokens = tokens.takeRight(tokens.length - 1)
 
@@ -124,6 +103,7 @@ object Parser {
         if (A.equals("compilation_unit")) {
           tempToken = new Token(A, compilationUnitName)
         }
+        weedToken(tempToken)
         nodeStack.append(
           new ParseTreeNode[Token](tempToken, childNodes.reverse))
 
@@ -137,6 +117,7 @@ object Parser {
         stateStack.append(cfg.shiftActions(stateStack.last)(A))
       }
 
+      weedToken(token)
       nodeStack.append(new ParseTreeNode[Token](token))
 
       // Error check

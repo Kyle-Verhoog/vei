@@ -119,7 +119,7 @@ term ( expr )
       new Token("EOF", "eof")
     )
 
-    val parseTree = Parser.parse(cfg, tokens, "NO_COMPILATION_NAME")
+    val parseTree = Parser.parse(cfg, tokens, "NO_COMPILATION_NAME", (t: Token) => {})
 
     val pt = new ParseTreeNode(
       new Token("1", "1"),

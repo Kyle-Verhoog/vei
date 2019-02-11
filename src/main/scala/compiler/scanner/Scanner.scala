@@ -120,7 +120,17 @@ object Scanner {
   def fromSerializedDFA(serializedDFA: String): Scanner = {
     val bytes = Base64.getDecoder.decode(serializedDFA)
     val bi = new ByteArrayInputStream(bytes)
-    val si = new ObjectInputStream(bi)
+    val si = new ObjectInputStream(bi) {
+      // https://stackoverflow.com/a/22375260 !!!????
+      override def resolveClass(desc: java.io.ObjectStreamClass): Class[_] = {
+        try {
+          Class.forName(desc.getName, false, getClass.getClassLoader)
+        }
+        catch {
+          case ex: ClassNotFoundException => super.resolveClass(desc)
+        }
+      }
+    }
 
     val dfa = si.readObject().asInstanceOf[DFA[String]]
 
