@@ -36,7 +36,7 @@ object TestUtils {
   def parseTokens(
       tokens: ListBuffer[Token]): ListBuffer[ParseTreeNode[Token]] = {
     val cfg = grammar
-    Parser.parse(cfg, tokens)
+    Parser.parse(cfg, tokens, "NO_COMPILATION_NAME")
   }
 
   def genAST(parseTree: ParseTreeNode[Token]): AST = {

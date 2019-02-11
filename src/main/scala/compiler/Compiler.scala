@@ -9,8 +9,8 @@ import scala.io.Source
 
 object Compiler {
   def main(args: Array[String]) {
-    //Joos1WScanner.generateNewScanner()
-    //Joos1WScanner.saveScanner("dfa")
+    // Joos1WScanner.generateNewScanner()
+    // Joos1WScanner.saveScanner("src/main/resources/serializations/dfa")
     //generateTableLR1()
     runActual(args)
     //runTestFile()
@@ -56,11 +56,6 @@ object Compiler {
         System.exit(42)
     }
     System.exit(0)
-  }
-
-  def generateTableLALR1(): Unit = {
-    val cfg = Source.fromResource("grammar.cfg").mkString
-    Jlalr1.parse(cfg)
   }
 
   def generateTableLR1(): Unit = {

@@ -719,8 +719,6 @@ public class Jlalr1 {
         }
     }
 
-
-
     // TODO copied main to take in string
     public static final void parseLr1(String cfg) {
         Scanner scanner = new Scanner(cfg);

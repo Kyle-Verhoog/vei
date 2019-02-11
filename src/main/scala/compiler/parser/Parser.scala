@@ -27,7 +27,7 @@ object Parser {
         t.tokenType match {
           case "IDENTIFIER" => {
             t.value match {
-              case "goto" | "double" | "float" | "long" =>
+              case "goto" | "double" | "float" | "long" | "switch" | "case" | "throws" | "throw" | "do" | "finally" | "break" | "continue" | "default" | "synchronized" | "transient" | "volatile" | "try" | "catch" =>
                 throw SemanticException(
                   "illegal value for IDENTIFIER: " + t.value)
               case _ =>
@@ -63,11 +63,28 @@ object Parser {
     def childrenTypes: List[String] = {
       children.map(child => child.tokenType).toList
     }
+
+    override def toString: String = {
+      token match {
+        case t: Token =>
+          val cs = children.map(
+            child => {
+              val childStrs = child.toString.split("\n")
+              val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+              "┠─ " + childStrs.head + tailChar + childStrs.tail.map(
+                line => "│  " + line
+              ).mkString("\n")
+            }
+          ).mkString("\n")
+          t.value.toString + "\n" + cs
+        case _ => "ERROR"
+      }
+    }
   }
 
   def parse(cfg: CFG,
             inputTokens: ListBuffer[Token],
-            compilationUnitName: String = "NO_COMPILATION_NAME"): ListBuffer[ParseTreeNode[Token]] = {
+            compilationUnitName: String): ListBuffer[ParseTreeNode[Token]] = {
     var tokens = inputTokens
     var nodeStack = ListBuffer[ParseTreeNode[Token]]()
     var stateStack = ListBuffer[Int]()

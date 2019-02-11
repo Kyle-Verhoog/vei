@@ -109,58 +109,6 @@ class TokenRegexTestSuite extends FunSuite {
     )
   }
 
-  test("Literals") {
-    val scanner = Scanner.fromConfig(s"""
-      ~ "~"
-      ! "!"
-      % "%"
-      & "&"
-      && "&&"
-      , ","
-      - "-"
-      . "\\."
-      / "/"
-      : ":"
-      ; ";"
-      < "<"
-      > ">"
-      = "="
-      != "!="
-      <= "<="
-      >= ">="
-      == "=="
-      ? "\\?"
-      [ "\\["
-      ] "\\]"
-      { "{"
-      } "}"
-      ^ "^"
-      * "\\*"
-      ( "\\("
-      ) "\\)"
-      + "\\+"
-      | "\\|"
-      || "\\|\\|"
-      BOOLEAN_LITERAL "(true)|(false)"
-      NULL_LITERAL "null"
-      INTEGER_LITERAL "0|((1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*)"
-      CHAR_LITERAL "'[!-~]'"
-      STRING_LITERAL ""(!|[#-~]|\"|☃|☘)*""
-      IDENTIFIER "([a-z]|[A-Z]|_|$$)([a-z]|[A-Z]|[0-9]|_|$$)*"
-      WHITESPACE "☃"
-      NEWLINE "☭""""")
-    // TODO: finish this test
-    val tokens = scanner.scan("i = 0123;").toList
-    // TODO: test negative integers
-    // val tokens = scanner.scan("int i = -123;").toList
-    assertTokenListsMatch(
-      Token.filterTokensByType(tokens, whitespaceTokens),
-      List(
-        new Token("INTE", "||"),
-      )
-    )
-  }
-
   test("Error: Unclosed string") {
     val scanner = Scanner.fromConfig(s"""
       PUBLIC "public"

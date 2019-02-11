@@ -1,6 +1,7 @@
 package compiler
 
 import compiler.parser.Parser
+import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 import org.scalatest.FunSuite
 
@@ -8,10 +9,58 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 class ParserTest extends FunSuite {
-  test("Test reading in example.lr1 file") {
-    val lines = Source.fromResource("testfiles/example.lr1").getLines().toArray
-    val cfg = Parser.readInLr1(lines)
+  val simpleLR1CFG = Parser.readInLr1("""6
+BOF
+EOF
+id
+-
+(
+)
+3
+S
+expr
+term
+S
+5
+S BOF expr EOF
+expr term
+expr expr - term
+term id
+term ( expr )
+11
+28
+8 EOF reduce 2
+9 - reduce 4
+7 - shift 1
+1 id shift 2
+6 ( shift 3
+6 term shift 4
+10 EOF shift 5
+2 - reduce 3
+4 ) reduce 1
+3 id shift 2
+4 EOF reduce 1
+2 ) reduce 3
+0 BOF shift 6
+8 - reduce 2
+2 EOF reduce 3
+3 expr shift 7
+9 ) reduce 4
+9 EOF reduce 4
+4 - reduce 1
+1 term shift 8
+3 term shift 4
+3 ( shift 3
+10 - shift 1
+6 id shift 2
+8 ) reduce 2
+1 ( shift 3
+7 ) shift 9
+6 expr shift 10
+    """.split("\n"))
 
+  test("Test readInLr1") {
+    val cfg = simpleLR1CFG
     assert(cfg.terminals.equals(ListBuffer("BOF", "EOF", "id", "-", "(", ")")))
     assert(cfg.nonterminal.equals(ListBuffer("S", "expr", "term")))
     assert(
@@ -54,9 +103,8 @@ class ParserTest extends FunSuite {
     assert(cfg.shiftActions(6)("expr").equals(10))
   }
 
-  test("Parsing example.lr1") {
-    val lines = Source.fromResource("testfiles/example.lr1").getLines().toArray
-    val cfg = Parser.readInLr1(lines)
+  test("Parsing simpleLR1") {
+    val cfg = simpleLR1CFG
 
     // BOF id - ( id ) - id EOF     from cs241
     val tokens = ListBuffer(
@@ -71,6 +119,34 @@ class ParserTest extends FunSuite {
       new Token("EOF", "eof")
     )
 
-    println(Parser.parse(cfg, tokens)(1).inorderLeafValues())
+    val parseTree = Parser.parse(cfg, tokens, "NO_COMPILATION_NAME")
+
+    val pt = new ParseTreeNode(
+      new Token("1", "1"),
+      ListBuffer(
+        new ParseTreeNode(
+          new Token("2", "2"),
+          ListBuffer[ParseTreeNode[Token]](
+            new ParseTreeNode(
+              new Token("3", "3"),
+              ListBuffer[ParseTreeNode[Token]]()
+            ),
+            new ParseTreeNode(
+              new Token("5", "5"),
+              ListBuffer[ParseTreeNode[Token]]()
+            ),
+            new ParseTreeNode(
+              new Token("6", "6"),
+              ListBuffer[ParseTreeNode[Token]]()
+            ),
+          )
+        ),
+        new ParseTreeNode(
+          new Token("4", "4"),
+          ListBuffer[ParseTreeNode[Token]]()
+        ),
+      )
+    )
+    println(pt)
   }
 }

@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := generate-executable
 DOCS_DIR  ?= docs
 
 PANDOC = pandoc

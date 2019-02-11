@@ -1,6 +1,5 @@
 package compiler.scanner
 
-import compiler.scanner.Token
 import exceptions.TransitionNonExistentException
 import org.scalatest.FunSuite
 
