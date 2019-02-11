@@ -11,7 +11,7 @@ class IfStatement() extends AST {
       val elseStatementBody = getChild(2)
       List(ifStatementBody.get, elseStatementBody.get)
     } catch {
-      case _ => List(ifStatementBody.get)
+      case _: Throwable => List(ifStatementBody.get)
     }
 
   }

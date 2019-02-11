@@ -4,10 +4,16 @@ import compiler.ast.SemanticException
 import compiler.scanner.Token
 import compiler.parser.Parser.ParseTreeNode
 
+import jlalr.Jlalr1
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object Joos1WParser {
+  def generateTableLR1(): Unit = {
+    val cfg = Source.fromResource("grammar.cfg").mkString
+    Jlalr1.parseLr1(cfg)
+  }
+
   def weedToken(token: Token) {
     token.tokenType match {
       case "IDENTIFIER" =>
@@ -20,12 +26,12 @@ object Joos1WParser {
               "illegal value for IDENTIFIER: " + token.value)
             case _ =>
         }
-            case "STRING_LITERAL" | "CHARACTER_LITERAL" =>
-              if (token.value.contains("\\u")) {
-                throw SemanticException(
-                  "Unicode values are not valid: " + token.value)
-              }
-            case _ =>
+      case "STRING_LITERAL" | "CHARACTER_LITERAL" =>
+        if (token.value.contains("\\u")) {
+          throw SemanticException(
+            "Unicode values are not valid: " + token.value)
+        }
+      case _ =>
     }
   }
 

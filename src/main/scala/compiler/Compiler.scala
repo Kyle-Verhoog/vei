@@ -1,64 +1,60 @@
 package compiler
 
 import compiler.ast.{AST, Weeder}
-import compiler.parser.Parser
+import compiler.parser.{Parser, Joos1WParser}
 import compiler.scanner.{Joos1WScanner, Scanner, Token}
-import jlalr.Jlalr1
 
 import scala.io.Source
 
 object Compiler {
+  val usage = """
+      Usage: joosc [--gen-dfa] filename
+  """
+
   def main(args: Array[String]) {
-    // Joos1WScanner.generateNewScanner()
-    // Joos1WScanner.saveScanner("src/main/resources/serializations/dfa")
-    //generateTableLR1()
-    runActual(args)
-    // runTestFile()
-  }
+    type OptionMap = Map[Symbol, Any]
 
-  def runTestFile(
-      testFile: String = "src/main/resources/test/Empty.java"): Unit = {
-    val file = Source.fromFile(testFile).mkString
-    println("Running file: " + testFile)
-    println("Scanning...")
-    // Joos1WScanner.generateNewScanner()
-    // Joos1WScanner.saveScanner("dfa")
-    Joos1WScanner.loadSavedScanner()
-    val tokens = Joos1WScanner.scanFile(testFile)
+    def optionMap(map : OptionMap, list: List[String]) : OptionMap = {
+      def isSwitch(s : String) = (s(0) == '-')
+      list match {
+        case Nil => map
+        case "--gen-scandfa" :: tail =>
+          optionMap(map ++ Map('genDfa -> true), tail)
+        case "--gen-parsetable" :: tail =>
+          optionMap(map ++ Map('genParseTable -> true), tail)
+        case string :: opt2 :: tail if isSwitch(opt2) =>
+          optionMap(map ++ Map('file -> string), list.tail)
+        case string :: Nil =>  optionMap(map ++ Map('file -> string), list.tail)
+        case option :: tail =>
+          println(s"Unknown option '$option'")
+          throw new RuntimeException("")
 
-    println("Parsing...")
-    val cfg =
-      Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
-    val parseTree = Parser.parse(cfg, tokens, testFile, (token: Token) => {})
-
-    println("Converting to ast....")
-    val ast = AST.convertParseTree(parseTree(1))
-    println(ast)
-    println("Weeding...")
-    Weeder.weed(ast)
-    println("Building environment...")
-    //val env = environment.buildEnvironment(ast, None)
-    //environment.verifyEnvironment(env)
-  }
-
-  def runActual(args: Array[String]): Unit = {
-    if (args.length.equals(0)) {
-      println("Must supply a file!")
-      System.exit(1) // TODO error codes?
+      }
     }
 
-    try {
-      runTestFile(args(0))
-    } catch {
-      case e: Exception =>
-        println(e)
-        System.exit(42)
-    }
-    System.exit(0)
-  }
+    val options = optionMap(Map(), args.toList)
 
-  def generateTableLR1(): Unit = {
-    val cfg = Source.fromResource("grammar.cfg").mkString
-    Jlalr1.parseLr1(cfg)
+    if (options contains 'genDfa) {
+      Joos1WScanner.generateNewScanner()
+      Joos1WScanner.saveScanner("src/main/resources/serializations/dfa")
+    }
+
+    if (options contains 'genParseTable) {
+      Joos1WParser.generateTableLR1()
+    }
+
+    if (options contains 'file) {
+      try {
+        Joos1WCompiler.compileFile(options('file).asInstanceOf[String])
+      } catch {
+        case e: Exception =>
+          println(e)
+          System.exit(42)
+      }
+      System.exit(0)
+    }
+    else {
+      Joos1WCompiler.compileFile("src/main/resources/test/Empty.java")
+    }
   }
 }
