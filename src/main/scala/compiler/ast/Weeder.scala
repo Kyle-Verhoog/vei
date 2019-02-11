@@ -17,11 +17,11 @@ object Weeder {
               case classAst: ClassDeclaration =>
                 if (classAst.identifier != ast.fileName)
                   throw SemanticException(
-                    "Class name: " + classAst.identifier + " doesnt match file name: " + ast.fileName)
+                    "Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}")
               case interfaceAst: InterfaceDeclaration =>
                 if (interfaceAst.identifier != ast.fileName)
                   throw SemanticException(
-                    "Interface name: " + interfaceAst.identifier + " doesnt match file name: " + ast.fileName)
+                    "Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}")
               case _ => {
                 queue.enqueue(currentAST.get.leftChild)
                 queue.enqueue(currentAST.get.rightSibling)
@@ -70,7 +70,7 @@ object Weeder {
             case PatternTwoDigitOctal(c)   =>
             case PatternOneDigitOctal(c)   =>
             case _ =>
-              throw SemanticException("Bad escape sequence: " + ast.value)
+              throw SemanticException(s"Bad escape sequence: ${ast.value}")
           }
         }
       }
@@ -84,7 +84,8 @@ object Weeder {
                   "\\6" | "\\7" =>
               case _ =>
                 throw SemanticException(
-                  "Bad escape sequence: " + ast.value.substring(i, i + 2))
+                  s"Bad escape sequence: ${ast.value.substring(i, i + 2)}"
+                )
             }
           }
           i += 1
