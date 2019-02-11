@@ -11,4 +11,8 @@ object MethodDeclarator {
   }
 }
 
-class MethodDeclarator(val identifier: String) extends AST {}
+class MethodDeclarator(val identifier: String) extends AST {
+  override def strFields: String = {
+    s"$identifier"
+  }
+}

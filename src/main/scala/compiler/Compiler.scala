@@ -13,10 +13,11 @@ object Compiler {
     // Joos1WScanner.saveScanner("src/main/resources/serializations/dfa")
     //generateTableLR1()
     runActual(args)
-    //runTestFile()
+    // runTestFile()
   }
 
-  def runTestFile(testFile: String = "src/main/resources/test/Empty.java"): Unit = {
+  def runTestFile(
+      testFile: String = "src/main/resources/test/Empty.java"): Unit = {
     val file = Source.fromFile(testFile).mkString
     println("Running file: " + testFile)
     println("Scanning...")
@@ -24,9 +25,6 @@ object Compiler {
     // Joos1WScanner.saveScanner("dfa")
     Joos1WScanner.loadSavedScanner()
     val tokens = Joos1WScanner.scanFile(testFile)
-
-    tokens.prepend(new Token("BOF", "bof"))
-    tokens.append(new Token("EOF", "eof"))
 
     println("Parsing...")
     val cfg =

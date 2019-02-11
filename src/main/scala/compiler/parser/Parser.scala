@@ -5,7 +5,6 @@ import compiler.scanner.Token
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.io.Source
 
 object Parser {
   class CFG(
@@ -23,25 +22,25 @@ object Parser {
   ) {
     // ensure tokens are well formed (perform weeding on literals)
     token match {
-      case t: Token => {
+      case t: Token =>
         t.tokenType match {
-          case "IDENTIFIER" => {
+          case "IDENTIFIER" =>
             t.value match {
-              case "goto" | "double" | "float" | "long" | "switch" | "case" | "throws" | "throw" | "do" | "finally" | "break" | "continue" | "default" | "synchronized" | "transient" | "volatile" | "try" | "catch" =>
+              case "goto" | "double" | "float" | "long" | "switch" | "case" |
+                  "throws" | "throw" | "do" | "finally" | "break" | "continue" |
+                  "default" | "synchronized" | "transient" | "volatile" |
+                  "try" | "catch" =>
                 throw SemanticException(
                   "illegal value for IDENTIFIER: " + t.value)
               case _ =>
             }
-          }
-          case "STRING_LITERAL" | "CHARACTER_LITERAL" => {
+          case "STRING_LITERAL" | "CHARACTER_LITERAL" =>
             if (t.value.contains("\\u")) {
               throw SemanticException(
                 "Unicode values are not valid: " + t.value)
             }
-          }
           case _ =>
         }
-      }
       case _ =>
     }
 
@@ -67,15 +66,19 @@ object Parser {
     override def toString: String = {
       token match {
         case t: Token =>
-          val cs = children.map(
-            child => {
-              val childStrs = child.toString.split("\n")
-              val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
-              "┠─ " + childStrs.head + tailChar + childStrs.tail.map(
-                line => "│  " + line
-              ).mkString("\n")
-            }
-          ).mkString("\n")
+          val cs = children
+            .map(
+              child => {
+                val childStrs = child.toString.split("\n")
+                val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+                "┠─ " + childStrs.head + tailChar + childStrs.tail
+                  .map(
+                    line => "┃  " + line
+                  )
+                  .mkString("\n")
+              }
+            )
+            .mkString("\n")
           t.value.toString + "\n" + cs
         case _ => "ERROR"
       }
@@ -110,7 +113,7 @@ object Parser {
 
         // pop |gamma| child nodes, and |gamma| states
         val childNodes = ListBuffer[ParseTreeNode[Token]]()
-        for (i <- gamma.indices) {
+        for (_ <- gamma.indices) {
           childNodes.append(nodeStack.last)
           nodeStack = nodeStack.take(nodeStack.length - 1)
           stateStack = stateStack.take(stateStack.length - 1)
@@ -119,7 +122,7 @@ object Parser {
         // TODO something other than non-leaf might be useful
         var tempToken = new Token(A, "non-leaf")
         if (A.equals("compilation_unit")) {
-          tempToken = new Token(A, compilationUnitName);
+          tempToken = new Token(A, compilationUnitName)
         }
         nodeStack.append(
           new ParseTreeNode[Token](tempToken, childNodes.reverse))
@@ -160,7 +163,7 @@ object Parser {
     val terminals = ListBuffer[String]()
     lines = lines.takeRight(lines.length - 1)
 
-    for (i <- 0 until count) {
+    for (_ <- 0 until count) {
       terminals.append(lines(0))
       lines = lines.takeRight(lines.length - 1)
     }

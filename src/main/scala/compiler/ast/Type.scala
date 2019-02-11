@@ -37,4 +37,8 @@ object Type {
   }
 }
 
-class Type(val ttype: String) extends AST {}
+class Type(val ttype: String) extends AST {
+  override def strFields: String = {
+    s"$ttype"
+  }
+}

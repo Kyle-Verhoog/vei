@@ -15,8 +15,9 @@ object Joos1WScanner {
     scanner = Some(Scanner.fromConfig(configFile, alphabet))
   }
 
-  def loadSavedScanner(rawDFA: String =
-    Source.fromResource("serializations/dfa").mkString): Unit = {
+  def loadSavedScanner(
+      rawDFA: String = Source.fromResource("serializations/dfa").mkString)
+    : Unit = {
     scanner = Some(Scanner.fromSerializedDFA(rawDFA))
   }
 
@@ -41,6 +42,8 @@ object Joos1WScanner {
     if (!keepWhitespace) {
       tokens = removeWhitespaceTokens(tokens)
     }
+    tokens.prepend(new Token("BOF", "bof"))
+    tokens.append(new Token("EOF", "eof"))
     tokens
   }
 

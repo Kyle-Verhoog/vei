@@ -655,7 +655,7 @@ class AST(var parent: Option[AST] = None,
   // adds sibling to end of sibling list and sets siblings parent accordingly
   def addSiblingToEnd(sib: AST): Unit = {
     rightSibling match {
-      case Some(node) => rightSibling.get.addSiblingToEnd(sib)
+      case Some(node) => node.addSiblingToEnd(sib)
       case None => {
         sib.parent = parent
         rightSibling = Some(sib)
@@ -667,29 +667,65 @@ class AST(var parent: Option[AST] = None,
   def addChildToEnd(newChild: AST): Unit = {
     leftChild match {
       case Some(node) => node.addSiblingToEnd(newChild)
-      case None => {
+      case None =>
         newChild.parent = Some(this)
         leftChild = Some(newChild)
-      }
     }
   }
 
-  override def toString: String = {
-    printNicelyFormattedTree()
+  def strFields: String = {
+    ""
   }
 
-  def printNicelyFormattedTree(depth: Int = 0): String = {
+  override def toString: String = {
+    betterNicelyFormattedTree
+  }
+
+  def betterNicelyFormattedTree: String = {
+    val cs = children
+      .map(
+        child => {
+          val childStrs = child.toString.split("\n")
+          val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+          "┠─ " + childStrs.head + tailChar + childStrs.tail
+            .map(
+              line => "┃  " + line
+            )
+            .mkString("\n")
+        }
+      )
+      .mkString("\n")
+    val className = getClass.toString.substring("class compiler.ast.".length)
+    val fields = strFields
+    s"$className($fields)" + "\n" + cs
+  }
+
+  def nicelyFormattedTree(depth: Int = 0): String = {
     var line = ""
-    for (i <- 0 until depth) {
+    for (_ <- 0 until depth) {
       line += "\t"
     }
     line += getClass
     line += "\n"
     if (leftChild.isDefined)
-      line += leftChild.get.printNicelyFormattedTree(depth + 1)
+      line += leftChild.get.nicelyFormattedTree(depth + 1)
     if (rightSibling.isDefined)
-      line += rightSibling.get.printNicelyFormattedTree(depth)
+      line += rightSibling.get.nicelyFormattedTree(depth)
     line
+  }
+
+  def siblings: List[AST] = {
+    rightSibling match {
+      case Some(n) => n :: n.siblings
+      case None    => Nil
+    }
+  }
+
+  def children: List[AST] = {
+    leftChild match {
+      case Some(n) => n :: n.siblings
+      case None    => List[AST]()
+    }
   }
 
   def getChild(n: Integer): Option[AST] = {

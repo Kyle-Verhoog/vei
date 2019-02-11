@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.ast.MethodDeclaration
+import compiler.ast.{AST, MethodDeclaration}
 import org.scalatest.FunSuite
 
 class ASTTest extends FunSuite {
@@ -11,10 +11,28 @@ class ASTTest extends FunSuite {
                                      |  }
                                      |}
        """.stripMargin)
+    println(ast)
     assert(ast.getDescendant(0).get == ast)
     assert(ast.getDescendant(1).get == ast.leftChild.get)
     assert(ast.getDescendant(2).get == ast.leftChild.get.leftChild.get)
     // TODO check childNum arg
+  }
+
+  test("children") {
+    val ast = new AST(
+      leftChild = Option(
+        new AST(
+          rightSibling = Option(
+            new AST(
+              rightSibling = Option(new AST(
+                rightSibling = Option(new AST(
+                ))
+                ))
+            ))
+        )))
+
+    println(ast)
+    assert(ast.children.length == 4)
   }
 
   test("Methods") {

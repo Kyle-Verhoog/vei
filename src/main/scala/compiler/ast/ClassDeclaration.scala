@@ -13,11 +13,18 @@ object ClassDeclaration {
 
 class ClassDeclaration(val modifiers: List[String], val identifier: String)
     extends AST {
-  if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers.contains("protected"))) {
-    throw SemanticException("Methods must not be package private (eg. need public/private/protected)")
+  if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
+        .contains("protected"))) {
+    throw SemanticException(
+      "Methods must not be package private (eg. need public/private/protected)")
   }
 
   if (modifiers.contains("abstract") && modifiers.contains("final")) {
     throw SemanticException("A class cannot be both 'abstract' and 'final'")
+  }
+
+  override def strFields: String = {
+    val mods = modifiers.mkString(" ")
+    s"$mods $identifier"
   }
 }

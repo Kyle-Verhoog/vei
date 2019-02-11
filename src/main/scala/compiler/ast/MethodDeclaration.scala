@@ -3,7 +3,7 @@ package compiler.ast
 object MethodDeclaration {
 
   def fromParseTreeNode(
-      /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
+  /*parseTree: ParseTreeNode[Token]*/ ): MethodDeclaration = {
     // children.childrenTypes match {
     //   case List("method_header", "method_body") =>
     //     val methodHeaderPTN = parseTree.children.head
@@ -56,6 +56,11 @@ class MethodDeclaration() extends AST {
         throw MalformedASTException(
           s"Method does not have MethodDeclarator child (got $e.")
     }
+  }
+
+  override def strFields: String = {
+    val mods = modifiers.mkString(" ")
+    s"$mods $returnType $identifier"
   }
 
 }

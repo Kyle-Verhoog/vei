@@ -39,6 +39,13 @@ class MethodHeader(val modifiers: List[String]) extends AST {
   MethodHeader.validateModifiers(modifiers)
 
   def returnType: String = {
-    getChild(0).asInstanceOf[Type].ttype
+    getChild(0) match {
+      case Some(t: Type) => t.ttype
+      case _             => throw new RuntimeException("")
+    }
+  }
+
+  override def strFields: String = {
+    s"$returnType"
   }
 }
