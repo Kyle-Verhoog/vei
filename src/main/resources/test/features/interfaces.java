@@ -1,1 +1,1 @@
-  public interface A {}
+  public interface Interfaces {}

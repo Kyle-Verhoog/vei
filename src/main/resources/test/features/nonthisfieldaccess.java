@@ -1,4 +1,4 @@
-public class A {
+public class Nonthisfieldaccess {
   public A() {}
   public int x;
   public void m() {

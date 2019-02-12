@@ -1,5 +1,5 @@
-public class A {
-  public A() {}
+public class Arbitraryreturn {
+  public Arbitraryreturn() {}
   public int m(int x) {
     if (x==42)
       return 87;

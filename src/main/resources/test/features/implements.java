@@ -1,4 +1,4 @@
-public class A implements java.io.Serializable {
-  public A() {}
-  int x;
+public class Implements implements java.io.Serializable {
+  public Implements() {}
+  public int x;
 }

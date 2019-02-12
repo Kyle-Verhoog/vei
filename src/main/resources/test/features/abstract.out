@@ -1,7 +1,7 @@
 PUBLIC ┃ public
 ABSTRACT ┃ abstract
 CLASS ┃ class
-IDENTIFIER ┃ A
+IDENTIFIER ┃ Abstract
 { ┃ {
 PUBLIC ┃ public
 ABSTRACT ┃ abstract

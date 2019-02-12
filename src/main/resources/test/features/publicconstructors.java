@@ -1,3 +1,3 @@
-public class A {
-  public A() {}
+public class Publicconstructors {
+  public Publicconstructors() {}
 }

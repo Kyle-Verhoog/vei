@@ -1,3 +1,3 @@
-public class A {
-  public A() { /* super(); */}
+public class Implicitsupercall {
+  public Implicitsupercall() { /* super(); */}
 }

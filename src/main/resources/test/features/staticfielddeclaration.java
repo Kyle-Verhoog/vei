@@ -1,3 +1,3 @@
-public class A {
+public class Staticfielddeclaration {
   protected static int x;
 }

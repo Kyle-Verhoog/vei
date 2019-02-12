@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Byte {
+  public Byte() {}
   protected byte x;
 }

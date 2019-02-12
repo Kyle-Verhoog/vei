@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Intliterals {
+  public Intliterals() {}
   protected int x = 42;
 }

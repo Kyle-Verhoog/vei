@@ -1,3 +1,3 @@
-public class A {
-  protected A() {}
+public class Protectedconstructors {
+  protected Protectedconstructors() {}
 }

@@ -138,6 +138,11 @@ object AST {
           case List("IMPORT", "name", ";") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
+      case "type_import_on_demand_declaration" =>
+        parseTree.childrenTypes match {
+          case List("IMPORT", "name", ".", "*", ";") =>
+            recurseOnChildren(parseTree, parent.get, List(1))
+        }
       case "array_type" =>
         parseTree.childrenTypes match {
           case List("primitive_type", "[", "]") | List("name", "[", "]") =>
@@ -556,7 +561,7 @@ object AST {
       case "identifier" => {
         ast = new Identifier(parseTree.token.value)
       }
-      case "cast_expression" => {
+      case "cast_expression" =>
         parseTree.childrenTypes match {
           case List("(", "primitive_type", ")", "unary_expression") |
               List("(", "expression", ")", "unary_expression_not_plus_minus") =>
@@ -571,9 +576,8 @@ object AST {
             ast = CastExpression.fromParseTreeNode(parseTree)
             recurseOnChildren(parseTree, ast, List(1, 2, 4))
         }
-
-      } // TODO
-      case _ => {
+      // TODO
+      case _ =>
         children.length match {
           case 0 =>
           case 1 =>
@@ -583,7 +587,6 @@ object AST {
               "Too many children to process, make a rule for this type: " + parseTree.token.tokenType)
           }
         }
-      }
     }
 
     ast

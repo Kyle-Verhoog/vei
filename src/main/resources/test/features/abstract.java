@@ -1,3 +1,3 @@
-public abstract class A {
+public abstract class Abstract {
     public abstract int m();
 }

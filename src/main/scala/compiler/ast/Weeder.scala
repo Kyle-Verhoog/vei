@@ -15,13 +15,14 @@ object Weeder {
           if (currentAST.isDefined) {
             currentAST.get match {
               case classAst: ClassDeclaration =>
+                print(s"KEVIN: ${classAst.identifier} ${ast.fileName}")
                 if (classAst.identifier != ast.fileName)
                   throw SemanticException(
-                    "Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}")
+                    s"Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}")
               case interfaceAst: InterfaceDeclaration =>
                 if (interfaceAst.identifier != ast.fileName)
                   throw SemanticException(
-                    "Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}")
+                    s"Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}")
               case _ => {
                 queue.enqueue(currentAST.get.leftChild)
                 queue.enqueue(currentAST.get.rightSibling)
@@ -82,6 +83,7 @@ object Weeder {
               case "\\b" | "\\r" | "\\n" | "\\t" | "\\f" | "\\\\" | "\\\"" |
                   "\\\'" | "\\0" | "\\1" | "\\2" | "\\3" | "\\4" | "\\5" |
                   "\\6" | "\\7" =>
+                i += 1
               case _ =>
                 throw SemanticException(
                   s"Bad escape sequence: ${ast.value.substring(i, i + 2)}"

@@ -1,6 +1,6 @@
-public class A {
-  public A() {}
-  public A returnThis() {
+public class This {
+  public This() {}
+  public This returnThis() {
     return this;
   }
 }

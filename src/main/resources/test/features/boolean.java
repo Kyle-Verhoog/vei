@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Boolean {
+  public Boolean() {}
   protected boolean x;
 }

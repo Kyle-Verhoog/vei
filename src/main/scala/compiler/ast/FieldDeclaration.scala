@@ -16,8 +16,9 @@ class FieldDeclaration(modifiers: List[String]) extends AST {
   if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
         .contains("protected"))) {
     throw SemanticException(
-      "Methods must not be package private (eg. need public/private/protected)")
+      "Fields must not be package private (eg. need public/private/protected)")
   }
+
   if (modifiers.contains("final")) {
     throw SemanticException("No field can be 'final'.")
   }

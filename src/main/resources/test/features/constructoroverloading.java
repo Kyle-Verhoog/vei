@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
-  public A(int x) {}
+public class Constructoroverloading {
+  public Constructoroverloading() {}
+  public Constructoroverloading(int x) {}
 }

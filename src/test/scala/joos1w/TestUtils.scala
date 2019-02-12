@@ -3,7 +3,7 @@ package joos1w
 import compiler.ast.AST
 import compiler.parser.Parser
 import compiler.parser.Parser.{CFG, ParseTreeNode}
-import compiler.scanner.{Joos1WScanner, Scanner, Token}
+import compiler.scanner.{Joos1WScanner, Token}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -24,7 +24,7 @@ object TestUtils {
       .fromResource("test/marmoset/" + assignmentVersion)
       .mkString
       .split('\n')
-      .map(s => s.split('.')(0))
+      .map(s => s.split(".java")(0))
       .distinct
       .toList
   }
@@ -72,6 +72,6 @@ object TestUtils {
   }
 
   def scanClass(body: String = ""): ListBuffer[Token] = {
-    scan(base(classBody=body))
+    scan(base(classBody = body))
   }
 }

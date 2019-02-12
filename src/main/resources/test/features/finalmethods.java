@@ -1,5 +1,5 @@
-public class A {
-  public A() {}
+public class Finalmethods {
+  public Finalmethods() {}
   public final int m() {
     return 42;
   }

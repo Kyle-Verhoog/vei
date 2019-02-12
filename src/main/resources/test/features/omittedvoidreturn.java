@@ -1,5 +1,5 @@
-public class A {
-  public A() {}
+public class Omittedvoidreturn {
+  public Omittedvoidreturn() {}
   public void m() {
     /* return; */
   }

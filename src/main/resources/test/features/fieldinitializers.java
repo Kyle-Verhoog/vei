@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Fieldinitializers {
+  public Fieldinitializers() {}
   protected int x = 42;
 }

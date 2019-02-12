@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Nullliteral {
+  public Nullliteral() {}
   protected A x = null;
 }

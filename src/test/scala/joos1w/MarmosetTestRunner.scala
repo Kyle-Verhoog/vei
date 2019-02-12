@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.Compiler.runTestFile
+import compiler.Joos1WCompiler
 import org.scalatest.FunSuite
 
 import scala.io.Source
@@ -12,16 +12,18 @@ class MarmosetTestRunner extends FunSuite {
 
     for (file <- files) {
       i += 1
-      println("on test " + i + " out of " + files.length)
+      println(s"on test $i out of ${files.length}")
       println(file)
-      val filePath = "src/main/resources/test/marmoset/a1/" + file + ".java"
+      val filePath = s"src/main/resources/test/marmoset/a1/${file}.java"
       val fileContents = Source.fromFile(filePath).mkString
+      // val fileLines = fileContents.split("\n")
+      // val JoosLine = if (fileLines.nonEmpty) fileLines(0) else ""
+      val JoosLine = fileContents
 
-      if (fileContents.contains("_EXCEPTION") || fileContents.contains(
-            "INVALID")) {
-        assertThrows[Exception](runTestFile(filePath))
+      if (JoosLine.contains("_EXCEPTION") || JoosLine.contains("INVALID")) {
+        assertThrows[Exception](Joos1WCompiler.compileFile(filePath))
       } else {
-        runTestFile(filePath)
+        Joos1WCompiler.compileFile(filePath)
       }
     }
   }
@@ -39,9 +41,9 @@ class MarmosetTestRunner extends FunSuite {
 
       if (fileContents.contains("_EXCEPTION") || fileContents.contains(
             "INVALID")) {
-        assertThrows[Exception](runTestFile(filePath))
+        assertThrows[Exception](Joos1WCompiler.compileFile(filePath))
       } else {
-        runTestFile(filePath)
+        Joos1WCompiler.compileFile(filePath)
       }
     }
   }

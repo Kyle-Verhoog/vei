@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Publicfields {
+  public Publicfields() {}
   public int x;
 }

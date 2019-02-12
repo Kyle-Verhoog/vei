@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Array {
+  public Array() {}
   protected int[] x;
 }

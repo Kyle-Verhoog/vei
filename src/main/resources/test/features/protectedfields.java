@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Protectedfields {
+  public Protectedfields() {}
   protected int x;
 }

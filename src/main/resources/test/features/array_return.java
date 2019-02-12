@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Array_return {
+  public Array_return() {}
   public int[] foo() { return null; }
 }

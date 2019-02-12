@@ -1,3 +1,3 @@
-  public final class A {
-    public A() {}
+  public final class Finalclasses {
+    public Finalclasses() {}
   }

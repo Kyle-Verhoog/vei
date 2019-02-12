@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Stringliterals {
+  public Stringliterals() {}
   protected String x = "foo";
 }

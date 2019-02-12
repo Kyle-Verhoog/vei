@@ -1,4 +1,6 @@
-public class A {
+// FAIL
+// Java 1.3
+public class Continue {
   public int m(int x) {
     while (x>0) {
        x=x-1;

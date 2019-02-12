@@ -1,5 +1,5 @@
-public class A {
-  public A() {}
+public class Implicitthisformethods {
+  public Implicitthisformethods() {}
   public int m1() {
     return 42;
   }

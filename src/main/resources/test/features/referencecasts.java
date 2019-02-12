@@ -1,6 +1,6 @@
-public class A {
-  public A() {}
-  public A m(Object x) {
+public class Referencecasts {
+  public Referencecasts() {}
+  public Referencecasts m(Object x) {
     return (A)x;
   }
 }

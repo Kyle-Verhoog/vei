@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class A {
-  public A() {}
+public class Packageimport {
+  public Packageimport() {}
   protected Vector c;
 }

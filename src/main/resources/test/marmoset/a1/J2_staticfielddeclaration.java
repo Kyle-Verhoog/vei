@@ -1,4 +1,4 @@
-// JOOS1: PARSER_WEEDER,JOOS1_STATIC_FIELD_DECLARATION,PARSER_EXCEPTION
+// JOOS1: PARSER_WEEDER,JOOS1_STATIC_FIELD_DECLARATION
 // JOOS2: PARSER_WEEDER
 public class J2_staticfielddeclaration {
     public J2_staticfielddeclaration() {}
@@ -10,4 +10,3 @@ public class J2_staticfielddeclaration {
     }
 
 }
-

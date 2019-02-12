@@ -1,4 +1,4 @@
-public class A {
-  public A() {}
+public class Booleanliterals {
+  public Booleanliterals() {}
   protected boolean x = false;
 }
