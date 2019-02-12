@@ -10,7 +10,6 @@ final case class MalformedASTException(
 ) extends Exception(message, cause)
 
 object AST {
-
   def getNthSibling(node: AST, sibNum: Integer): Option[AST] = {
     var sib = Option(node)
     (0 until sibNum).foreach(_ => {
@@ -67,7 +66,7 @@ object AST {
 
     // build new node
     parseTree.token.tokenType match {
-      case "compilation_unit" => {
+      case "compilation_unit" =>
         ast = new CompilationUnit(parseTree.token.value)
 
         parseTree.childrenTypes match {
@@ -76,8 +75,7 @@ object AST {
                     "type_declaration") =>
             recurseOnChildren(parseTree, ast)
         }
-      }
-      case "type_declaration" => {
+      case "type_declaration" =>
         ast = new TypeDeclaration
 
         parseTree.childrenTypes match {
@@ -85,7 +83,6 @@ object AST {
             recurseOnChildren(parseTree, ast)
           case List(";") | List() =>
         }
-      }
       case "class_declaration" =>
         parseTree.childrenTypes match {
           case List("modifiers",
@@ -97,13 +94,12 @@ object AST {
             ast = ClassDeclaration.fromParseTreeNode(children.head, children(2))
             recurseOnChildren(parseTree, ast, List(3, 4, 5))
         }
-      case "super" => {
+      case "super" =>
         parseTree.childrenTypes match {
           case List("EXTENDS", "class_type") =>
             recurseOnChildren(parseTree, parent.get, List(1))
           case List() =>
         }
-      }
       case "field_declaration" =>
         parseTree.childrenTypes match {
           case List("modifiers", "type", "variable_declarator", ";") =>
@@ -391,7 +387,7 @@ object AST {
             ast = new WhileStatement()
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
-      case "primary_no_new_array" => {
+      case "primary_no_new_array" =>
         parseTree.childrenTypes match {
           case List("literal") | List("THIS") | List(
                 "class_instance_creation_expression") | List("field_access") |
@@ -401,8 +397,7 @@ object AST {
           case List("(", "expression", ")") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
-      }
-      case "literal" => {
+      case "literal" =>
         parseTree.childrenTypes match {
           // TODO verify
           // perform cast, this should handle lots of things without us checking anywhere else :)
@@ -417,15 +412,13 @@ object AST {
           case List("NULL_LITERAL") =>
             ast = new NullLiteral(getValue(children.head))
         }
-      }
-      case "class_instance_creation_expression" => {
+      case "class_instance_creation_expression" =>
         parseTree.childrenTypes match {
           case List("NEW", "class_type", "(", "argument_list", ")") =>
             ast = new ClassInstanceCreation()
             recurseOnChildren(parseTree, parent.get, List(1, 3))
         }
-      }
-      case "argument_list" => {
+      case "argument_list" =>
         parseTree.childrenTypes match {
           case List() =>
           case List("argument_list", ",", "expression") =>
@@ -435,36 +428,30 @@ object AST {
             ast = new ArgumentList()
             recurseOnChildren(parseTree, ast, List(0))
         }
-      }
-      case "array_creation_expression" => {
+      case "array_creation_expression" =>
         parseTree.childrenTypes match {
           case List("NEW", "primitive_type", "dim_exprs") |
               List("NEW", "class_or_interface_type", "dim_exprs") =>
             ast = new ArrayCreationExpression(getValue(children(1)))
             recurseOnChildren(parseTree, ast, List(2))
         }
-      }
-      case "primitive_type" => {
+      case "primitive_type" =>
         ast = new PrimitiveType(getValue(children.head))
-      }
-      case "dim_exprs" => {
+      case "dim_exprs" =>
         parseTree.childrenTypes match {
           case List("[", "expression", "]") =>
             recurseOnChildren(parseTree, parent.get, List(1))
         }
-      }
-      case "dims" => {
+      case "dims" => {}
         // TODO verify this is what we want
         // Do nothing for dims
-      }
-      case "field_access" => {
+      case "field_access" =>
         parseTree.childrenTypes match {
           case List("primary", ".", "IDENTIFIER") =>
             ast = new FieldAccess(getValue(children(2)))
             recurseOnChildren(parseTree, ast, List(0))
         }
-      }
-      case "method_invocation" => {
+      case "method_invocation" =>
         parseTree.childrenTypes match {
           case List("name", "(", "argument_list", ")") =>
             ast = new MethodInvocation()
@@ -473,8 +460,7 @@ object AST {
             ast = new MethodInvocation(Some(getValue(children(2))))
             recurseOnChildren(parseTree, ast, List(0, 4))
         }
-      }
-      case "array_access" => {
+      case "array_access" =>
         parseTree.childrenTypes match {
           case List("name", "[", "expression", "]") =>
             ast = new ArrayAccess(Some(getValue(children(0))))
@@ -483,8 +469,7 @@ object AST {
             ast = new ArrayAccess(None)
             recurseOnChildren(parseTree, ast, List(0, 2))
         }
-      }
-      case "conditional_expression" => {
+      case "conditional_expression" =>
         parseTree.childrenTypes match {
           case List("conditional_or_expression") =>
             recurseOnChildren(parseTree, parent.get, List(0))
@@ -496,13 +481,12 @@ object AST {
             ast = new ConditionalExpression()
             recurseOnChildren(parseTree, ast, List(2, 4))
         }
-      }
       // TODO maybe case match like the rest, but im lazy now :)
       case "conditional_or_expression" | "conditional_and_expression" |
           "inclusive_or_expression" | "exclusive_or_expression" |
           "and_expression" | "equality_expression" | "relational_expression" |
           "shift_expression" | "additive_expression" |
-          "multiplicative_expression" => {
+          "multiplicative_expression" =>
         // TODO evaluate this approach
         if (children.isEmpty) {
           // TODO nothing to do? should never happen, throw?
@@ -518,8 +502,7 @@ object AST {
         } else {
           throw new RuntimeException("Too many children for an expression")
         }
-      }
-      case "unary_expression" => {
+      case "unary_expression" =>
         // need to handle unary_expression - unary_expression where the second unary
         // immediately goes to an integer literal, because in that case we must negate
         // the integer literal to properly check integer ranges
@@ -537,30 +520,24 @@ object AST {
                 ast.setNegative(true)
               case _ =>
             }
-          case List("unary_expression_not_plus_minus") => {
+          case List("unary_expression_not_plus_minus") =>
             recurseOnChildren(parseTree, parent.get)
-          }
         }
-      }
-      case "unary_expression_not_plus_minus" => {
+      case "unary_expression_not_plus_minus" =>
         parseTree.childrenTypes match {
           case List("postfix_expression") | List("cast_expression") =>
             recurseOnChildren(parseTree, parent.get)
           case List("~", "unary_expression") |
-              List("!", "unary_expression") => {
+              List("!", "unary_expression") =>
             recurseOnChildren(parseTree, parent.get, List(1))
-          }
         }
-      }
-      case "postfix_expression" => {
+      case "postfix_expression" =>
         parseTree.childrenTypes match {
           case List("primary") | List("name") =>
             recurseOnChildren(parseTree, parent.get)
         }
-      }
-      case "identifier" => {
+      case "identifier" =>
         ast = new Identifier(parseTree.token.value)
-      }
       case "cast_expression" =>
         parseTree.childrenTypes match {
           case List("(", "primitive_type", ")", "unary_expression") |
@@ -582,10 +559,9 @@ object AST {
           case 0 =>
           case 1 =>
             ast = convertParseTree(parseTree.children.head, parent)
-          case _ => {
+          case _ =>
             throw new RuntimeException(
               "Too many children to process, make a rule for this type: " + parseTree.token.tokenType)
-          }
         }
     }
 
@@ -659,10 +635,9 @@ class AST(var parent: Option[AST] = None,
   def addSiblingToEnd(sib: AST): Unit = {
     rightSibling match {
       case Some(node) => node.addSiblingToEnd(sib)
-      case None => {
+      case None =>
         sib.parent = parent
         rightSibling = Some(sib)
-      }
     }
   }
 
