@@ -15,7 +15,6 @@ object Weeder {
           if (currentAST.isDefined) {
             currentAST.get match {
               case classAst: ClassDeclaration =>
-                print(s"KEVIN: ${classAst.identifier} ${ast.fileName}")
                 if (classAst.identifier != ast.fileName)
                   throw SemanticException(
                     s"Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}")
@@ -130,7 +129,6 @@ object Weeder {
       }
       case ast: CastExpression => {
         println("checking cast expr")
-        println(ast)
         ast.getChild(0).get match {
           case ast: Name          =>
           case ast: PrimitiveType =>
