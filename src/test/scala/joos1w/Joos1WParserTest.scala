@@ -1,14 +1,13 @@
 package joos1w
 
-import compiler.ast.SemanticException
-import compiler.parser.Joos1WParser
+import compiler.joos1w.ast.SemanticException
+import compiler.joos1w.Joos1WParser
 import compiler.parser.Parser.ParseTreeNode
-import compiler.scanner.{Joos1WScanner, Token}
+import compiler.scanner.Token
 import org.scalatest.FunSuite
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-
 
 class Joos1WParserTest extends FunSuite {
   test("Invalid identifiers") {
@@ -28,7 +27,8 @@ class Joos1WParserTest extends FunSuite {
       Joos1WParser.parse(TestUtils.scanClass("""
         private int catch() {
         }
-        """), "A.java")
+        """),
+                         "A.java")
     )
   }
 }

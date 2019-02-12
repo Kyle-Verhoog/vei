@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.Joos1WCompiler
+import compiler.joos1w.Joos1WCompiler
 import org.scalatest.FunSuite
 
 import scala.io.Source

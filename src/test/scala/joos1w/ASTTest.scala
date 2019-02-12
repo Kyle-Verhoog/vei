@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.ast.{AST, MethodDeclaration}
+import compiler.joos1w.ast.{AST, MethodDeclaration}
 import org.scalatest.FunSuite
 
 class ASTTest extends FunSuite {
@@ -11,11 +11,9 @@ class ASTTest extends FunSuite {
                                      |  }
                                      |}
        """.stripMargin)
-    println(ast)
     assert(ast.getDescendant(0).get == ast)
     assert(ast.getDescendant(1).get == ast.leftChild.get)
     assert(ast.getDescendant(2).get == ast.leftChild.get.leftChild.get)
-    // TODO check childNum arg
   }
 
   test("children") {
@@ -30,8 +28,6 @@ class ASTTest extends FunSuite {
                 ))
             ))
         )))
-
-    println(ast)
     assert(ast.children.length == 4)
   }
 
@@ -50,5 +46,43 @@ class ASTTest extends FunSuite {
         assert(n.modifiers == List("public", "static"))
       case _ => throw new Exception()
     }
+  }
+
+  test("If statements") {
+    val ast = TestUtils.ASTForSrc(s"""
+                                     |public class A {
+                                     |  public static void test() {
+                                     |    int x = 0;
+                                     |    int y = 3;
+                                     |    string s = "what";
+                                     |    if (x + y > 2 || s == "notwhat") {
+                                     |      test();
+                                     |    }
+                                     |  }
+                                     |}
+       """.stripMargin)
+    println(ast.toStrTree)
+  }
+
+  test("If-else-if-else statements") {
+    val ast = TestUtils.ASTForSrc(s"""
+                                     |public class A {
+                                     |  public static void test() {
+                                     |    int x = 0;
+                                     |    int y = 3;
+                                     |    string s = "what";
+                                     |    if (x + y > 2 || s == "notwhat") {
+                                     |      test();
+                                     |    }
+                                     |    else if (x > 34) {
+                                     |      test();
+                                     |    }
+                                     |    else {
+                                     |      string kevin = "420";
+                                     |    }
+                                     |  }
+                                     |}
+       """.stripMargin)
+    println(ast.toStrTree)
   }
 }

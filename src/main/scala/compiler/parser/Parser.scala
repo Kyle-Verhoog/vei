@@ -1,11 +1,10 @@
 package compiler.parser
 
-import compiler.ast.SemanticException
+import compiler.joos1w.ast.SemanticException
 import compiler.scanner.Token
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 
 object Parser {
   class CFG(

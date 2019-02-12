@@ -1,6 +1,7 @@
 package compiler
 
-import compiler.scanner.{Joos1WScanner, Token}
+import compiler.joos1w.Joos1WScanner
+import compiler.scanner.Token
 import org.scalatest.FunSuite
 
 object ScannerTestUtils {

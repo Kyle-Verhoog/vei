@@ -1,10 +1,6 @@
 package compiler
 
-import compiler.ast.{AST, Weeder}
-import compiler.parser.{Parser, Joos1WParser}
-import compiler.scanner.{Joos1WScanner, Scanner, Token}
-
-import scala.io.Source
+import compiler.joos1w.{Joos1WCompiler, Joos1WParser, Joos1WScanner}
 
 object Compiler {
   val usage = """
@@ -14,8 +10,8 @@ object Compiler {
   def main(args: Array[String]) {
     type OptionMap = Map[Symbol, Any]
 
-    def optionMap(map : OptionMap, list: List[String]) : OptionMap = {
-      def isSwitch(s : String) = (s(0) == '-')
+    def optionMap(map: OptionMap, list: List[String]): OptionMap = {
+      def isSwitch(s: String) = s(0) == '-'
       list match {
         case Nil => map
         case "--gen-scandfa" :: tail =>
@@ -24,7 +20,7 @@ object Compiler {
           optionMap(map ++ Map('genParseTable -> true), tail)
         case string :: opt2 :: tail if isSwitch(opt2) =>
           optionMap(map ++ Map('file -> string), list.tail)
-        case string :: Nil =>  optionMap(map ++ Map('file -> string), list.tail)
+        case string :: Nil => optionMap(map ++ Map('file -> string), list.tail)
         case option :: tail =>
           println(s"Unknown option '$option'")
           throw new RuntimeException("")
@@ -52,8 +48,7 @@ object Compiler {
           System.exit(42)
       }
       System.exit(0)
-    }
-    else {
+    } else {
       Joos1WCompiler.compileFile("src/main/resources/test/Empty.java")
     }
   }

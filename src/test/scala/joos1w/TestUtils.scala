@@ -1,9 +1,10 @@
 package joos1w
 
-import compiler.ast.AST
+import compiler.joos1w.ast.AST
+import compiler.joos1w.Joos1WScanner
 import compiler.parser.Parser
 import compiler.parser.Parser.{CFG, ParseTreeNode}
-import compiler.scanner.{Joos1WScanner, Token}
+import compiler.scanner.Token
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
