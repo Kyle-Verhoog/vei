@@ -85,4 +85,19 @@ class ASTTest extends FunSuite {
        """.stripMargin)
     println(ast.toStrTree)
   }
+  test("If-else-if-else empty statements") {
+    val ast = TestUtils.ASTForSrc(s"""
+                                     |public class A {
+                                     |  public static void test() {
+                                     |    if (x) {
+                                     |    }
+                                     |    else if (x) {
+                                     |    }
+                                     |    else {
+                                     |    }
+                                     |  }
+                                     |}
+       """.stripMargin)
+    println(ast.toStrTree)
+  }
 }
