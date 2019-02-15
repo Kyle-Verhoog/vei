@@ -10,29 +10,33 @@ object Type {
 
   def fromParseTreeNode(typeNode: ParseTreeNode[Token]): Type = {
     typeNode.childrenTypes match {
-      case List("primitive_type") =>
+      case "primitive_type" :: Nil =>
         new Type(AST.getValue(typeNode.children.head))
-      case List("reference_type") =>
+      case "reference_type" :: Nil =>
         new Type(parseReferenceType(typeNode.children.head))
+      case _ =>
+        throw ASTConstructionException(s"")
     }
   }
 
   def parseReferenceType(referenceTypeNode: ParseTreeNode[Token]): String = {
     referenceTypeNode.childrenTypes match {
-      case List("class_or_interface_type") =>
+      case "class_or_interface_type" :: Nil =>
         val classOrInstanceTypeNode = referenceTypeNode.children.head
         val nameNode = classOrInstanceTypeNode.children.head
         Name.parseName(nameNode) // returning the name
-      case List("array_type") => {
+      case "array_type" :: Nil =>
         val arrayTypeNode = referenceTypeNode.children.head
         arrayTypeNode.childrenTypes match {
-          case List("primitive_type", "[", "]") =>
+          case "primitive_type" :: "[" :: "]" :: Nil =>
             AST.getValue(arrayTypeNode.children.head) + "[]" // returning the name with []
-          case List("name", "[", "]") =>
+          case "name" :: "[" :: "]" :: Nil =>
             Name.parseName(arrayTypeNode.children.head) + "[]" // returning the name with []
+          case _ =>
+            throw ASTConstructionException(s"")
         }
-      }
-
+      case _ =>
+        throw ASTConstructionException(s"")
     }
   }
 }

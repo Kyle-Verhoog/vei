@@ -1,5 +1,8 @@
 package compiler.joos1w.ast
 
+import compiler.parser.Parser.ParseTreeNode
+import compiler.scanner.Token
+
 class IfStatement() extends AST {
   // returns the children for the if and else (if present) statements
   def getStatementChildren: List[AST] = {
@@ -14,5 +17,9 @@ class IfStatement() extends AST {
       case _: Throwable => List(ifStatementBody.get)
     }
 
+  }
+
+  override def fromParseTree(parseTree: ParseTreeNode[Token]): AST = {
+    new AST()
   }
 }

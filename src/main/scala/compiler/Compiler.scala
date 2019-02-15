@@ -18,10 +18,10 @@ object Compiler {
           optionMap(map ++ Map('genDfa -> true), tail)
         case "--gen-parsetable" :: tail =>
           optionMap(map ++ Map('genParseTable -> true), tail)
-        case string :: opt2 :: tail if isSwitch(opt2) =>
+        case string :: opt2 :: _ if isSwitch(opt2) =>
           optionMap(map ++ Map('file -> string), list.tail)
         case string :: Nil => optionMap(map ++ Map('file -> string), list.tail)
-        case option :: tail =>
+        case option :: _ =>
           println(s"Unknown option '$option'")
           throw new RuntimeException("")
 

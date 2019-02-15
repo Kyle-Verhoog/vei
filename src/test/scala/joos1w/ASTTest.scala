@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.joos1w.ast.{AST, MethodDeclaration}
+import compiler.joos1w.ast.{AST, Empty, MethodDeclaration}
 import org.scalatest.FunSuite
 
 class ASTTest extends FunSuite {
@@ -86,7 +86,7 @@ class ASTTest extends FunSuite {
     println(ast.toStrTree)
   }
   test("If-else-if-else empty statements") {
-    val ast = TestUtils.ASTForSrc(s"""
+    val parseTree = TestUtils.parseSrc(s"""
                                      |public class A {
                                      |  public static void test() {
                                      |    if (x) {
@@ -97,7 +97,29 @@ class ASTTest extends FunSuite {
                                      |    }
                                      |  }
                                      |}
-       """.stripMargin)
+       """.stripMargin)(1)
+    println(parseTree)
+    val ast = AST.fromParseTree(parseTree, new Empty)
+    println(ast)
+  }
+
+  test("Minimal") {
+    val src =
+      s"""
+         |public class A {
+         |  static public int x;
+         |  public static void test(int x, int y) {
+         |  }
+         |}
+       """.stripMargin
+    val parseTree = TestUtils.parseSrc(src)(1)
+    println(parseTree)
+    println(TestUtils.ASTForSrc(src).toStrTree)
+    val ast = AST.fromParseTree(parseTree, new Empty)
     println(ast.toStrTree)
+  }
+
+  test("All grammar rules and terminals") {
+    // read in grammar.cfg
   }
 }

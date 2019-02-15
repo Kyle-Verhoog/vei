@@ -97,8 +97,7 @@ object Parser {
           stateStack = stateStack.take(stateStack.length - 1)
         }
 
-        // TODO something other than non-leaf might be useful
-        var tempToken = new Token(A, "non-leaf")
+        var tempToken = new Token(A, prodRule.mkString(" "))
         if (A.equals("compilation_unit")) {
           tempToken = new Token(A, compilationUnitName)
         }
@@ -166,7 +165,7 @@ object Parser {
     val prodRules = ListBuffer[List[String]]()
     lines = lines.takeRight(lines.length - 1)
 
-    for (i <- 0 until count) {
+    for (_ <- 0 until count) {
       prodRules.append(lines(0).split(" ").toList)
       lines = lines.takeRight(lines.length - 1)
     }
@@ -177,7 +176,7 @@ object Parser {
     val shiftingMap = mutable.HashMap[Int, mutable.HashMap[String, Int]]()
     val reduceMap = mutable.HashMap[Int, mutable.HashMap[String, Int]]()
 
-    for (i <- 0 until count) {
+    for (_ <- 0 until count) {
       val line = lines(0).split(" ")
       val currentState = line(0).toInt
       val token = line(1)

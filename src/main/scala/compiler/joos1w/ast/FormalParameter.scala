@@ -14,6 +14,13 @@ object FormalParameter {
 
 class FormalParameter(val name: String) extends AST {
   def ttype: String = {
-    getChild(0).asInstanceOf[Type].ttype
+    getChild(0) match {
+      case Some(c: Type) => c.ttype
+      case _             => throw new RuntimeException()
+    }
+  }
+
+  override def strFields: String = {
+    s"$ttype $name"
   }
 }

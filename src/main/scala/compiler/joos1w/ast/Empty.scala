@@ -1,3 +1,7 @@
 package compiler.joos1w.ast
 
-class Empty() extends AST {}
+class Empty(fieldName: String = "") extends AST {
+  override def strFields: String = {
+    s"$fieldName"
+  }
+}
