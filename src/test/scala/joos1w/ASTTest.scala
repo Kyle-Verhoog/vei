@@ -108,7 +108,7 @@ class ASTTest extends FunSuite {
       s"""
          |public class A {
          |  static public int x;
-         |  public static void test(int x, int y) {
+         |  public static void test(int x, int y, int z) {
          |  }
          |}
        """.stripMargin

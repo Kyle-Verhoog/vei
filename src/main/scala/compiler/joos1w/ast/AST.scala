@@ -690,6 +690,23 @@ object AST {
     }
   }
 
+  def fromParseTreeList(list: List[ParseTreeNode[Token]], parent: AST): AST = {
+    list.length match {
+      case 2 => // LIST ITEM
+        val item = fromParseTree(list(1), parent)
+        fromParseTreeList(list.head.children.toList, parent)
+        parent.addChildToEnd(item)
+      case 3 => // LIST , ITEM
+        val item = fromParseTree(list(2), parent)
+        fromParseTreeList(list.head.children.toList, parent)
+        parent.addChildToEnd(item)
+      case 1 =>
+        val item = fromParseTree(list.head, parent)
+        parent.addChildToEnd(item)
+    }
+    parent
+  }
+
   def fromParseTree(parseTree: ParseTreeNode[Token], parent: AST): AST = {
     val tokenType = parseTree.token.tokenType
     val children = parseTree.children.toList
@@ -708,10 +725,10 @@ object AST {
         }
       case "package_declaration" =>
         childrenTypes match {
-          case "package_declaration" :: "import_declarations" :: "type_declaration" :: Nil =>
+          case "PACKAGE" :: "name" :: ";" :: Nil =>
             fromParseTreeAttachChildren(
               new PackageDeclaration,
-              children
+              children(1) :: Nil
             )
           case Nil => new Empty
           case _ =>
@@ -756,7 +773,7 @@ object AST {
         parseTree.childrenTypes match {
           case "EXTENDS" :: "class_type" :: Nil =>
             // TODO[kyle]
-            fromParseTree(children(1), parent)
+            fromParseTreeList(children, parent)
           case Nil => new Empty()
           case _ =>
             throw ASTConstructionException(s"$tokenType $childrenTypes")
@@ -765,7 +782,7 @@ object AST {
         parseTree.childrenTypes match {
           case "IMPLEMENTS" :: "interface_type_list" :: Nil =>
             // TODO[kyle]
-            fromParseTree(children(1), parent)
+            fromParseTreeList(children, parent)
           case Nil => new Empty
           case _ =>
             throw ASTConstructionException(s"$tokenType $childrenTypes")
@@ -855,10 +872,8 @@ object AST {
       case "formal_parameter_list" =>
         childrenTypes match {
           case "formal_parameter_list" :: "," :: "formal_parameter" :: Nil =>
-            val p = new AST()
-            p.addChildToEnd(fromParseTree(children.head, new Empty))
-            p.addChildToEnd(fromParseTree(children(2), new Empty))
-            p
+            val p = new ASTList("formal_parameter_list")
+            fromParseTreeList(children, p)
           case "formal_parameter" :: Nil =>
             fromParseTreeAttachChildren(parent, children)
           case Nil => new Empty
