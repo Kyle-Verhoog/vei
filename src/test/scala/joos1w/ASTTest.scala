@@ -106,14 +106,24 @@ class ASTTest extends FunSuite {
   test("Minimal") {
     val src =
       s"""
+         |package test;
+         |
+         |import test.test;
+         |import test.test.*;
+         |
          |public class A {
          |  static public int x;
          |  public static void test(int x, int y, int z) {
          |    {
          |    int i = 5;
          |    String x = "";
+         |    x = test.test.x(1, 2, i);
          |    }
-         |    { }
+         |    {
+         |     {
+         |       int y = -123;
+         |     }
+         |    }
          |  }
          |}
        """.stripMargin

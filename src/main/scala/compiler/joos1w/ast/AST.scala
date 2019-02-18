@@ -740,8 +740,37 @@ object AST {
             val l = new ASTList("import declarations")
             fromParseTreeList(children, l)
           case Nil => new Empty
-          case _ =>
-            throw ASTConstructionException(s"$tokenType $childrenTypes")
+          case _   => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      // case "interface_type_list" =>
+      //   parseTree.childrenTypes match {
+      //     case List("interface_type") =>
+      //       recurseOnChildren(parseTree, parent, Vector(0))
+      //     case List("interface_type_list", ",", "interface_type") =>
+      //       recurseOnChildren(parseTree, parent, Vector(1))
+      //   }
+      case "import_declaration" =>
+        childrenTypes match {
+          case "single_type_import_declaration" :: Nil |
+              "type_import_on_demand_declaration" :: Nil =>
+            fromParseTreeAttachChildren(
+              new ImportDeclaration(),
+              children
+            )
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "single_type_import_declaration" =>
+        childrenTypes match {
+          case "IMPORT" :: "name" :: ";" :: Nil =>
+            fromParseTree(children(1), parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "type_import_on_demand_declaration" =>
+        childrenTypes match {
+          case "IMPORT" :: "name" :: "." :: "*" :: ";" :: Nil =>
+            // TODO: special node type
+            fromParseTree(children(1), parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
       case "type_declaration" =>
         childrenTypes match {
@@ -967,6 +996,15 @@ object AST {
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
+      case "qualified_name" =>
+        childrenTypes match {
+          case "name" :: "." :: "IDENTIFIER" :: Nil =>
+            fromParseTreeAttachChildren(
+              new Name(getValue(children(2))),
+              children.head :: Nil
+            )
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
       case "expression" =>
         childrenTypes match {
           case "assignment_expression" :: Nil =>
@@ -1051,19 +1089,23 @@ object AST {
         // immediately goes to an integer literal, because in that case we must negate
         // the integer literal to properly check integer ranges
         childrenTypes match {
-          // case "-" :: "unary_expression" :: Nil =>
-          //   val ast = new GeneralExpression(Some(getValue(children.head)))
-          //   recurseOnChildren(parseTree, ast, Vector(1))
-          //   // check if unary expression was IntegerLiteral, if so negate it
-          //   ast.getChild(0).get match {
-          //     case ast: IntegerLiteral =>
-          //       // if an integer literal isnt a direct expression, check its bounds before negating
-          //       if (!isDirectExpression(parseTree.children(1))) {
-          //         ast.integerValue // will trigger evaluation
-          //       }
-          //       ast.setNegative(true)
-          //     case _ =>
-          //   }
+          case "-" :: "unary_expression" :: Nil =>
+            val ast = fromParseTreeAttachChildren(
+              new GeneralExpression(Some(getValue(children.head))),
+              children(1) :: Nil,
+            )
+            // check if unary expression was IntegerLiteral, if so negate it
+            ast.getChild(0).get match {
+              case ast: IntegerLiteral =>
+                // if an integer literal isn't a direct expression, check its bounds before negating
+                if (!isDirectExpression(parseTree.children(1))) {
+                  ast.integerValue // will trigger evaluation
+                }
+                ast.setNegative(true)
+                ast
+              case _ =>
+                throw ASTConstructionException(s"$tokenType $childrenTypes")
+            }
           case "unary_expression_not_plus_minus" :: Nil =>
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
@@ -1082,67 +1124,114 @@ object AST {
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
-
-      // case "interface_type_list" =>
-      //   parseTree.childrenTypes match {
-      //     case List("interface_type") =>
-      //       recurseOnChildren(parseTree, parent, Vector(0))
-      //     case List("interface_type_list", ",", "interface_type") =>
-      //       recurseOnChildren(parseTree, parent, Vector(1))
-      //   }
-      // case "field_declaration" =>
-      //   parseTree.childrenTypes match {
-      //     case List("modifiers", "type", "variable_declarator", ";") =>
-      //       ast = FieldDeclaration.fromParseTreeNode(children.head)
-      //       recurseOnChildren(parseTree, ast, Vector(1, 2))
-      //   }
-      // case "assignment" =>
-      //   ast = new Assignment()
-      //   parseTree.childrenTypes match {
-      //     case List("left_hand_side",
-      //               "assignment_operator",
-      //               "assignment_expression") =>
-      //       recurseOnChildren(parseTree, ast, Vector(0, 2))
-      //   }
-      // case "import_declaration" =>
-      //   parseTree.childrenTypes match {
-      //     case List("single_type_import_declaration") | List(
-      //           "type_import_on_demand_declaration") =>
-      //       ast = new ImportDeclaration()
-      //       recurseOnChildren(parseTree, ast, Vector(0))
-      //   }
-      // case "single_type_import_declaration" =>
-      //   parseTree.childrenTypes match {
-      //     case List("IMPORT", "name", ";") =>
-      //       recurseOnChildren(parseTree, parent, Vector(1))
-      //   }
-      // case "type_import_on_demand_declaration" =>
-      //   parseTree.childrenTypes match {
-      //     case List("IMPORT", "name", ".", "*", ";") =>
-      //       recurseOnChildren(parseTree, parent, Vector(1))
-      //   }
+      case "primary" =>
+        childrenTypes match {
+          case "primary_no_new_array" :: Nil =>
+            fromParseTree(children.head, parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "primary_no_new_array" =>
+        childrenTypes match {
+          case "literal" :: Nil | "method_invocation" :: Nil =>
+            fromParseTree(children.head, parent)
+          // case "THIS" :: Nil |
+          //       "class_instance_creation_expression") | List("field_access") |
+          //     List("method_invocation") | List("array") | List(
+          //       "array_access") =>
+          //   recurseOnAllChildren(parseTree, parent)
+          // case List("(", "expression", ")") =>
+          //   recurseOnChildren(parseTree, parent, Vector(1))
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "literal" =>
+        childrenTypes match {
+          // TODO verify
+          // perform cast, this should handle lots of things without us checking anywhere else :)
+          case "INTEGER_LITERAL" :: Nil =>
+            new IntegerLiteral(getValue(children.head))
+          case "BOOLEAN_LITERAL" :: Nil =>
+            new BooleanLiteral(getValue(children.head).toBoolean)
+          case "CHARACTER_LITERAL" :: Nil =>
+            new CharacterLiteral(getValue(children.head))
+          case "STRING_LITERAL" :: Nil =>
+            new StringLiteral(getValue(children.head))
+          case "NULL_LITERAL" :: Nil =>
+            new NullLiteral(getValue(children.head))
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "field_declaration" =>
+        childrenTypes match {
+          case "modifiers" :: "type" :: "variable_declarator" :: ";" :: Nil =>
+            fromParseTreeAttachChildren(
+              FieldDeclaration.fromParseTreeNode(children.head),
+              children(1) :: children(2) :: Nil
+            )
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "statement_expression" =>
+        childrenTypes match {
+          case "assignment" :: Nil =>
+            fromParseTree(children.head, parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "assignment" =>
+        childrenTypes match {
+          case "left_hand_side" ::
+                "assignment_operator" ::
+                "assignment_expression" :: Nil =>
+            fromParseTreeAttachChildren(
+              new Assignment(),
+              children.head :: children(2) :: Nil
+            )
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "left_hand_side" =>
+        childrenTypes match {
+          case "name" :: Nil | "field_access" :: Nil | "array_access" :: Nil =>
+            fromParseTree(children.head, parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "name" =>
+        childrenTypes match {
+          case "simple_name" :: Nil =>
+            new Name(getValue(children.head))
+          case "qualified_name" :: Nil =>
+            fromParseTree(children.head, parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "method_invocation" =>
+        childrenTypes match {
+          case "name" :: "(" :: "argument_list" :: ")" :: Nil =>
+            fromParseTreeAttachChildren(
+              new MethodInvocation(),
+              children.head :: children(2) :: Nil
+            )
+          case "primary" :: "." :: "IDENTIFIER" :: "(" :: "argument_list" :: ")" :: Nil =>
+            fromParseTreeAttachChildren(
+              new MethodInvocation(Some(getValue(children(2)))),
+              children.head :: children(4) :: Nil
+            )
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
+      case "argument_list" =>
+        childrenTypes match {
+          case "argument_list" :: "," :: "expression" :: Nil =>
+            val p = new ASTList("argument_list")
+            fromParseTreeList(children, p)
+          case "expression" :: Nil =>
+            fromParseTreeAttachChildren(parent, children)
+          case Nil => new Empty
+          case _   => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
       // case "array_type" =>
       //   parseTree.childrenTypes match {
       //     case List("primitive_type", "[", "]") | List("name", "[", "]") =>
-      //       recurseOnChildren(parseTree, parent, Vector(0))
-      //   }
-      // case "name" =>
-      //   parseTree.childrenTypes match {
-      //     case List("simple_name") =>
-      //       ast = new Name(getValue(children.head))
-      //     case List("qualified_name") =>
       //       recurseOnChildren(parseTree, parent, Vector(0))
       //   }
       // case "local_variable_declaration_statement" =>
       //   parseTree.childrenTypes match {
       //     case List("local_variable_declaration", ";") =>
       //       recurseOnChildren(parseTree, parent, Vector(0))
-      //   }
-      // case "qualified_name" =>
-      //   parseTree.childrenTypes match {
-      //     case List("name", ".", "IDENTIFIER") =>
-      //       ast = new Name(getValue(children(2)))
-      //       recurseOnChildren(parseTree, ast, Vector(0))
       //   }
       // case "constructor_declaration" =>
       //   parseTree.childrenTypes match {
@@ -1282,31 +1371,6 @@ object AST {
       //       ast = new WhileStatement()
       //       recurseOnChildren(parseTree, ast, Vector(2, 4))
       //   }
-      // case "primary_no_new_array" =>
-      //   parseTree.childrenTypes match {
-      //     case List("literal") | List("THIS") | List(
-      //           "class_instance_creation_expression") | List("field_access") |
-      //         List("method_invocation") | List("array") | List(
-      //           "array_access") =>
-      //       recurseOnAllChildren(parseTree, parent)
-      //     case List("(", "expression", ")") =>
-      //       recurseOnChildren(parseTree, parent, Vector(1))
-      //   }
-      // case "literal" =>
-      //   parseTree.childrenTypes match {
-      //     // TODO verify
-      //     // perform cast, this should handle lots of things without us checking anywhere else :)
-      //     case List("INTEGER_LITERAL") =>
-      //       ast = new IntegerLiteral(getValue(children.head))
-      //     case List("BOOLEAN_LITERAL") =>
-      //       ast = new BooleanLiteral(getValue(children.head).toBoolean)
-      //     case List("CHARACTER_LITERAL") =>
-      //       ast = new CharacterLiteral(getValue(children.head))
-      //     case List("STRING_LITERAL") =>
-      //       ast = new StringLiteral(getValue(children.head))
-      //     case List("NULL_LITERAL") =>
-      //       ast = new NullLiteral(getValue(children.head))
-      //   }
       // case "class_instance_creation_expression" =>
       //   parseTree.childrenTypes match {
       //     case List("NEW", "class_type", "(", "argument_list", ")") =>
@@ -1345,15 +1409,6 @@ object AST {
       //     case List("primary", ".", "IDENTIFIER") =>
       //       ast = new FieldAccess(getValue(children(2)))
       //       recurseOnChildren(parseTree, ast, Vector(0))
-      //   }
-      // case "method_invocation" =>
-      //   parseTree.childrenTypes match {
-      //     case List("name", "(", "argument_list", ")") =>
-      //       ast = new MethodInvocation()
-      //       recurseOnChildren(parseTree, ast, Vector(0, 2))
-      //     case List("primary", ".", "IDENTIFIER", "(", "argument_list", ")") =>
-      //       ast = new MethodInvocation(Some(getValue(children(2))))
-      //       recurseOnChildren(parseTree, ast, Vector(0, 4))
       //   }
       // case "array_access" =>
       //   parseTree.childrenTypes match {
