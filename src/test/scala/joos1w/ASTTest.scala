@@ -109,13 +109,18 @@ class ASTTest extends FunSuite {
          |public class A {
          |  static public int x;
          |  public static void test(int x, int y, int z) {
+         |    {
+         |    int i = 5;
+         |    String x = "";
+         |    }
+         |    { }
          |  }
          |}
        """.stripMargin
     val parseTree = TestUtils.parseSrc(src)(1)
     println(parseTree)
     println(TestUtils.ASTForSrc(src).toStrTree)
-    val ast = AST.fromParseTree(parseTree, new Empty)
+    val ast = AST.fromParseTree(parseTree)
     println(ast.toStrTree)
   }
 
