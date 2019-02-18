@@ -19,6 +19,6 @@ class IntegerLiteral(rawValue: String, var negative: Boolean = false)
   }
 
   override def strFields: String = {
-    s"$rawValue"
+    s"$integerValue"
   }
 }

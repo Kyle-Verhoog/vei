@@ -98,12 +98,12 @@ class ASTTest extends FunSuite {
                                      |  }
                                      |}
        """.stripMargin)(1)
-    println(parseTree)
+    // println(parseTree)
     val ast = AST.fromParseTree(parseTree, new Empty)
     println(ast)
   }
 
-  test("Minimal") {
+  test("Maximal") {
     val src =
       s"""
          |package test;
@@ -113,7 +113,13 @@ class ASTTest extends FunSuite {
          |
          |public class A {
          |  static public int x;
+         |  public A() {
+         |  }
          |  public static void test(int x, int y, int z) {
+         |    int[] y = new int[42];
+         |    y[0] = 0;
+         |    int z = y.length;
+         |    this.x = 12313;
          |    {
          |    int i = 5;
          |    String x = "";
@@ -124,11 +130,34 @@ class ASTTest extends FunSuite {
          |       int y = -123;
          |     }
          |    }
+         |    if (x >= true) {
+         |    }
+         |    if (x instanceof Y) {
+         |    }
+         |    return true;
          |  }
          |}
        """.stripMargin
     val parseTree = TestUtils.parseSrc(src)(1)
-    println(parseTree)
+    // println(parseTree)
+    println(TestUtils.ASTForSrc(src).toStrTree)
+    val ast = AST.fromParseTree(parseTree)
+    println(ast.toStrTree)
+  }
+
+  test("Interfaces") {
+    val src =
+      s"""
+         |package test;
+         |
+         |import test.test;
+         |import test.test.*;
+         |
+         |public interface I extends test.I {
+         |}
+       """.stripMargin
+    val parseTree = TestUtils.parseSrc(src)(1)
+    // println(parseTree)
     println(TestUtils.ASTForSrc(src).toStrTree)
     val ast = AST.fromParseTree(parseTree)
     println(ast.toStrTree)
