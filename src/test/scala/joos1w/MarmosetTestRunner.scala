@@ -14,7 +14,7 @@ class MarmosetTestRunner extends FunSuite {
       i += 1
       println(s"on test $i out of ${files.length}")
       println(file)
-      val filePath = s"src/main/resources/test/marmoset/a1/${file}.java"
+      val filePath = s"src/main/resources/test/marmoset/a1/$file.java"
       val fileContents = Source.fromFile(filePath).mkString
       // val fileLines = fileContents.split("\n")
       // val JoosLine = if (fileLines.nonEmpty) fileLines(0) else ""

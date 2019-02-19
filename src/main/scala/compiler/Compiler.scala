@@ -23,8 +23,8 @@ object Compiler {
         case string :: Nil => optionMap(map ++ Map('file -> string), list.tail)
         case option :: _ =>
           println(s"Unknown option '$option'")
-          throw new RuntimeException("")
-
+          System.exit(1)
+          Map[Symbol, Any]()
       }
     }
 
