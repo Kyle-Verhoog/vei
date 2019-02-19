@@ -11,7 +11,7 @@ import scala.collection.mutable
 object Weeder {
   def weed(ast: AST): Unit = {
     ast match {
-      case ast: CompilationUnit => {
+      case ast: CompilationUnit =>
         val queue = mutable.Queue[Option[AST]](ast.leftChild)
 
         while (queue.nonEmpty) {
@@ -26,15 +26,13 @@ object Weeder {
                 if (interfaceAst.identifier != ast.fileName)
                   throw SemanticException(
                     s"Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}")
-              case _ => {
+              case _ =>
                 queue.enqueue(currentAST.get.leftChild)
                 queue.enqueue(currentAST.get.rightSibling)
-              }
             }
           }
         }
-      }
-      case ast: MethodDeclaration => {
+      case ast: MethodDeclaration =>
         // body is necessarily defined if it has a second child
         val hasBody = ast.body.hasBody
         //println("looking at method: " + ast.identifier)
@@ -60,8 +58,7 @@ object Weeder {
         if (isNative && !isStatic) {
           throw SemanticException("Native methods must be static")
         }
-      }
-      case ast: CharacterLiteral => {
+      case ast: CharacterLiteral =>
         val PatternThreeDigitOctal = """'\\[0-3][0-7][0-7](\d{0})'""".r
         val PatternTwoDigitOctal = """'\\[0-7][0-7](\d{0})'""".r
         val PatternOneDigitOctal = """'\\[0-7](\d{0})'""".r
@@ -77,8 +74,7 @@ object Weeder {
               throw SemanticException(s"Bad escape sequence: ${ast.value}")
           }
         }
-      }
-      case ast: StringLiteral => {
+      case ast: StringLiteral =>
         var i = 0
         while (i < ast.value.length) {
           if (ast.value.charAt(i) == '\\') {
@@ -95,8 +91,7 @@ object Weeder {
           }
           i += 1
         }
-      }
-      case ast: InterfaceDeclaration => {
+      case ast: InterfaceDeclaration =>
         val queue = mutable.Queue[Option[AST]]()
 
         if (ast.leftChild.isDefined) {
@@ -113,13 +108,12 @@ object Weeder {
           val currentAST = queue.dequeue()
           if (currentAST.isDefined) {
             currentAST.get match {
-              case ast: MethodHeader => {
+              case ast: MethodHeader =>
                 if (ast.modifiers.contains("static") || ast.modifiers.contains(
                       "final")) {
                   throw SemanticException(
                     "Interface methods cannot be static or final")
                 }
-              }
               case _ =>
             }
             // recurse
@@ -129,21 +123,16 @@ object Weeder {
               queue.enqueue(currentAST.get.rightSibling)
           }
         }
-
-      }
-      case ast: CastExpression => {
-        println("checking cast expr")
+      case ast: CastExpression =>
         ast.getChild(0).get match {
-          case ast: Name          =>
-          case ast: PrimitiveType =>
-          case ast: Identifier    =>
-          case _                  => throw SemanticException("Cast must reduce to identifier")
+          case _: Name          =>
+          case _: PrimitiveType =>
+          case _: Identifier    =>
+          case _                => throw SemanticException("Cast must reduce to identifier")
         }
-      }
-      case ast: IntegerLiteral => {
+      case ast: IntegerLiteral =>
         // evaluates the integer literal, causes error to be thrown if its not in range
         ast.integerValue
-      }
       case _ =>
     }
 

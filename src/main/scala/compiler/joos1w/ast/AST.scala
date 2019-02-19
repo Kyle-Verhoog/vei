@@ -898,7 +898,6 @@ object AST {
       case "class_body_declarations" =>
         childrenTypes match {
           case "class_body_declarations" :: "class_body_declaration" :: Nil =>
-            // TODO[kyle]
             val l = new ASTList("class_body_declarations")
             fromParseTreeList(children, l)
           case Nil => new Empty
