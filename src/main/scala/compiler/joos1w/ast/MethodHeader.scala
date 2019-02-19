@@ -15,7 +15,8 @@ object MethodHeader {
     if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
           .contains("protected"))) {
       throw SemanticException(
-        "Methods must not be package private (eg. need public/private/protected)")
+        "Methods must not be package private (eg. need public/private/protected)"
+      )
 
     }
     if (modifiers.contains("private")) {
@@ -24,7 +25,8 @@ object MethodHeader {
     if (modifiers.contains("abstract")) {
       if (modifiers.contains("static") || modifiers.contains("final")) {
         throw SemanticException(
-          "An abstract method cannot be 'static' or 'final'.")
+          "An abstract method cannot be 'static' or 'final'."
+        )
       }
     }
     if (modifiers.contains("static")) {

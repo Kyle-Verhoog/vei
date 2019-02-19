@@ -5,7 +5,8 @@ import compiler.scanner.Token
 
 object ConstructorDeclaration {
   def fromParseTreeNode(
-      modifiers: ParseTreeNode[Token]): ConstructorDeclaration = {
+      modifiers: ParseTreeNode[Token]
+  ): ConstructorDeclaration = {
     println(AST.getValueList(modifiers))
     new ConstructorDeclaration(
       modifiers = AST.getValueList(modifiers)
@@ -25,7 +26,8 @@ class ConstructorDeclaration(modifiers: List[String]) extends AST {
       case Some(n: ConstructorDeclarator) => n.name
       case e =>
         throw MalformedASTException(
-          s"ConsturctorDeclaration does not have ConstructorDeclarator child (got $e.")
+          s"ConsturctorDeclaration does not have ConstructorDeclarator child (got $e."
+        )
     }
   }
 }

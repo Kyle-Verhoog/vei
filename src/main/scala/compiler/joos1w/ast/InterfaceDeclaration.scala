@@ -6,7 +6,8 @@ import compiler.scanner.Token
 object InterfaceDeclaration {
   def fromParseTreeNode(
       modifiers: ParseTreeNode[Token],
-      identifier: ParseTreeNode[Token]): InterfaceDeclaration = {
+      identifier: ParseTreeNode[Token]
+  ): InterfaceDeclaration = {
     new InterfaceDeclaration(
       modifiers = AST.getValueList(modifiers),
       identifier = AST.getValue(identifier)

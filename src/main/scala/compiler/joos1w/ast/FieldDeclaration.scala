@@ -6,7 +6,7 @@ import compiler.scanner.Token
 object FieldDeclaration {
   def fromParseTreeNode(modifiers: ParseTreeNode[Token]): FieldDeclaration = {
     new FieldDeclaration(
-      modifiers = AST.getValueList(modifiers),
+      modifiers = AST.getValueList(modifiers)
     )
   }
 }
@@ -16,7 +16,8 @@ class FieldDeclaration(modifiers: List[String]) extends AST {
   if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
         .contains("protected"))) {
     throw SemanticException(
-      "Fields must not be package private (eg. need public/private/protected)")
+      "Fields must not be package private (eg. need public/private/protected)"
+    )
   }
 
   if (modifiers.contains("final")) {

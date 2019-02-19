@@ -15,7 +15,8 @@ object Name {
 
   def parseQualifiedName(qualifiedNameNode: ParseTreeNode[Token]): String = {
     parseName(qualifiedNameNode.children.head) + "." + AST.getValue(
-      qualifiedNameNode.children.last)
+      qualifiedNameNode.children.last
+    )
   }
 
   def parseName(nameNode: ParseTreeNode[Token]): String = {

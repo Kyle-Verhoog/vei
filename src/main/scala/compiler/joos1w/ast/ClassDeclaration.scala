@@ -8,14 +8,20 @@ import compiler.scanner.Token
 
 object ClassDeclaration extends ASTConstructor {
 
-  def fromParseTreeNode(modifiers: ParseTreeNode[Token],
-                        identifier: ParseTreeNode[Token]): ClassDeclaration = {
-    new ClassDeclaration(modifiers = AST.getValueList(modifiers),
-                         identifier = AST.getValue(identifier))
+  def fromParseTreeNode(
+      modifiers: ParseTreeNode[Token],
+      identifier: ParseTreeNode[Token]
+  ): ClassDeclaration = {
+    new ClassDeclaration(
+      modifiers = AST.getValueList(modifiers),
+      identifier = AST.getValue(identifier)
+    )
   }
 
-  def fromParseTree(parseTree: Parser.ParseTreeNode[Token],
-                    parent: AST): AST = {
+  def fromParseTree(
+      parseTree: Parser.ParseTreeNode[Token],
+      parent: AST
+  ): AST = {
     val children = parseTree.children.toList
     val childrenTypes = parseTree.childrenTypes
     childrenTypes match {
@@ -42,7 +48,8 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
   if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
         .contains("protected"))) {
     throw SemanticException(
-      "Methods must not be package private (eg. need public/private/protected)")
+      "Methods must not be package private (eg. need public/private/protected)"
+    )
   }
 
   if (modifiers.contains("abstract") && modifiers.contains("final")) {

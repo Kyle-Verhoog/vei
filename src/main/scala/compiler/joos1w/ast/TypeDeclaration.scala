@@ -4,8 +4,10 @@ import compiler.parser.Parser
 import compiler.scanner.Token
 
 object TypeDeclaration extends ASTConstructor {
-  def fromParseTree(parseTree: Parser.ParseTreeNode[Token],
-                    parent: AST): AST = {
+  def fromParseTree(
+      parseTree: Parser.ParseTreeNode[Token],
+      parent: AST
+  ): AST = {
     val children = parseTree.children.toList
     val childrenTypes = parseTree.childrenTypes
     childrenTypes match {

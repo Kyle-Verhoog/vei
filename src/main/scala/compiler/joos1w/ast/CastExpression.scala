@@ -25,7 +25,8 @@ object CastExpression {
     if (node.token.tokenType == "postfix_expression") {
       if (node.childrenTypes == List("primary")) {
         throw SemanticException(
-          "Illegal cast, cast should not have an expression that evaluates to primary")
+          "Illegal cast, cast should not have an expression that evaluates to primary"
+        )
       }
       return // done since anything from here is ok
     }

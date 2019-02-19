@@ -32,7 +32,8 @@ class MethodDeclaration() extends AST {
       case Some(n: MethodHeader) => n.returnType
       case e =>
         throw MalformedASTException(
-          s"Method leftChild is not a MethodHeader (got $e).")
+          s"Method leftChild is not a MethodHeader (got $e)."
+        )
     }
   }
 
@@ -49,7 +50,8 @@ class MethodDeclaration() extends AST {
       case Some(n: MethodHeader) => n.modifiers
       case e =>
         throw MalformedASTException(
-          s"Method does not have MethodDeclarator child (got $e).")
+          s"Method does not have MethodDeclarator child (got $e)."
+        )
     }
   }
 
@@ -58,7 +60,8 @@ class MethodDeclaration() extends AST {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>
         throw MalformedASTException(
-          s"Method does not have MethodDeclarator child (got $e.")
+          s"Method does not have MethodDeclarator child (got $e."
+        )
     }
   }
 

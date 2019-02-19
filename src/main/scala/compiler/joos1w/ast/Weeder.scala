@@ -21,11 +21,13 @@ object Weeder {
               case classAst: ClassDeclaration =>
                 if (classAst.identifier != ast.fileName)
                   throw SemanticException(
-                    s"Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}")
+                    s"Class name: ${classAst.identifier} doesn't match file name: ${ast.fileName}"
+                  )
               case interfaceAst: InterfaceDeclaration =>
                 if (interfaceAst.identifier != ast.fileName)
                   throw SemanticException(
-                    s"Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}")
+                    s"Interface name: ${interfaceAst.identifier} doesn't match file name: ${ast.fileName}"
+                  )
               case _ =>
                 queue.enqueue(currentAST.get.leftChild)
                 queue.enqueue(currentAST.get.rightSibling)
@@ -52,7 +54,8 @@ object Weeder {
 
         if (!abstractOrNative && !hasBody) {
           throw SemanticException(
-            "Non-abstract/non-native method must have body")
+            "Non-abstract/non-native method must have body"
+          )
         }
 
         if (isNative && !isStatic) {
@@ -110,9 +113,11 @@ object Weeder {
             currentAST.get match {
               case ast: MethodHeader =>
                 if (ast.modifiers.contains("static") || ast.modifiers.contains(
-                      "final")) {
+                      "final"
+                    )) {
                   throw SemanticException(
-                    "Interface methods cannot be static or final")
+                    "Interface methods cannot be static or final"
+                  )
                 }
               case _ =>
             }

@@ -5,7 +5,8 @@ import compiler.scanner.Token
 
 object FormalParameter {
   def fromParseTreeNode(
-      formalParameter: ParseTreeNode[Token]): FormalParameter = {
+      formalParameter: ParseTreeNode[Token]
+  ): FormalParameter = {
     new FormalParameter(
       name = AST.getValue(formalParameter.children(1))
     )

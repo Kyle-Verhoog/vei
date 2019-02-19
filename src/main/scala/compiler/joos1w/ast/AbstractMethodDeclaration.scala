@@ -6,7 +6,8 @@ class AbstractMethodDeclaration extends AST {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>
         throw MalformedASTException(
-          s"AbstractMethodDeclaration does not have MethodDeclarator child (got $e.")
+          s"AbstractMethodDeclaration does not have MethodDeclarator child (got $e."
+        )
     }
   }
 }
