@@ -758,7 +758,6 @@ object AST {
       case "interface_type_list" =>
         childrenTypes match {
           case "interface_type_list" :: "," :: "interface_type" :: Nil =>
-            recurseOnChildren(parseTree, parent, Vector(1))
             val l = new ASTList("interface_type_list")
             fromParseTreeList(children, l)
           case "interface_type" :: Nil =>
@@ -814,23 +813,22 @@ object AST {
           case _ => throw ASTConstructionException()
         }
       case "super" =>
-        parseTree.childrenTypes match {
+        childrenTypes match {
           case "EXTENDS" :: "class_type" :: Nil =>
-            fromParseTreeList(children(1) :: Nil, parent)
+            fromParseTree(children(1), parent)
           case Nil => new Empty()
           case _   => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
       case "class_type" =>
-        parseTree.childrenTypes match {
+        childrenTypes match {
           case "class_or_interface_type" :: Nil =>
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
       case "interfaces" =>
-        parseTree.childrenTypes match {
+        childrenTypes match {
           case "IMPLEMENTS" :: "interface_type_list" :: Nil =>
-            // TODO[kyle]
-            fromParseTreeList(children, parent)
+            fromParseTree(children(1), parent)
           case Nil => new Empty
           case _   => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
@@ -1301,7 +1299,8 @@ object AST {
         }
       case "statement_expression" =>
         childrenTypes match {
-          case "assignment" :: Nil | "method_invocation" :: Nil =>
+          case "assignment" :: Nil | "method_invocation" :: Nil |
+              "class_instance_creation_expression" :: Nil =>
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
@@ -1565,28 +1564,6 @@ object AST {
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
       case "dims" => new Empty
-      // // TODO verify this is what we want
-      // // Do nothing for dims
-      // case "conditional_expression" =>
-      //   parseTree.childrenTypes match {
-      //     case List("conditional_or_expression") =>
-      //       recurseOnChildren(parseTree, parent, Vector(0))
-      //     case List("conditional_or_expression",
-      //               "?",
-      //               "expression",
-      //               ":",
-      //               "conditional_expression") =>
-      //       ast = new ConditionalExpression()
-      //       recurseOnChildren(parseTree, ast, Vector(2, 4))
-      //   }
-      // // TODO maybe case match like the rest, but im lazy now :)
-      // case "postfix_expression" =>
-      //   parseTree.childrenTypes match {
-      //     case List("primary") | List("name") =>
-      //       recurseOnAllChildren(parseTree, parent)
-      //   }
-      // case "identifier" =>
-      //   ast = new Identifier(parseTree.token.value)
       case _ =>
         throw ASTConstructionException(s"Unhandled token type '$tokenType'")
     }
