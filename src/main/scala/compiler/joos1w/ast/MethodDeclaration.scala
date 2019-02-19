@@ -37,7 +37,11 @@ class MethodDeclaration() extends AST {
   }
 
   def body: MethodBody = {
-    this.getDescendant(1, Some(1)).get.asInstanceOf[MethodBody]
+    this.getDescendant(1, Some(1)) match {
+      case Some(body: MethodBody) => body
+      case Some(_: Empty)         => new MethodBody(false)
+      case _                      => throw MalformedASTException(s"")
+    }
   }
 
   def modifiers: List[String] = {

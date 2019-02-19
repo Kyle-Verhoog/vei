@@ -12,7 +12,7 @@ object Joos1WCompiler {
     println("Parsing...")
     val parseTree = Joos1WParser.parse(tokens, file)
     println("Generating AST...")
-    val ast = AST.convertParseTree(parseTree)
+    val ast = AST.fromParseTree(parseTree)
     println("Weeding...")
     Weeder.weed(ast)
   }
