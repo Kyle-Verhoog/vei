@@ -43,20 +43,16 @@ class MethodHeader(val modifiers: List[String]) extends AST {
   var currentSignature: Signature = null
 
   def originalSignature: Signature = {
-    println("calculating params " + parameters.children)
-    println(methodDeclarator)
     (methodDeclarator.identifier,
      parameters.children.map(child =>
        child.asInstanceOf[FormalParameter].ttype))
   }
 
-  def setSignature(sig: Signature) = {
+  def setSignature(sig: Signature): Unit = {
     currentSignature = sig
   }
 
   def signature: Signature = {
-    println("LOOKING UP THE SIG ")
-    println(originalSignature)
     if (currentSignature == null) {
       originalSignature
     } else {

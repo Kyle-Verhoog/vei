@@ -49,26 +49,24 @@ class GenericEnvironment(val ast: AST,
     None
   }
 
-  def searchForVariable(name: String): Option[AST] = {
-    println("searching in env " + this + " for name: " + name)
-    println("is parent " + parentEnvironment.isDefined)
+  protected def searchForSimpleVariable(name: String): Option[AST] = {
     if (variableTable.contains(name)) return variableTable.get(name)
     if (parentEnvironment.isDefined)
-      return parentEnvironment.get.searchForVariable(name)
+      return parentEnvironment.get.searchForSimpleVariable(name)
     None
   }
 
-  def searchForClass(name: String): Option[AST] = {
+  protected def searchForSimpleClass(name: String): Option[AST] = {
     if (classTable.contains(name)) return classTable.get(name)
     if (parentEnvironment.isDefined)
-      return parentEnvironment.get.searchForClass(name)
+      return parentEnvironment.get.searchForSimpleClass(name)
     None
   }
 
-  def searchForMethod(sig: Signature): Option[AST] = {
+  protected def searchForSimpleMethod(sig: Signature): Option[AST] = {
     if (methodTable.contains(sig)) return methodTable.get(sig)
     if (parentEnvironment.isDefined)
-      return parentEnvironment.get.searchForMethod(sig)
+      return parentEnvironment.get.searchForSimpleMethod(sig)
     None
   }
 
@@ -76,12 +74,53 @@ class GenericEnvironment(val ast: AST,
     parentEnvironment.get.findPackageEnv(name)
   }
 
+  protected def searchForQualifiedClass(name: String): Option[AST] = {
+    val splitName = name.split('.')
+    if (splitName.length < 2)
+      throw new RuntimeException("Class name is not qualified!")
+
+    val pkgName = splitName.dropRight(1).mkString(".")
+    val className = splitName.last
+
+    val pkg = findPackageEnv(pkgName)
+    if (pkg.isEmpty) throw new RuntimeException("Package: " + pkg + " not found")
+    pkg.get.searchForSimpleClass(className)
+  }
+
+  protected def searchForQualifiedVariable(name: String): Option[AST] = {
+    throw new RuntimeException("TODO") // TODO
+  }
+
+  protected def searchForQualifiedMethod(sig: Signature): Option[AST] = {
+    throw new RuntimeException("TODO") // TODO
+  }
+
+  def serarchForVariable(name: String): Option[AST] = {
+    if (name.contains('.')) {
+      return searchForQualifiedVariable(name)
+    }
+    searchForSimpleVariable(name)
+  }
+
+  def serarchForClass(name: String): Option[AST] = {
+    if (name.contains('.')) {
+      return searchForQualifiedClass(name)
+    }
+    searchForSimpleClass(name)
+  }
+
+  def serarchForMethod(sig: Signature): Option[AST] = {
+    if (sig._1.contains('.')) {
+      return searchForQualifiedMethod(sig)
+    }
+    searchForSimpleMethod(sig)
+  }
+
   def createOrReturnRootPackageEnv(name: String): PackageEnvironment = {
     parentEnvironment.get.createOrReturnRootPackageEnv(name)
   }
 
   def retrieveAllClassesInPackage(name: String): Map[String, AST] = {
-    println("searching up")
     parentEnvironment.get.retrieveAllClassesInPackage(name)
   }
 

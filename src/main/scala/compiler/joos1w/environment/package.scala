@@ -15,13 +15,11 @@ package object environment {
     // TODO finish
     ast match {
       case ast: CompilationUnit =>
-        println("DOING COMPILATION UNIT")
         if (ast.packageDeclaration.isDefined) {
           val packageDeclaration = ast.packageDeclaration.get
           environment = parentEnvironment.get.createOrReturnRootPackageEnv(
             packageDeclaration.name)
           parentEnvironment = Option(environment)
-          println("added pacckage " + packageDeclaration.name)
         }
 
         // TODO what to do with imports?
@@ -47,7 +45,6 @@ package object environment {
         parentEnvironment.get.insertLocalVariable(ast.name, ast)
       // class/interfaces declaration
       case ast: ClassDeclaration =>
-        println("creating a class env for class " + ast.identifier)
         environment = new ClassEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertClass(ast.identifier, ast)
       case ast: InterfaceDeclaration =>
@@ -127,11 +124,8 @@ package object environment {
 
     // do checks on the environments themselves
     env match {
-      case env: ClassEnvironment => {
-        println("import set " + env.getImportSets)
-        println("imported classes: " + env.getImportedClasses)
-      }
-      case _ =>
+      case env: ClassEnvironment =>
+      case _                     =>
     }
 
     //if (env.ast.rightSibling.isDefined) verifyAST(env, env.ast.rightSibling.get)
@@ -145,11 +139,9 @@ package object environment {
     ast match {
       // TODO fill in checks
       case ast: ClassInstanceCreation =>
-        print("checking class instance creation " + ast.name)
-        if (env.searchForClass(ast.name).isEmpty)
+        if (env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
-        println("done")
       case ast: FieldAccess =>
       // TODO
       // check methods are defined
@@ -164,7 +156,7 @@ package object environment {
       case ast: AbstractMethodDeclaration => return
       case ast: MethodDeclaration         => return
       case ast: ClassDeclaration =>
-        println("some classes super set " + ast.getSuperSet)
+        //println("some classes super set " + ast.getSuperSet)
         return
       case ast: ConstructorDeclaration => return
       case ast: ForStatement           => return

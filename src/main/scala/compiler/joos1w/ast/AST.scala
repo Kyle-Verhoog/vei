@@ -797,12 +797,12 @@ object AST {
           case "name" :: "(" :: "argument_list" :: ")" :: Nil =>
             fromParseTreeAttachChildren(
               new MethodInvocation(),
-              children.head :: children(2) :: Nil
+              children(2) :: children.head :: Nil
             )
           case "primary" :: "." :: "IDENTIFIER" :: "(" :: "argument_list" :: ")" :: Nil =>
             fromParseTreeAttachChildren(
-              new MethodInvocation(Some(getValue(children(2)))),
-              children.head :: children(4) :: Nil
+              new MethodInvocation(),
+              children(4) :: children(2) :: children.head :: Nil
             )
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }

@@ -1,5 +1,5 @@
-public class List1 {
-	public List1() {}
+public class List {
+	public List() {}
 	
 	public int method() {
 		return 123;

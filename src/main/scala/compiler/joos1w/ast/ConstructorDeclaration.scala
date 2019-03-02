@@ -7,7 +7,6 @@ object ConstructorDeclaration {
   def fromParseTreeNode(
       modifiers: ParseTreeNode[Token]
   ): ConstructorDeclaration = {
-    println(AST.getValueList(modifiers))
     new ConstructorDeclaration(
       mods = AST.getValueList(modifiers)
     )

@@ -16,7 +16,6 @@ class RootEnvironment(val myAst: AST, val parent: Option[GenericEnvironment])
       name: String): PackageEnvironment = {
     if (packageEnvironments.contains(name)) return packageEnvironments(name)
     // TODO values that arent null?
-    println("creating new pkg env for: " + name)
     packageEnvironments += name -> new PackageEnvironment(null, Option(this))
     insertChild(packageEnvironments(name))
 
@@ -24,7 +23,6 @@ class RootEnvironment(val myAst: AST, val parent: Option[GenericEnvironment])
   }
 
   override def retrieveAllClassesInPackage(name: String): Map[String, AST] = {
-    print("searching for class in pkg " + name)
     val classes = mutable.Map[String, AST]()
 
     if (name.split('.').last == "*") {

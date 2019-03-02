@@ -101,19 +101,17 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     imported.toMap
   }
 
-  override def searchForClass(name: String): Option[AST] = {
+  override def searchForSimpleClass(name: String): Option[AST] = {
     if (classTable.contains(name)) return classTable.get(name)
-    println("searching imported classes....")
-    println(getImportedClasses.keys)
     getImportedClasses.get(name)
   }
 
-  override def searchForMethod(sig: Signature): Option[AST] = {
+  override def searchForSimpleMethod(sig: Signature): Option[AST] = {
     if (methodTable.contains(sig)) return methodTable.get(sig)
     inheritSet.get(sig)
   }
 
-  override def searchForVariable(name: String): Option[AST] = {
+  override def searchForSimpleVariable(name: String): Option[AST] = {
     if (variableTable.contains(name)) return variableTable.get(name)
     inheritSet.get(name, List())
   }

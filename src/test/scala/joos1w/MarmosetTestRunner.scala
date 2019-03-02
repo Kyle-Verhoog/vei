@@ -34,7 +34,7 @@ class MarmosetTestRunner extends FunSuite {
     val listOfFiles = TestUtils.marmosetTestFiles("a2")
 
     var i = 0
-    for (files <- listOfFiles.take(1)) {
+    for (files <- listOfFiles.slice(10,13)) {
       i += 1
       println("on test " + i + " out of " + listOfFiles.length)
       println(files.mkString(" "))
