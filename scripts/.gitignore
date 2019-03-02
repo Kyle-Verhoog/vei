@@ -1,0 +1,5 @@
+marmo_results
+
+__pycache__/
+*.pyc
+*.pyo
