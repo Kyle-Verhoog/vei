@@ -13,6 +13,16 @@ object Name {
     }
   }
 
+  // BIG HACK
+  def fromImportStarParseTreeNode(nameNode: ParseTreeNode[Token]): Name = {
+    nameNode.childrenTypes match {
+      case List("simple_name") =>
+        new Name(AST.getValue(nameNode.children.head) + ".*")
+      case List("qualified_name") =>
+        new Name(parseQualifiedName(nameNode.children.head) + ".*")
+    }
+  }
+
   def parseQualifiedName(qualifiedNameNode: ParseTreeNode[Token]): String = {
     parseName(qualifiedNameNode.children.head) + "." + AST.getValue(
       qualifiedNameNode.children.last
@@ -30,7 +40,7 @@ object Name {
 }
 
 class Name(val name: String) extends AST {
-  val partsOfName = name.split(".")
+  val partsOfName = name.split('.')
 
   override def strFields: String = {
     s"$name"

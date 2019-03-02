@@ -5,6 +5,10 @@ class ASTList(fieldName: String = "") extends AST {
     children.length
   }
 
+  def getFieldName: String = {
+    fieldName
+  }
+
   override def strFields: String = {
     s"$fieldName ($length)"
   }

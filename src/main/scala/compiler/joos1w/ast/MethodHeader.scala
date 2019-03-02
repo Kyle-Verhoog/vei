@@ -1,5 +1,6 @@
 package compiler.joos1w.ast
 
+import compiler.joos1w.environment.environment.Signature
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
@@ -39,8 +40,40 @@ object MethodHeader {
 
 class MethodHeader(val modifiers: List[String]) extends AST {
   MethodHeader.validateModifiers(modifiers)
+  var currentSignature: Signature = null
+
+  def originalSignature: Signature = {
+    println("calculating params " + parameters.children)
+    println(methodDeclarator)
+    (methodDeclarator.identifier,
+     parameters.children.map(child =>
+       child.asInstanceOf[FormalParameter].ttype))
+  }
+
+  def setSignature(sig: Signature) = {
+    currentSignature = sig
+  }
+
+  def signature: Signature = {
+    println("LOOKING UP THE SIG ")
+    println(originalSignature)
+    if (currentSignature == null) {
+      originalSignature
+    } else {
+      currentSignature
+    }
+  }
+
+  def parameters: ASTList = {
+    methodDeclarator.parameters
+  }
+
+  def methodDeclarator: MethodDeclarator = {
+    children(1).asInstanceOf[MethodDeclarator]
+  }
 
   def returnType: String = {
+    if (children.isEmpty) return "void" // TODO void
     getChild(0) match {
       case Some(t: Type) => t.ttype
       case _             => throw new RuntimeException("")

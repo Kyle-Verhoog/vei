@@ -1,5 +1,7 @@
 package compiler.joos1w.ast
 
+import compiler.joos1w.environment.environment.Signature
+
 object MethodDeclaration {
 
   def fromParseTreeNode(
@@ -26,48 +28,9 @@ object MethodDeclaration {
   }
 }
 
-class MethodDeclaration() extends AST {
-  def returnType: String = {
-    this.getDescendant(1) match {
-      case Some(n: MethodHeader) => n.returnType
-      case e =>
-        throw MalformedASTException(
-          s"Method leftChild is not a MethodHeader (got $e)."
-        )
-    }
+class MethodDeclaration() extends ASTMethodDeclaration {
+  def signature: Signature = {
+    if (header.isDefined) return header.get.signature
+    (identifier, List())
   }
-
-  def body: MethodBody = {
-    this.getDescendant(1, Some(1)) match {
-      case Some(body: MethodBody) => body
-      case Some(_: Empty)         => new MethodBody(false)
-      case _                      => throw MalformedASTException(s"")
-    }
-  }
-
-  def modifiers: List[String] = {
-    this.getDescendant(1) match {
-      case Some(n: MethodHeader) => n.modifiers
-      case e =>
-        throw MalformedASTException(
-          s"Method does not have MethodDeclarator child (got $e)."
-        )
-    }
-  }
-
-  def identifier: String = {
-    this.getDescendant(2, Some(1)) match {
-      case Some(n: MethodDeclarator) => n.identifier
-      case e =>
-        throw MalformedASTException(
-          s"Method does not have MethodDeclarator child (got $e."
-        )
-    }
-  }
-
-  override def strFields: String = {
-    val mods = modifiers.mkString(" ")
-    s"$mods $returnType $identifier"
-  }
-
 }

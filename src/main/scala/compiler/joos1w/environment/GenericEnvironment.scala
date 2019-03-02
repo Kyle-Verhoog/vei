@@ -1,6 +1,7 @@
 package compiler.joos1w.environment
 
 import compiler.joos1w.ast.AST
+import compiler.joos1w.environment.environment.Signature
 import exceptions.EnvironmentError
 
 import scala.collection.mutable
@@ -13,11 +14,9 @@ class GenericEnvironment(val ast: AST,
     ListBuffer[GenericEnvironment]()
 
   // TODO consider having more specific tables that return specific AST types
-  // packages map to a list of AST since multiple files can have same package
-  val packageTable: mutable.HashMap[String, List[AST]] =
-    mutable.HashMap[String, List[AST]]()
   val classTable: mutable.HashMap[String, AST] = mutable.HashMap[String, AST]()
-  val methodTable: mutable.HashMap[String, AST] = mutable.HashMap[String, AST]()
+  val methodTable: mutable.HashMap[Signature, AST] =
+    mutable.HashMap[Signature, AST]()
   val variableTable: mutable.HashMap[String, AST] =
     mutable.HashMap[String, AST]()
 
@@ -30,11 +29,11 @@ class GenericEnvironment(val ast: AST,
     variableTable += name -> ast
   }
 
-  def insertMethod(name: String, ast: AST): Unit = {
-    if (methodTable.contains(name))
+  def insertMethod(sig: Signature, ast: AST): Unit = {
+    if (methodTable.contains(sig))
       throw EnvironmentError(
-        "Method: " + name + " already declared in current scope")
-    methodTable += name -> ast
+        "Method: " + sig + " already declared in current scope")
+    methodTable += sig -> ast
   }
 
   def insertClass(name: String, ast: AST): Unit = {
@@ -42,14 +41,6 @@ class GenericEnvironment(val ast: AST,
       throw EnvironmentError(
         "Class: " + name + " already declared in current scope")
     classTable += name -> ast
-  }
-
-  def insertPackage(name: String, ast: AST): Unit = {
-    if (packageTable.contains(name)) {
-      packageTable += name -> (packageTable(name) :+ ast)
-    } else {
-      packageTable += name -> List(ast)
-    }
   }
 
   // TODO mabye return one of the variable AST instead of generic AST, if possible
@@ -74,11 +65,24 @@ class GenericEnvironment(val ast: AST,
     None
   }
 
-  def searchForMethod(name: String): Option[AST] = {
-    if (methodTable.contains(name)) return methodTable.get(name)
+  def searchForMethod(sig: Signature): Option[AST] = {
+    if (methodTable.contains(sig)) return methodTable.get(sig)
     if (parentEnvironment.isDefined)
-      return parentEnvironment.get.searchForMethod(name)
+      return parentEnvironment.get.searchForMethod(sig)
     None
+  }
+
+  def findPackageEnv(name: String): Option[PackageEnvironment] = {
+    parentEnvironment.get.findPackageEnv(name)
+  }
+
+  def createOrReturnRootPackageEnv(name: String): PackageEnvironment = {
+    parentEnvironment.get.createOrReturnRootPackageEnv(name)
+  }
+
+  def retrieveAllClassesInPackage(name: String): Map[String, AST] = {
+    println("searching up")
+    parentEnvironment.get.retrieveAllClassesInPackage(name)
   }
 
   def insertChild(genericEnvironment: GenericEnvironment): Unit = {

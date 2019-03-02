@@ -18,13 +18,7 @@ object Compiler {
           optionMap(map ++ Map('genDfa -> true), tail)
         case "--gen-parsetable" :: tail =>
           optionMap(map ++ Map('genParseTable -> true), tail)
-        case string :: opt2 :: _ if isSwitch(opt2) =>
-          optionMap(map ++ Map('file -> string), list.tail)
-        case string :: Nil => optionMap(map ++ Map('file -> string), list.tail)
-        case option :: _ =>
-          println(s"Unknown option '$option'")
-          System.exit(1)
-          Map[Symbol, Any]()
+        case files=> optionMap(map ++ Map('files -> files.mkString(" ")), Nil)
       }
     }
 
@@ -39,9 +33,9 @@ object Compiler {
       Joos1WParser.generateTableLR1()
     }
 
-    if (options contains 'file) {
+    if (options contains 'files) {
       try {
-        Joos1WCompiler.compileFile(options('file).asInstanceOf[String])
+        Joos1WCompiler.compileFiles(options('files).asInstanceOf[String].split(" ").toList)
       } catch {
         case e: Exception =>
           println(e)
@@ -49,7 +43,7 @@ object Compiler {
       }
       System.exit(0)
     } else {
-      Joos1WCompiler.compileFile("src/main/resources/test/Empty.java")
+      System.exit(0)
     }
   }
 }

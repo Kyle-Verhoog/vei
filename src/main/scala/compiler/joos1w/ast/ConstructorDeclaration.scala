@@ -9,19 +9,19 @@ object ConstructorDeclaration {
   ): ConstructorDeclaration = {
     println(AST.getValueList(modifiers))
     new ConstructorDeclaration(
-      modifiers = AST.getValueList(modifiers)
+      mods = AST.getValueList(modifiers)
     )
   }
 }
 
-class ConstructorDeclaration(modifiers: List[String]) extends AST {
-  MethodHeader.validateModifiers(modifiers)
+class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
+  MethodHeader.validateModifiers(mods)
   //println("modifiers " + modifiers)
-  if (modifiers.contains("abstract")) {
+  if (mods.contains("abstract")) {
     throw SemanticException("Cannot have abstract constructors!")
   }
 
-  def identifier: String = {
+  override def identifier: String = {
     this.getChild(0) match {
       case Some(n: ConstructorDeclarator) => n.name
       case e =>
@@ -30,4 +30,25 @@ class ConstructorDeclaration(modifiers: List[String]) extends AST {
         )
     }
   }
+
+  override def modifiers: List[String] = {
+    mods
+  }
+
+  def signature: (String, List[String]) = {
+    if (header.isDefined) return header.get.signature
+    (identifier,
+     constructorDeclarator.parameters.children.map(child =>
+       child.asInstanceOf[FormalParameter].ttype))
+  }
+
+  def constructorDeclarator: ConstructorDeclarator = {
+    children.head.asInstanceOf[ConstructorDeclarator]
+  }
+
+  override def header: Option[MethodHeader] = {
+    None
+  }
+
+  override def returnType: String = "void"
 }

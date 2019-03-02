@@ -1,11 +1,18 @@
 package compiler.joos1w.ast
 
 // TODO option, yea or nay?
-class ArrayAccess(name: Option[String]) extends AST {
+class ArrayAccess extends AST {
+  def name: Option[String] = {
+    children.head match {
+      case child: Name => Some(child.name)
+      case _           => None
+    }
+  }
+
   override def strFields: String = {
-    name match {
-      case Some(name: String) => s"$name"
-      case _                  => ""
+    children.head match {
+      case child: Name => child.name
+      case _           => "Not direct access"
     }
   }
 }

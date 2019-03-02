@@ -27,6 +27,24 @@ class CompilationUnit(name: String) extends AST {
     name.split("/").last.split("\\.java$").head.mkString
   }
 
+  def packageDeclaration: Option[PackageDeclaration] = {
+    children(0) match {
+      case ast: PackageDeclaration => Option(ast)
+      case ast: Empty => None
+    }
+  }
+
+  def importDeclarations: Option[ImportDeclarationsList] = {
+    children(1) match {
+      case ast: ImportDeclarationsList => Option(ast)
+      case ast: Empty => None
+    }
+  }
+
+  def typeDeclaration: Option[AST] = {
+    Option(children.last)
+  }
+
   override def strFields: String = {
     s"$fileName.java"
   }

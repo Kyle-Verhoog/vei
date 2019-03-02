@@ -211,9 +211,11 @@ class ASTTest extends FunSuite {
          |}
        """.stripMargin
     val parseTree = TestUtils.parseSrc(src)(1)
+    println(parseTree)
     // println(parseTree)
     println(TestUtils.ASTForSrc(src).toStrTree)
     val ast = AST.fromParseTree(parseTree)
+    println("-----")
     println(ast.toStrTree)
   }
 }

@@ -20,14 +20,54 @@ object TestUtils {
       .toList
   }
 
-  def marmosetTestFiles(assignmentVersion: String): List[String] = {
-    Source
+  def getMarmosetLibFiles(version: String): List[String] = {
+    getAllFilesInSubDirectories("test/marmoset/lib/" + version + "/java/")
+  }
+
+  def getAllFilesInSubDirectories(dir: String): List[String] = {
+    val subdirs = Source
+      .fromResource(dir)
+      .mkString
+      .split("\n")
+      .filter(s => !s.contains(".java"))
+    val subFiles: List[String] =
+      subdirs
+        .flatMap(newDir => getAllFilesInSubDirectories(dir + "/" + newDir))
+        .toList
+
+    val files = Source
+      .fromResource(dir)
+      .mkString
+      .split("\n")
+      .filter(s => s.contains(".java"))
+      .map(s => dir + "/" + s)
+      .distinct
+      .toList
+
+    files ++ subFiles
+  }
+
+  def marmosetTestFiles(assignmentVersion: String): List[List[String]] = {
+    // get all single files
+    val singleFiles = Source
       .fromResource("test/marmoset/" + assignmentVersion)
       .mkString
       .split('\n')
-      .map(s => s.split(".java")(0))
+      .filter(s => s.contains(".java"))
+      .map(s => List("test/marmoset/" + assignmentVersion + "/" + s))
       .distinct
       .toList
+
+    // get directories
+    val subDirFiles = Source
+      .fromResource("test/marmoset/" + assignmentVersion)
+      .mkString
+      .split('\n')
+      .filter(s => !s.contains(".java"))
+      .map(dir => getAllFilesInSubDirectories("test/marmoset/" + assignmentVersion + "/" + dir))
+      .toList
+
+    subDirFiles ++ singleFiles
   }
 
   def grammar: CFG = {
@@ -41,7 +81,7 @@ object TestUtils {
   }
 
   def genAST(parseTree: ParseTreeNode[Token]): AST = {
-    AST.convertParseTree(parseTree)
+    AST.fromParseTree(parseTree)
   }
 
   def scan(src: String): ListBuffer[Token] = {

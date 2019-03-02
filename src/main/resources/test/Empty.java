@@ -30,13 +30,14 @@ public class Empty {
             int m = alpha;
         }
 
-        char a = (Object) 'a';
+        // TODO uncommment
+        //char a = (String) 'a';
         char a2 = '\r';
         String kevin = "kevin /* */";
         String kevin1 = "kevin \n /* */";
         boolean b = true;
         String test = null;
-        System.out.println("Helloworld");
+        //System.out.println("Helloworld");
     }
 
 }

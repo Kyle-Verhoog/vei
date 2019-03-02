@@ -4,21 +4,37 @@ import compiler.joos1w.ast.{CompilationUnit, _}
 import exceptions.EnvironmentError
 
 package object environment {
+  // Identifier, Parameters
+  type Signature = (String, List[String])
+
   def buildEnvironment(
       ast: AST,
       parent: Option[GenericEnvironment]): GenericEnvironment = {
     var environment: GenericEnvironment = null // TODO null?
     var parentEnvironment = parent
-
     // TODO finish
     ast match {
       case ast: CompilationUnit =>
-        environment = new RootEnvironment(ast, parentEnvironment)
+        println("DOING COMPILATION UNIT")
+        if (ast.packageDeclaration.isDefined) {
+          val packageDeclaration = ast.packageDeclaration.get
+          environment = parentEnvironment.get.createOrReturnRootPackageEnv(
+            packageDeclaration.name)
+          parentEnvironment = Option(environment)
+          println("added pacckage " + packageDeclaration.name)
+        }
+
+        // TODO what to do with imports?
+        if (ast.importDeclarations.isDefined) {}
+
+        // special case for compilation unit, we manually recurse and return within the match
+        if (ast.typeDeclaration.isDefined) {
+          buildEnvironment(ast.typeDeclaration.get, parentEnvironment)
+        }
+        return environment
       // packages declaration
       case ast: PackageDeclaration =>
-        environment = new PackageEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertPackage(ast.name, ast)
-        parentEnvironment = Some(environment) // packages become parents
+        throw new RuntimeException("should not recurse on package decl")
       // variable declaration
       case ast: LocalVariableDeclaration =>
         // we insert variables into their own environment, instead of parents
@@ -31,6 +47,7 @@ package object environment {
         parentEnvironment.get.insertLocalVariable(ast.name, ast)
       // class/interfaces declaration
       case ast: ClassDeclaration =>
+        println("creating a class env for class " + ast.identifier)
         environment = new ClassEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertClass(ast.identifier, ast)
       case ast: InterfaceDeclaration =>
@@ -39,19 +56,26 @@ package object environment {
       // methods declaration
       case ast: AbstractMethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.identifier, ast)
+        parentEnvironment.get.insertMethod(ast.signature, ast)
       case ast: MethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.identifier, ast)
+        parentEnvironment.get.insertMethod(ast.signature, ast)
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.identifier, ast)
+        parentEnvironment.get.insertMethod(ast.signature, ast)
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
       case ast: WhileStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
-      case ast: IfStatement => {
+      case ast: ASTList => {
+        // TODO is this how we do blocks?
+        if (ast.getFieldName == "block_statements") {
+          environment = new BlockEnvironment(ast, parentEnvironment)
+        }
+      }
+      // TODO I dont think we will need anything now that they all have blocks
+      /*case ast: IfStatement => {
         // special case for if statement where each statement child gets its own environment
         ast.getStatementChildren.foreach(statement => {
           val env = buildEnvironment(
@@ -60,7 +84,7 @@ package object environment {
           parentEnvironment.get.insertChild(env)
         })
         // TODO figure out special case for IF and ELSE statements
-      }
+      }*/
       case _ =>
     }
 
@@ -94,27 +118,38 @@ package object environment {
     all variables were declared, types are correct, etc...
    */
   def verifyEnvironment(env: GenericEnvironment): Unit = {
-    println("looking at an env " + env)
-    if (env.ast.rightSibling.isDefined) verifyAST(env, env.ast.rightSibling.get)
-    if (env.ast.leftChild.isDefined) verifyAST(env, env.ast.leftChild.get)
+    // verify ast for most types of environments
+    env match {
+      case env: RootEnvironment    => // do nothing for root env AST
+      case env: PackageEnvironment => // do nothing for package env AST
+      case _                       => verifyAST(env, env.ast)
+    }
+
+    // do checks on the environments themselves
+    env match {
+      case env: ClassEnvironment => {
+        println("import set " + env.getImportSets)
+        println("imported classes: " + env.getImportedClasses)
+      }
+      case _ =>
+    }
+
+    //if (env.ast.rightSibling.isDefined) verifyAST(env, env.ast.rightSibling.get)
+    //if (env.ast.leftChild.isDefined) verifyAST(env, env.ast.leftChild.get)
     env.childrenEnvironments.foreach(child => verifyEnvironment(child))
   }
 
   // traverses an AST as part of verifying an environment,
   // only go as deep as an environments scope (eg. dont go into methods, classes, etc...)
   def verifyAST(env: GenericEnvironment, ast: AST): Unit = {
-    println("looking at an ast")
     ast match {
       // TODO fill in checks
-      // check variables defined
-      case ast: Identifier =>
-        println("looking at " + ast.name)
-        if (env.searchForVariable(ast.name).isEmpty)
-          throw EnvironmentError("Undeclared identifier: " + ast.name)
-      case ast: Name =>
-        println("looking at name " + ast.name)
-        if (env.searchForVariable(ast.name).isEmpty)
-          throw EnvironmentError("Undeclared name: " + ast.name)
+      case ast: ClassInstanceCreation =>
+        print("checking class instance creation " + ast.name)
+        if (env.searchForClass(ast.name).isEmpty)
+          throw EnvironmentError(
+            "Attempting to create instance of not found class: " + ast.name)
+        println("done")
       case ast: FieldAccess =>
       // TODO
       // check methods are defined
@@ -128,10 +163,13 @@ package object environment {
       case ast: InterfaceDeclaration      => return
       case ast: AbstractMethodDeclaration => return
       case ast: MethodDeclaration         => return
-      case ast: ConstructorDeclaration    => return
-      case ast: ForStatement              => return
-      case ast: WhileStatement            => return
-      case _                              =>
+      case ast: ClassDeclaration =>
+        println("some classes super set " + ast.getSuperSet)
+        return
+      case ast: ConstructorDeclaration => return
+      case ast: ForStatement           => return
+      case ast: WhileStatement         => return
+      case _                           =>
     }
 
     if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)

@@ -1,7 +1,14 @@
 package compiler.joos1w.ast
 
-class AbstractMethodDeclaration extends AST {
-  def identifier: String = {
+import compiler.joos1w.environment.environment.Signature
+
+class AbstractMethodDeclaration extends ASTMethodDeclaration {
+  def signature: Signature = {
+    if (header.isDefined) return header.get.signature
+    (identifier, List())
+  }
+
+  override def identifier: String = {
     this.getDescendant(2, Some(1)) match {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>

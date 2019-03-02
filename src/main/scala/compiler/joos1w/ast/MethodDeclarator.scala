@@ -12,6 +12,11 @@ object MethodDeclarator {
 }
 
 class MethodDeclarator(val identifier: String) extends AST {
+  def parameters: ASTList = {
+    if (children.last.isInstanceOf[Empty]) return new ASTList()
+    children.last.asInstanceOf[ASTList]
+  }
+
   override def strFields: String = {
     s"$identifier"
   }
