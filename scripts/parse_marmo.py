@@ -65,4 +65,3 @@ def parse_results(raw_results):
         results.append(MarmoTestResult(line))
 
     return results
-
