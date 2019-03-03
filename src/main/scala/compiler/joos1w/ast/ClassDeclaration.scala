@@ -112,6 +112,7 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
     children.last.asInstanceOf[ASTList]
   }
 
+  /*
   def getDeclareSet: Map[Signature, AST] = {
     val map = mutable.Map[Signature, AST]()
     getClassBody.children
@@ -123,6 +124,7 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
       })
     map.toMap
   }
+  */
 
   def getImports: List[ImportDeclaration] = {
     val imports = parent.get.parent.get

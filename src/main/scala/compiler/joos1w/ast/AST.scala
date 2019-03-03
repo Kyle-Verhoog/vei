@@ -340,6 +340,12 @@ object AST {
           case Nil => new Empty
           case _   => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
+      case "interface_member_declaration" =>
+        childrenTypes match {
+          case "abstract_method_declaration" :: Nil =>
+            fromParseTree(children.head, parent)
+          case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
+        }
       case "extends_interfaces" =>
         childrenTypes match {
           case "extends_interfaces" :: "," :: "interface_type" :: Nil =>

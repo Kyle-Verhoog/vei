@@ -22,8 +22,8 @@ class RootEnvironment(val myAst: AST, val parent: Option[GenericEnvironment])
     packageEnvironments(name)
   }
 
-  override def retrieveAllClassesInPackage(name: String): Map[String, AST] = {
-    val classes = mutable.Map[String, AST]()
+  override def retrieveAllClassesInPackage(name: String): Map[String, ClassEnvironment] = {
+    val classes = mutable.Map[String, ClassEnvironment]()
 
     if (name.split('.').last == "*") {
       // get all classes from packages that have this as a prefix

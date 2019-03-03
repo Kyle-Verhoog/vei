@@ -1,6 +1,11 @@
 package compiler.joos1w.environment
 
-import compiler.joos1w.ast.{AST, ClassDeclaration, InterfaceDeclaration}
+import compiler.joos1w.ast.{
+  AST,
+  ClassDeclaration,
+  FieldDeclaration,
+  InterfaceDeclaration
+}
 import compiler.joos1w.environment.environment.Signature
 
 import scala.collection.mutable
@@ -21,20 +26,24 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
   }
 
-  def declareSet: Map[Signature, AST] = {
-    myAst match {
-      case ast: ClassDeclaration     => ast.getDeclareSet
-      case ast: InterfaceDeclaration => Map() // TODO
-    }
+  def declareSet: Map[Signature, GenericEnvironment] = {
+    val map = mutable.Map[Signature, GenericEnvironment]()
+    childrenEnvironments
+      .foreach(child =>
+        child match {
+          case c: MethodEnvironment   => map += c.signature -> c
+          case c: VariableEnvironment => map += (c.name, None) -> c
+          case _                      =>
+      })
+    map.toMap
   }
 
-  def inheritSet: Map[Signature, AST] = {
-    val map = mutable.Map[Signature, AST]()
+  def inheritSet: Map[Signature, GenericEnvironment] = {
+    val map = mutable.Map[Signature, GenericEnvironment]()
 
     superSet.foreach(superClass => {
       getImportedClasses(superClass)
-        .asInstanceOf[ClassDeclaration]
-        .getDeclareSet
+        .declareSet
         .foreach(entry => {
           if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
           map += entry._1 -> entry._2
@@ -43,8 +52,8 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
-  def containSet: Map[Signature, AST] = {
-    val map = mutable.Map[Signature, AST]()
+  def containSet: Map[Signature, GenericEnvironment] = {
+    val map = mutable.Map[Signature, GenericEnvironment]()
 
     inheritSet.foreach(entry => map += entry._1 -> entry._2)
     declareSet.foreach(entry => map += entry._1 -> entry._2)
@@ -65,8 +74,8 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
   }
 
-  def getImportedClasses: Map[String, AST] = {
-    var imported = mutable.Map[String, AST]()
+  def getImportedClasses: Map[String, ClassEnvironment] = {
+    var imported = mutable.Map[String, ClassEnvironment]()
 
     getImportSets.foreach(importSet => {
       val packageName = importSet._1
@@ -101,19 +110,21 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     imported.toMap
   }
 
-  override def searchForSimpleClass(name: String): Option[AST] = {
+  override def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
     if (classTable.contains(name)) return classTable.get(name)
     getImportedClasses.get(name)
   }
 
-  override def searchForSimpleMethod(sig: Signature): Option[AST] = {
+  override def searchForSimpleMethod(
+      sig: Signature): Option[MethodEnvironment] = {
     if (methodTable.contains(sig)) return methodTable.get(sig)
-    inheritSet.get(sig)
+    inheritSet.get(sig).asInstanceOf[Option[MethodEnvironment]]
   }
 
-  override def searchForSimpleVariable(name: String): Option[AST] = {
+  override def searchForSimpleVariable(
+      name: String): Option[VariableEnvironment] = {
     if (variableTable.contains(name)) return variableTable.get(name)
-    inheritSet.get(name, List())
+    inheritSet.get((name, None)).asInstanceOf[Option[VariableEnvironment]]
   }
 
 }

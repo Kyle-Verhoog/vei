@@ -1,11 +1,12 @@
 package compiler.joos1w.environment
 
+
 import compiler.joos1w.ast.{CompilationUnit, _}
 import exceptions.EnvironmentError
 
 package object environment {
   // Identifier, Parameters
-  type Signature = (String, List[String])
+  type Signature = (String, Option[List[String]])
 
   def buildEnvironment(
       ast: AST,
@@ -38,28 +39,30 @@ package object environment {
         // we insert variables into their own environment, instead of parents
         // so we can tell if a variable is used before being declared
         environment = new VariableEnvironment(ast, parentEnvironment)
-        environment.insertLocalVariable(ast.name, ast)
+        environment.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
       case ast: FieldDeclaration =>
-        parentEnvironment.get.insertLocalVariable(ast.name, ast)
+        environment = new VariableEnvironment(ast, parentEnvironment)
+        parentEnvironment.get.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
       case ast: FormalParameter =>
-        parentEnvironment.get.insertLocalVariable(ast.name, ast)
+        environment = new VariableEnvironment(ast, parentEnvironment)
+        environment.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
       // class/interfaces declaration
       case ast: ClassDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertClass(ast.identifier, ast)
+        parentEnvironment.get.insertClass(ast.identifier, environment.asInstanceOf[ClassEnvironment])
       case ast: InterfaceDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertClass(ast.identifier, ast)
+        parentEnvironment.get.insertClass(ast.identifier, environment.asInstanceOf[ClassEnvironment])
       // methods declaration
       case ast: AbstractMethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, ast)
+        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
       case ast: MethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, ast)
+        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, ast)
+        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
@@ -89,9 +92,11 @@ package object environment {
       parentEnvironment.get.insertChild(environment)
     }
 
-    // but make local variable parent going forward, to make checking for not yet declared things easy
-    if (ast.isInstanceOf[LocalVariableDeclaration]) {
-      parentEnvironment = Some(environment)
+    // but make variables parent going forward, to make checking for not yet declared things easy
+    ast match {
+      case ast: LocalVariableDeclaration => parentEnvironment = Some(environment)
+      case ast: FormalParameter => parentEnvironment = Some(environment)
+      case _ =>
     }
 
     // recurse across

@@ -34,11 +34,11 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
     mods
   }
 
-  def signature: (String, List[String]) = {
+  def signature: (String, Option[List[String]]) = {
     if (header.isDefined) return header.get.signature
     (identifier,
-     constructorDeclarator.parameters.children.map(child =>
-       child.asInstanceOf[FormalParameter].ttype))
+     Some(constructorDeclarator.parameters.children.map(child =>
+       child.asInstanceOf[FormalParameter].ttype)))
   }
 
   def constructorDeclarator: ConstructorDeclarator = {

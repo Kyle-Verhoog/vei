@@ -14,56 +14,56 @@ class GenericEnvironment(val ast: AST,
     ListBuffer[GenericEnvironment]()
 
   // TODO consider having more specific tables that return specific AST types
-  val classTable: mutable.HashMap[String, AST] = mutable.HashMap[String, AST]()
-  val methodTable: mutable.HashMap[Signature, AST] =
-    mutable.HashMap[Signature, AST]()
-  val variableTable: mutable.HashMap[String, AST] =
-    mutable.HashMap[String, AST]()
+  val classTable: mutable.HashMap[String, ClassEnvironment] = mutable.HashMap[String, ClassEnvironment]()
+  val methodTable: mutable.HashMap[Signature, MethodEnvironment] =
+    mutable.HashMap[Signature, MethodEnvironment]()
+  val variableTable: mutable.HashMap[String, VariableEnvironment] =
+    mutable.HashMap[String, VariableEnvironment]()
 
-  def insertLocalVariable(name: String, ast: AST): Unit = {
+  def insertLocalVariable(name: String, env: VariableEnvironment): Unit = {
     if (variableTable.contains(name)) {
       println("the keys" + variableTable.keySet)
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
-    variableTable += name -> ast
+    variableTable += name -> env
   }
 
-  def insertMethod(sig: Signature, ast: AST): Unit = {
+  def insertMethod(sig: Signature, env: MethodEnvironment): Unit = {
     if (methodTable.contains(sig))
       throw EnvironmentError(
         "Method: " + sig + " already declared in current scope")
-    methodTable += sig -> ast
+    methodTable += sig -> env
   }
 
-  def insertClass(name: String, ast: AST): Unit = {
+  def insertClass(name: String, env: ClassEnvironment): Unit = {
     if (classTable.contains(name))
       throw EnvironmentError(
         "Class: " + name + " already declared in current scope")
-    classTable += name -> ast
+    classTable += name -> env
   }
 
   // TODO mabye return one of the variable AST instead of generic AST, if possible
-  def findLocalVariable(name: String): Option[AST] = {
+  def findLocalVariable(name: String): Option[VariableEnvironment] = {
     if (variableTable.contains(name)) return variableTable.get(name)
     None
   }
 
-  protected def searchForSimpleVariable(name: String): Option[AST] = {
+  protected def searchForSimpleVariable(name: String): Option[VariableEnvironment] = {
     if (variableTable.contains(name)) return variableTable.get(name)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleVariable(name)
     None
   }
 
-  protected def searchForSimpleClass(name: String): Option[AST] = {
+  protected def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
     if (classTable.contains(name)) return classTable.get(name)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleClass(name)
     None
   }
 
-  protected def searchForSimpleMethod(sig: Signature): Option[AST] = {
+  protected def searchForSimpleMethod(sig: Signature): Option[MethodEnvironment] = {
     if (methodTable.contains(sig)) return methodTable.get(sig)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleMethod(sig)
@@ -74,7 +74,7 @@ class GenericEnvironment(val ast: AST,
     parentEnvironment.get.findPackageEnv(name)
   }
 
-  protected def searchForQualifiedClass(name: String): Option[AST] = {
+  protected def searchForQualifiedClass(name: String): Option[ClassEnvironment] = {
     val splitName = name.split('.')
     if (splitName.length < 2)
       throw new RuntimeException("Class name is not qualified!")
@@ -87,29 +87,29 @@ class GenericEnvironment(val ast: AST,
     pkg.get.searchForSimpleClass(className)
   }
 
-  protected def searchForQualifiedVariable(name: String): Option[AST] = {
+  protected def searchForQualifiedVariable(name: String): Option[VariableEnvironment] = {
     throw new RuntimeException("TODO") // TODO
   }
 
-  protected def searchForQualifiedMethod(sig: Signature): Option[AST] = {
+  protected def searchForQualifiedMethod(sig: Signature): Option[MethodEnvironment] = {
     throw new RuntimeException("TODO") // TODO
   }
 
-  def serarchForVariable(name: String): Option[AST] = {
+  def serarchForVariable(name: String): Option[VariableEnvironment] = {
     if (name.contains('.')) {
       return searchForQualifiedVariable(name)
     }
     searchForSimpleVariable(name)
   }
 
-  def serarchForClass(name: String): Option[AST] = {
+  def serarchForClass(name: String): Option[ClassEnvironment] = {
     if (name.contains('.')) {
       return searchForQualifiedClass(name)
     }
     searchForSimpleClass(name)
   }
 
-  def serarchForMethod(sig: Signature): Option[AST] = {
+  def serarchForMethod(sig: Signature): Option[MethodEnvironment] = {
     if (sig._1.contains('.')) {
       return searchForQualifiedMethod(sig)
     }
@@ -120,7 +120,7 @@ class GenericEnvironment(val ast: AST,
     parentEnvironment.get.createOrReturnRootPackageEnv(name)
   }
 
-  def retrieveAllClassesInPackage(name: String): Map[String, AST] = {
+  def retrieveAllClassesInPackage(name: String): Map[String, ClassEnvironment] = {
     parentEnvironment.get.retrieveAllClassesInPackage(name)
   }
 
