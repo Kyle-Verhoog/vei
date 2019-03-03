@@ -36,20 +36,28 @@ class MarmosetTestRunner extends FunSuite {
       .fromFile(expectedResultsFile)
       .mkString
       .split("\n")
-      .map(l => l.split(" "))
+      .map(l => l.split(" ").toList)
       .toList
+    val getExpectedResult = (files: String) => {
+      expectedResults
+        .filter(r => files contains r(0))
+        .takeWhile(result => true)
+        .head
+    }
 
     var i = 0
     for (files <- listOfFiles) {
       i += 1
-      println("on test " + i + " out of " + listOfFiles.length)
+      val expectedResult = getExpectedResult(files.mkString(" "))
+      println(
+        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(0))
       println(files.mkString(" "))
 
       val filePaths = files.map(f => "src/main/resources/" + f)
 
       val libFiles =
         getMarmosetLibFiles("2").map(f => "src/main/resources/" + f)
-      expectedResults(i)(1) match {
+      expectedResult(1) match {
         case "????" =>
           try {
             Joos1WCompiler.compileFiles(filePaths ++ libFiles)

@@ -1,6 +1,6 @@
 package joos1w
 
-import compiler.joos1w.ast.AST
+import compiler.joos1w.ast.{AST, Weeder}
 import compiler.joos1w.Joos1WScanner
 import compiler.parser.Parser
 import compiler.parser.Parser.{CFG, ParseTreeNode}
@@ -64,7 +64,9 @@ object TestUtils {
       .mkString
       .split('\n')
       .filter(s => !s.contains(".java"))
-      .map(dir => getAllFilesInSubDirectories("test/marmoset/" + assignmentVersion + "/" + dir))
+      .map(dir =>
+        getAllFilesInSubDirectories(
+          "test/marmoset/" + assignmentVersion + "/" + dir))
       .toList
 
     subDirFiles ++ singleFiles
@@ -94,7 +96,9 @@ object TestUtils {
   }
 
   def ASTForSrc(src: String): AST = {
-    genAST(parseSrc(src)(1))
+    val ast = genAST(parseSrc(src)(1))
+    // Weeder.weed(ast)
+    ast
   }
 
   def base(methodBody: String = "", classBody: String = ""): String = {
