@@ -1,7 +1,6 @@
 package compiler.joos1w
 
-import compiler.joos1w.ast.{AST, Weeder}
-import compiler.joos1w.environment.RootEnvironment
+import ast.{AST, Weeder}
 
 object Joos1WCompiler {
   Joos1WScanner.loadSavedScanner()
@@ -23,11 +22,7 @@ object Joos1WCompiler {
     println("Scanning, parsing, weeding files...")
     val weededAst = files.map(file => compileFile(file))
     println("Building environments...")
-    val rootEnvironment = new RootEnvironment(new AST(), None)
-
-    weededAst.foreach(ast =>
-      environment.environment.buildEnvironment(ast, Option(rootEnvironment)))
-    environment.environment.verifyEnvironment(rootEnvironment)
+    Joos1WEnvironment.buildEnvironment(weededAst)
     println("done")
   }
 }
