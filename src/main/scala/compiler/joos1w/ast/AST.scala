@@ -802,16 +802,17 @@ object AST {
         childrenTypes match {
           case "name" :: "(" :: "argument_list" :: ")" :: Nil =>
             fromParseTreeAttachChildren(
-              new MethodInvocation(),
+              new MethodInvocation(None),
               children(2) :: children.head :: Nil
             )
           case "primary" :: "." :: "IDENTIFIER" :: "(" :: "argument_list" :: ")" :: Nil =>
             fromParseTreeAttachChildren(
-              new MethodInvocation(),
-              children(4) :: children(2) :: children.head :: Nil
+              new MethodInvocation(Some(getValue(children(2)))),
+              children(4) :: children.head :: Nil
             )
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
+
       case "argument_list" =>
         childrenTypes match {
           case "argument_list" :: "," :: "expression" :: Nil =>
