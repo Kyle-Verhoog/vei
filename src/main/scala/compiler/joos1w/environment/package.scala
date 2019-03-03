@@ -1,12 +1,35 @@
 package compiler.joos1w.environment
 
-
 import compiler.joos1w.ast.{CompilationUnit, _}
 import exceptions.EnvironmentError
 
 package object environment {
   // Identifier, Parameters
   type Signature = (String, Option[List[String]])
+
+  def isPrimitive(ttype: String): Boolean = {
+    if (List("int",
+             "short",
+             "boolean",
+             "byte",
+             "char",
+             "int[]",
+             "short[]",
+             "boolean[]",
+             "byte[]",
+             "char[]",
+             "void").contains(ttype))
+      return true
+    false
+  }
+
+  def verifyType(ttype: String, env: GenericEnvironment): Boolean = {
+    var typeToVerify = ttype
+    if (ttype.length > 2 && ttype.takeRight(2) == "[]") {
+      typeToVerify = ttype.dropRight(2)
+    }
+    env.serarchForClass(typeToVerify).isDefined || isPrimitive(typeToVerify)
+  }
 
   def buildEnvironment(
       ast: AST,
@@ -23,7 +46,7 @@ package object environment {
           parentEnvironment = Option(environment)
         } else {
           // look up default package
-          environment = parentEnvironment.get.createOrReturnRootPackageEnv("DEFAULa")
+          environment = parentEnvironment.get.createOrReturnRootPackageEnv("")
           parentEnvironment = Option(environment)
         }
 
@@ -43,30 +66,44 @@ package object environment {
         // we insert variables into their own environment, instead of parents
         // so we can tell if a variable is used before being declared
         environment = new VariableEnvironment(ast, parentEnvironment)
-        environment.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
+        environment.insertLocalVariable(
+          ast.name,
+          environment.asInstanceOf[VariableEnvironment])
       case ast: FieldDeclaration =>
         environment = new VariableEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
+        parentEnvironment.get.insertLocalVariable(
+          ast.name,
+          environment.asInstanceOf[VariableEnvironment])
       case ast: FormalParameter =>
         environment = new VariableEnvironment(ast, parentEnvironment)
-        environment.insertLocalVariable(ast.name, environment.asInstanceOf[VariableEnvironment])
+        parentEnvironment.get.insertLocalVariable(
+          ast.name,
+          environment.asInstanceOf[VariableEnvironment])
       // class/interfaces declaration
       case ast: ClassDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertClass(ast.identifier, environment.asInstanceOf[ClassEnvironment])
+        parentEnvironment.get.insertClass(
+          ast.identifier,
+          environment.asInstanceOf[ClassEnvironment])
       case ast: InterfaceDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertClass(ast.identifier, environment.asInstanceOf[ClassEnvironment])
+        parentEnvironment.get.insertClass(
+          ast.identifier,
+          environment.asInstanceOf[ClassEnvironment])
       // methods declaration
       case ast: AbstractMethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
+        parentEnvironment.get.insertMethod(
+          ast.signature,
+          environment.asInstanceOf[MethodEnvironment])
       case ast: MethodDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
+        parentEnvironment.get.insertMethod(
+          ast.signature,
+          environment.asInstanceOf[MethodEnvironment])
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        parentEnvironment.get.insertMethod(ast.signature, environment.asInstanceOf[MethodEnvironment])
+        // TODO NOTE we do not add consturctor methods to the parent env. they arent callable
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
@@ -98,9 +135,10 @@ package object environment {
 
     // but make variables parent going forward, to make checking for not yet declared things easy
     ast match {
-      case ast: LocalVariableDeclaration => parentEnvironment = Some(environment)
+      case ast: LocalVariableDeclaration =>
+        parentEnvironment = Some(environment)
       case ast: FormalParameter => parentEnvironment = Some(environment)
-      case _ =>
+      case _                    =>
     }
 
     // recurse across
@@ -128,18 +166,52 @@ package object environment {
     env match {
       case env: RootEnvironment    => // do nothing for root env AST
       case env: PackageEnvironment => // do nothing for package env AST
-      case _                       => verifyAST(env, env.ast)
+      // TODO
+      /*
+           we need to traverse down only some of the children nodes (eg. the bodies for the
+           declarations, but not the headers/invocations stuff like that
+       */
+      case env: MethodEnvironment => {
+        env.ast match {
+          // for methods we want to verify return type, and traverse body
+          case ast: MethodDeclaration => {
+            if (!verifyType(ast.returnType, env)) {
+              throw EnvironmentError("Unknown return type: " + ast.returnType)
+            }
+            verifyAST(env, ast.body)
+          }
+          case ast: ConstructorDeclaration => verifyAST(env, ast.body)
+        }
+      }
+      // for variable declarations we want to verify types and thats it
+      case env: VariableEnvironment => {
+        var ttype = "TEMP"
+        env.ast match {
+          case ast: LocalVariableDeclaration => ttype = ast.ttype
+          case ast: FieldDeclaration         => ttype = ast.fieldType
+          case ast: FormalParameter          => ttype = ast.ttype
+        }
+        if (!verifyType(ttype, env)) {
+          throw EnvironmentError("Unknown variable type: " + ttype)
+        }
+      }
+      case _ => verifyAST(env, env.ast)
     }
 
     // do checks on the environments themselves
     env match {
       case env: ClassEnvironment =>
         // verify there are no duplicate imported types
-        val importedTypes = env.getImportSets.map(importSet => importSet._2).filter(types => types != "*")
+        val importedTypes = env.getImportSets
+          .map(importSet => importSet._2)
+          .filter(types => types != "*")
         if (importedTypes.length != importedTypes.distinct.length) {
           throw new RuntimeException("Duplicated imported types!")
         }
-      case _                     =>
+
+        // verify that class doesnt depend on itself
+        env.superSet
+      case _ =>
     }
 
     //if (env.ast.rightSibling.isDefined) verifyAST(env, env.ast.rightSibling.get)
@@ -152,15 +224,20 @@ package object environment {
   def verifyAST(env: GenericEnvironment, ast: AST): Unit = {
     ast match {
       // TODO fill in checks
+      case ast: Name =>
+      /*if (env.serarchForVariable(ast.name).isEmpty) {
+          println("error name in env " + env.ast.toStrTree)
+          throw EnvironmentError(
+            "Attempting to use undefined name: " + ast.name)
+        }*/
+      // TODO
+      case ast: FieldAccess => // TODO
+      // check methods are defined
       case ast: ClassInstanceCreation =>
         if (env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
-      case ast: FieldAccess =>
-      // TODO
-      // check methods are defined
-      case ast: MethodInvocation =>
-      // Stop recursing since this is a new environment
+        return
       case ast: CompilationUnit           => return
       case ast: PackageDeclaration        => return
       case ast: FieldDeclaration          => return
@@ -169,13 +246,12 @@ package object environment {
       case ast: InterfaceDeclaration      => return
       case ast: AbstractMethodDeclaration => return
       case ast: MethodDeclaration         => return
-      case ast: ClassDeclaration =>
-        //println("some classes super set " + ast.getSuperSet)
-        return
-      case ast: ConstructorDeclaration => return
-      case ast: ForStatement           => return
-      case ast: WhileStatement         => return
-      case _                           =>
+      case ast: MethodInvocation          => return
+      case ast: ClassDeclaration          => return
+      case ast: ConstructorDeclaration    => return
+      case ast: ForStatement              => return
+      case ast: WhileStatement            => return
+      case _                              =>
     }
 
     if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)

@@ -49,5 +49,12 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
     None
   }
 
+  override def body: MethodBody = {
+    val hasBody = children.last.isInstanceOf[Empty]
+    val methodBody = new MethodBody(hasBody)
+    children.last.children.foreach(child => methodBody.addChildToEnd(child))
+    methodBody
+  }
+
   override def returnType: String = "void"
 }

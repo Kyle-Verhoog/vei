@@ -56,7 +56,7 @@ class GenericEnvironment(val ast: AST,
     None
   }
 
-  protected def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
+  def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
     if (classTable.contains(name)) return classTable.get(name)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleClass(name)

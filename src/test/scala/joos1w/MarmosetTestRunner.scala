@@ -45,8 +45,8 @@ class MarmosetTestRunner extends FunSuite {
         .head
     }
 
-    var i = 0
-    for (files <- listOfFiles) {
+    var i = 187
+    for (files <- listOfFiles.drop(187)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
@@ -58,12 +58,6 @@ class MarmosetTestRunner extends FunSuite {
       val libFiles =
         getMarmosetLibFiles("2").map(f => "src/main/resources/" + f)
       expectedResult(1) match {
-        case "????" =>
-          try {
-            Joos1WCompiler.compileFiles(filePaths ++ libFiles)
-          } catch {
-            case _: Throwable =>
-          }
         case "fail" =>
           assertThrows[Exception](
             Joos1WCompiler.compileFiles(filePaths ++ libFiles))

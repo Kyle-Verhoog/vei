@@ -28,7 +28,7 @@ class FieldDeclaration(modifiers: List[String]) extends AST {
   }
 
   def fieldType: String = {
-    getChild(0).asInstanceOf[Type].ttype
+    getChild(0).get.asInstanceOf[Type].ttype
   }
 
   def name: String = {

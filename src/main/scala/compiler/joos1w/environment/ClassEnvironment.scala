@@ -2,6 +2,7 @@ package compiler.joos1w.environment
 
 import compiler.joos1w.ast.{AST, ClassDeclaration, InterfaceDeclaration}
 import compiler.joos1w.environment.environment.Signature
+import exceptions.EnvironmentError
 
 import scala.collection.mutable
 
@@ -16,8 +17,20 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
 
   def superSet: List[String] = {
     myAst match {
-      case ast: ClassDeclaration     => ast.getSuperSet
-      case ast: InterfaceDeclaration => List("TODO") // TODO
+      case ast: ClassDeclaration => {
+        if (ast.getSuperSet.contains(ast.identifier)) {
+          throw EnvironmentError(
+            "Class: " + ast.identifier + " cannot extend or implement itself!")
+        }
+        ast.getSuperSet
+      }
+      case ast: InterfaceDeclaration => {
+        if (ast.getExtends.contains(ast.identifier)) {
+          throw EnvironmentError(
+            "Class: " + ast.identifier + " cannot extend or implement itself!")
+        }
+        ast.getExtends
+      }
     }
   }
 
@@ -124,8 +137,8 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       return searchForQualifiedClass(singleTypeImports(name))
 
     // search packages
-    //if (parentEnvironment.get.searchForSimpleClass(name).isDefined)
-      //return parentEnvironment.get.searchForSimpleClass(name)
+    if (parentEnvironment.get.searchForSimpleClass(name).isDefined)
+      return parentEnvironment.get.searchForSimpleClass(name)
 
     // search imports
     getImportedClasses.get(name)

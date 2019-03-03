@@ -16,4 +16,12 @@ object InterfaceDeclaration {
 }
 
 class InterfaceDeclaration(modifiers: List[String], val identifier: String)
-    extends AST {}
+    extends AST {
+  def getExtends: List[String] = {
+    children.head
+      .asInstanceOf[ASTList]
+      .children
+      .map(child => child.asInstanceOf[Name].name)
+  }
+
+}
