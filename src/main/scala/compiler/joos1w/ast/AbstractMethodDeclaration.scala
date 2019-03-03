@@ -5,7 +5,7 @@ import compiler.joos1w.environment.environment.Signature
 class AbstractMethodDeclaration extends ASTMethodDeclaration {
   def signature: Signature = {
     if (header.isDefined) return header.get.signature
-    (identifier, List())
+    (identifier, Some(List()))
   }
 
   override def identifier: String = {

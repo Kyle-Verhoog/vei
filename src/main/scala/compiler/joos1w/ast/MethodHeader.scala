@@ -44,8 +44,8 @@ class MethodHeader(val modifiers: List[String]) extends AST {
 
   def originalSignature: Signature = {
     (methodDeclarator.identifier,
-     parameters.children.map(child =>
-       child.asInstanceOf[FormalParameter].ttype))
+     Some(parameters.children.map(child =>
+       child.asInstanceOf[FormalParameter].ttype)))
   }
 
   def setSignature(sig: Signature): Unit = {

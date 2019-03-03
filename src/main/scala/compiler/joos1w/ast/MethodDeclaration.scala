@@ -31,6 +31,6 @@ object MethodDeclaration {
 class MethodDeclaration() extends ASTMethodDeclaration {
   def signature: Signature = {
     if (header.isDefined) return header.get.signature
-    (identifier, List())
+    (identifier, Some(List()))
   }
 }
