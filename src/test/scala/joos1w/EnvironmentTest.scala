@@ -157,17 +157,6 @@ class EnvironmentTest extends FunSuite {
 
     val lib = List(ast2, ast3, ast4)
 
-
-    val test0 = TestUtils.ASTForSrc(s"""
-                                       |import A.B.C;
-                                       |public class test {
-                                       |  public static void main() {
-                                       |    InDefaultPackage idp;
-                                       |  }
-                                       |}
-       """.stripMargin)
-    Joos1WEnvironment.buildEnvironment(List(test0) ++ lib)
-
     val test1 = TestUtils.ASTForSrc(s"""
                                       |import A.B.C;
                                       |public class test {
@@ -213,7 +202,7 @@ class EnvironmentTest extends FunSuite {
   }
 
   test("""
-          Every import-on-demand declaration must refer to a package declared n some file listed on the Joos command
+          Every import-on-demand declaration must refer to a package declared in some file listed on the Joos command
           line. That is, the import-on-demand declaration must refer to a package whose name appears as the package
           declaration in some source file, or whose name is a prefix of the name appearing in some package declaration.
     """) {

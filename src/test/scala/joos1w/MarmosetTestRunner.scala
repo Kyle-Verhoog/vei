@@ -4,6 +4,7 @@ import compiler.joos1w.Joos1WCompiler
 import joos1w.TestUtils.getMarmosetLibFiles
 import org.scalatest.FunSuite
 
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 class MarmosetTestRunner extends FunSuite {
@@ -46,6 +47,7 @@ class MarmosetTestRunner extends FunSuite {
     }
 
     var i = 0
+    var failedTests = ListBuffer[Throwable]()
     for (files <- listOfFiles.drop(0)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
@@ -57,13 +59,26 @@ class MarmosetTestRunner extends FunSuite {
 
       val libFiles =
         getMarmosetLibFiles("2").map(f => "src/main/resources/" + f)
-      expectedResult(1) match {
-        case "fail" =>
-          assertThrows[Exception](
-            Joos1WCompiler.compileFiles(filePaths ++ libFiles))
-        case "pass" =>
-          Joos1WCompiler.compileFiles(filePaths ++ libFiles)
+      try {
+        expectedResult(1) match {
+          case "fail" =>
+            assertThrows[Exception](
+              Joos1WCompiler.compileFiles(filePaths ++ libFiles))
+          case "pass" =>
+            Joos1WCompiler.compileFiles(filePaths ++ libFiles)
+        }
+        println("✓ TEST PASSED")
+      } catch {
+        case e: Throwable =>
+          failedTests += e
+          println(e)
+          println("✗ TEST FAILED")
       }
+      println(s"$i/${listOfFiles.length} TESTS RUN")
+      println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")
+    }
+    if (failedTests.nonEmpty) {
+      throw new RuntimeException()
     }
   }
 }
