@@ -1,11 +1,6 @@
 package compiler.joos1w.environment
 
-import compiler.joos1w.ast.{
-  AST,
-  ClassDeclaration,
-  FieldDeclaration,
-  InterfaceDeclaration
-}
+import compiler.joos1w.ast.{AST, ClassDeclaration, InterfaceDeclaration}
 import compiler.joos1w.environment.environment.Signature
 
 import scala.collection.mutable
@@ -13,8 +8,8 @@ import scala.collection.mutable
 class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   myAst match {
-    case ast: ClassDeclaration     =>
-    case ast: InterfaceDeclaration =>
+    case ast: ClassDeclaration     => insertClass(ast.identifier, this)
+    case ast: InterfaceDeclaration => insertClass(ast.identifier, this)
     case _ =>
       throw new RuntimeException("Class env needs class or interface as AST")
   }
@@ -38,12 +33,22 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
+  // mapping from the type to the fully qualified name
+  // eg. C -> A.B.C
+  def singleTypeImports: Map[String, String] = {
+    val map = mutable.Map[String, String]()
+    getImportSets
+      .filter(importSet => importSet._2 != "*")
+      .foreach(importSet =>
+        map += importSet._2 -> (importSet._1 + "." + importSet._2))
+    map.toMap
+  }
+
   def inheritSet: Map[Signature, GenericEnvironment] = {
     val map = mutable.Map[Signature, GenericEnvironment]()
 
     superSet.foreach(superClass => {
-      getImportedClasses(superClass)
-        .declareSet
+      getImportedClasses(superClass).declareSet
         .foreach(entry => {
           if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
           map += entry._1 -> entry._2
@@ -65,10 +70,10 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   def getImportSets: List[(String, String)] = {
     myAst match {
       case ast: ClassDeclaration => {
-        ast.getImports.map(imp => {
+        (ast.getImports.map(imp => {
           val partsOfName = imp.name.split('.')
           (partsOfName.dropRight(1).mkString("."), partsOfName.last)
-        }) ++ List(("java.lang", "*"))
+        }) ++ List(("java.lang", "*"))).distinct
       }
       case ast: InterfaceDeclaration => List(("java.lang", "*")) // TODO
     }
@@ -111,7 +116,18 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   override def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
+    // search enclosing class/interface
     if (classTable.contains(name)) return classTable.get(name)
+
+    // search type imports
+    if (singleTypeImports.contains(name))
+      return searchForQualifiedClass(singleTypeImports(name))
+
+    // search packages
+    //if (parentEnvironment.get.searchForSimpleClass(name).isDefined)
+      //return parentEnvironment.get.searchForSimpleClass(name)
+
+    // search imports
     getImportedClasses.get(name)
   }
 

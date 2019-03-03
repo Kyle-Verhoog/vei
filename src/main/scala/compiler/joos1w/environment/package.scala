@@ -21,6 +21,10 @@ package object environment {
           environment = parentEnvironment.get.createOrReturnRootPackageEnv(
             packageDeclaration.name)
           parentEnvironment = Option(environment)
+        } else {
+          // look up default package
+          environment = parentEnvironment.get.createOrReturnRootPackageEnv("DEFAULa")
+          parentEnvironment = Option(environment)
         }
 
         // TODO what to do with imports?

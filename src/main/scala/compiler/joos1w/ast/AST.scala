@@ -1,6 +1,5 @@
 package compiler.joos1w.ast
 
-import compiler.joos1w.Joos1WCFG
 import compiler.joos1w.ast.literals._
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
