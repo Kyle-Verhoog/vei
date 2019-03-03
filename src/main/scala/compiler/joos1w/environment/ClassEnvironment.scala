@@ -9,8 +9,26 @@ import scala.collection.mutable
 class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   myAst match {
-    case ast: ClassDeclaration     => insertClass(ast.identifier, this)
-    case ast: InterfaceDeclaration => insertClass(ast.identifier, this)
+    case ast: ClassDeclaration     => {
+      insertClass(ast.identifier, this)
+
+      if (superSet.contains(ast.identifier)) {
+        throw EnvironmentError(
+          "Class: " + ast.identifier + " cannot extend or implement itself!")
+      }
+    }
+    case ast: InterfaceDeclaration => {
+      insertClass(ast.identifier, this)
+
+      if (superSet.contains(ast.identifier)) {
+        throw EnvironmentError(
+          "Interface: " + ast.identifier + " cannot extend or implement itself!")
+      }
+
+      if (singleTypeImports.contains(ast.identifier)) {
+        throw EnvironmentError("Cannot import interface of same name!")
+      }
+    }
     case _ =>
       throw new RuntimeException("Class env needs class or interface as AST")
   }
@@ -18,17 +36,9 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   def superSet: List[String] = {
     myAst match {
       case ast: ClassDeclaration => {
-        if (ast.getSuperSet.contains(ast.identifier)) {
-          throw EnvironmentError(
-            "Class: " + ast.identifier + " cannot extend or implement itself!")
-        }
         ast.getSuperSet
       }
       case ast: InterfaceDeclaration => {
-        if (ast.getExtends.contains(ast.identifier)) {
-          throw EnvironmentError(
-            "Class: " + ast.identifier + " cannot extend or implement itself!")
-        }
         ast.getExtends
       }
     }
@@ -61,7 +71,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     val map = mutable.Map[Signature, GenericEnvironment]()
 
     superSet.foreach(superClass => {
-      getImportedClasses(superClass).declareSet
+      serarchForClass(superClass).get.containSet
         .foreach(entry => {
           if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
           map += entry._1 -> entry._2
@@ -97,7 +107,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
   }
 
-  def getImportedClasses: Map[String, ClassEnvironment] = {
+  def lookUpImportedClass(klass: String): Option[ClassEnvironment] = {
     var imported = mutable.Map[String, ClassEnvironment]()
 
     getImportSets.foreach(importSet => {
@@ -106,7 +116,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
 
       if (className == "*") { // look up all sub classes
         retrieveAllClassesInPackage(packageName).foreach(pair => {
-          if (imported.contains(pair._1))
+          if (imported.contains(pair._1) && klass == pair._1)
             throw new RuntimeException(
               "duplicate class names imported: " + pair._1)
           imported += pair
@@ -122,7 +132,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
           throw new RuntimeException(
             "could not find class " + className + " in package " + packageName)
 
-        if (imported.contains(className))
+        if (imported.contains(className) && klass == className)
           throw new RuntimeException(
             "duplicate class names imported: " + className)
 
@@ -130,7 +140,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       }
     })
 
-    imported.toMap
+    imported.get(klass)
   }
 
   override def searchForSimpleClass(name: String): Option[ClassEnvironment] = {
@@ -138,15 +148,16 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     if (classTable.contains(name)) return classTable.get(name)
 
     // search type imports
-    if (singleTypeImports.contains(name))
+    if (singleTypeImports.contains(name)) {
       return searchForQualifiedClass(singleTypeImports(name))
+    }
 
     // search packages
     if (parentEnvironment.get.searchForSimpleClass(name).isDefined)
       return parentEnvironment.get.searchForSimpleClass(name)
 
     // search imports
-    getImportedClasses.get(name)
+    lookUpImportedClass(name)
   }
 
   override def searchForSimpleMethod(

@@ -46,7 +46,7 @@ class MarmosetTestRunner extends FunSuite {
     }
 
     var i = 0
-    for (files <- listOfFiles) {
+    for (files <- listOfFiles.drop(0)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(

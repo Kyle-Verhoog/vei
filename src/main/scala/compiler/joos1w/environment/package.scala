@@ -28,7 +28,7 @@ package object environment {
     if (ttype.length > 2 && ttype.takeRight(2) == "[]") {
       typeToVerify = ttype.dropRight(2)
     }
-    env.serarchForClass(typeToVerify).isDefined || isPrimitive(typeToVerify)
+    isPrimitive(typeToVerify) || env.serarchForClass(typeToVerify).isDefined
   }
 
   def buildEnvironment(
@@ -180,12 +180,13 @@ package object environment {
             }
             verifyAST(env, ast.body)
           }
+          // just verify return type, no body to check
           case ast: AbstractMethodDeclaration => {
             if (!verifyType(ast.returnType, env)) {
               throw EnvironmentError("Unknown return type: " + ast.returnType)
             }
-            verifyAST(env, ast.body)
           }
+          // just check body, no return type to verify
           case ast: ConstructorDeclaration => verifyAST(env, ast.body)
         }
       }

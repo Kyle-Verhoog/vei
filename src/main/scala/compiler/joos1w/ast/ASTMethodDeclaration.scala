@@ -28,7 +28,9 @@ abstract class ASTMethodDeclaration extends AST {
     this.getDescendant(1, Some(1)) match {
       case Some(body: MethodBody) => body
       case Some(_: Empty)         => new MethodBody(false)
-      case _                      => throw MalformedASTException(s"")
+      case _ =>
+        throw MalformedASTException(
+          s"Expected body got: " + this.getDescendant(1, Some(1)))
     }
   }
 
