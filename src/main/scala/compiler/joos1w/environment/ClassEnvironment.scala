@@ -9,12 +9,17 @@ import scala.collection.mutable
 class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   myAst match {
-    case ast: ClassDeclaration     => {
+    case ast: ClassDeclaration => {
       insertClass(ast.identifier, this)
 
       if (superSet.contains(ast.identifier)) {
         throw EnvironmentError(
           "Class: " + ast.identifier + " cannot extend or implement itself!")
+      }
+
+      if (singleTypeImports.contains(ast.identifier) && singleTypeImports(
+            ast.identifier) != qualifiedName) {
+        throw EnvironmentError("Cannot import type of same name!")
       }
     }
     case ast: InterfaceDeclaration => {
@@ -25,12 +30,29 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
           "Interface: " + ast.identifier + " cannot extend or implement itself!")
       }
 
-      if (singleTypeImports.contains(ast.identifier)) {
+      if (singleTypeImports.contains(ast.identifier) && singleTypeImports(
+            ast.identifier) != qualifiedName) {
         throw EnvironmentError("Cannot import interface of same name!")
       }
     }
     case _ =>
       throw new RuntimeException("Class env needs class or interface as AST")
+  }
+
+  def packageName: String = {
+    parentEnvironment.get match {
+      case env: PackageEnvironment => env.pkgName
+      case _ =>
+        throw new RuntimeException(
+          "expecting parent of class env to be pkg env")
+    }
+  }
+
+  def qualifiedName: String = {
+    ast match {
+      case ast: ClassDeclaration     => packageName + "." + ast.identifier
+      case ast: InterfaceDeclaration => packageName + "." + ast.identifier
+    }
   }
 
   def superSet: List[String] = {
