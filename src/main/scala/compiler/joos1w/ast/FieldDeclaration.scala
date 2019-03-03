@@ -12,7 +12,7 @@ object FieldDeclaration {
 }
 
 // TODO determine how we want to handle modifiers, type and stuff
-class FieldDeclaration(modifiers: List[String]) extends AST {
+class FieldDeclaration(val modifiers: List[String]) extends AST {
   if (!(modifiers.contains("public") || modifiers.contains("private") || modifiers
         .contains("protected"))) {
     throw SemanticException(

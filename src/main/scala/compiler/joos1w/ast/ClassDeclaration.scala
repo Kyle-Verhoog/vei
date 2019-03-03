@@ -101,6 +101,8 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
     var superSet = List[String]()
 
     if (extendsList.isDefined) superSet = superSet :+ extendsList.get
+    if (superSet.isEmpty) superSet = List("java.lang.Object")
+
     if (interfacesList.isDefined)
       superSet = List.concat(superSet, interfacesList.get)
 
@@ -124,7 +126,7 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
       })
     map.toMap
   }
-  */
+   */
 
   def getImports: List[ImportDeclaration] = {
     val imports = parent.get.parent.get

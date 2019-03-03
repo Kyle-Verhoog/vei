@@ -12,4 +12,11 @@ class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       case _ => throw new RuntimeException("Unknown ast type for variable env")
     }
   }
+
+  def modifiers: List[String] = {
+    myAst match {
+      case ast: FieldDeclaration => ast.modifiers
+      case _ => throw new RuntimeException("variable type does not have modifiers")
+    }
+  }
 }

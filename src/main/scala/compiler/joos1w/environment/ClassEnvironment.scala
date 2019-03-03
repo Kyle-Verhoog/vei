@@ -78,6 +78,15 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
+  def getPublicInheritedSet: Map[Signature, GenericEnvironment] = {
+    inheritSet.filter(entry => {
+      entry._2 match {
+        case env: MethodEnvironment   => env.modifiers.contains("public")
+        case env: VariableEnvironment => env.modifiers.contains("public")
+      }
+    })
+  }
+
   // mapping from the type to the fully qualified name
   // eg. C -> A.B.C
   def singleTypeImports: Map[String, String] = {
@@ -92,14 +101,50 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   def inheritSet: Map[Signature, GenericEnvironment] = {
     val map = mutable.Map[Signature, GenericEnvironment]()
 
+    // special case for java.lang.Object, it cant inherit anything since it is the root
+    if (qualifiedName == "java.lang.Object") return map.toMap
+
     superSet.foreach(superClass => {
       serarchForClass(superClass).get.containSet
         .foreach(entry => {
-          if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
-          map += entry._1 -> entry._2
+          val signature = entry._1
+          val env = entry._2
+          //if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
+
+          // check that we should inherit this
+          env match {
+            case e: MethodEnvironment =>
+              if (nodecl(signature)) {
+                if (e.modifiers.contains("abstract")) {
+                  // only inherit abstract mmethod if its in allabs
+                  if (allabs(signature)) map += entry._1 -> entry._2
+                } else { // non abstract method can be inherited
+                  map += entry._1 -> entry._2
+                }
+              }
+            case e: VariableEnvironment =>
+              // only inherit field if it is not declared in this environment
+              if (nodecl(signature)) map += entry._1 -> entry._2
+          }
         })
     })
     map.toMap
+  }
+
+  def nodecl(signature: Signature): Boolean = {
+    !declareSet.contains(signature)
+  }
+
+  def allabs(signature: Signature): Boolean = {
+    superSet.foreach(superClass => {
+      serarchForClass(superClass).get.containSet
+        .foreach(entry => {
+          val sig = entry._1
+          val env = entry._2
+          if (signature == signature) return true
+        })
+    })
+    false
   }
 
   def containSet: Map[Signature, GenericEnvironment] = {

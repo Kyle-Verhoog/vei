@@ -103,7 +103,7 @@ package object environment {
           environment.asInstanceOf[MethodEnvironment])
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-        // TODO NOTE we do not add consturctor methods to the parent env. they arent callable
+      // TODO NOTE we do not add consturctor methods to the parent env. they arent callable
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
@@ -218,6 +218,30 @@ package object environment {
 
         // verify that class doesnt depend on itself
         env.superSet
+
+        // check that an interface doesnt overwrite a method with wrong return type
+        env.ast match {
+          case ast: InterfaceDeclaration =>
+
+
+
+            if (env.superSet.length == 1) {
+              println("super set " + env.superSet)
+              println(" declare set " + env.declareSet.keys)
+              println("   inherit set" + env.inheritSet.keys)
+              println("      contain set" + env.inheritSet.keys)
+            }
+
+            val inherited = env.getPublicInheritedSet
+            env.declareSet
+              .filter(e => e._2.isInstanceOf[MethodEnvironment])
+              .foreach(method => {
+                if (inherited.contains(method._1)) {
+                  // TODO val returnType1 = method.
+                }
+              })
+          case _ =>
+        }
       case _ =>
     }
 
