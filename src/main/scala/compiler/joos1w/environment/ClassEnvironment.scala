@@ -88,7 +88,12 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
           (partsOfName.dropRight(1).mkString("."), partsOfName.last)
         }) ++ List(("java.lang", "*"))).distinct
       }
-      case ast: InterfaceDeclaration => List(("java.lang", "*")) // TODO
+      case ast: InterfaceDeclaration => {
+        (ast.getImports.map(imp => {
+          val partsOfName = imp.name.split('.')
+          (partsOfName.dropRight(1).mkString("."), partsOfName.last)
+        }) ++ List(("java.lang", "*"))).distinct
+      }
     }
   }
 

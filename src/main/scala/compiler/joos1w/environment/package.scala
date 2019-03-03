@@ -180,6 +180,12 @@ package object environment {
             }
             verifyAST(env, ast.body)
           }
+          case ast: AbstractMethodDeclaration => {
+            if (!verifyType(ast.returnType, env)) {
+              throw EnvironmentError("Unknown return type: " + ast.returnType)
+            }
+            verifyAST(env, ast.body)
+          }
           case ast: ConstructorDeclaration => verifyAST(env, ast.body)
         }
       }

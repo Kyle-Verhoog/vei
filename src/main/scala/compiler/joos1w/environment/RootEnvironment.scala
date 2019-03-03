@@ -8,12 +8,21 @@ class RootEnvironment(val myAst: AST, val parent: Option[GenericEnvironment])
   val packageEnvironments: mutable.HashMap[String, PackageEnvironment] =
     mutable.HashMap[String, PackageEnvironment]()
 
+  // these are always needed according to the spec
+  createOrReturnRootPackageEnv("java")
+  createOrReturnRootPackageEnv("java.lang")
+
   override def findPackageEnv(name: String): Option[PackageEnvironment] = {
     packageEnvironments.get(name)
   }
 
   override def createOrReturnRootPackageEnv(
       name: String): PackageEnvironment = {
+    // create all sub packages
+    if (name.contains(".")) {
+      createOrReturnRootPackageEnv(name.split('.').dropRight(1).mkString("."))
+    }
+
     if (packageEnvironments.contains(name)) return packageEnvironments(name)
     // TODO values that arent null?
     packageEnvironments += name -> new PackageEnvironment(null, Option(this))
