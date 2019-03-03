@@ -130,6 +130,11 @@ package object environment {
     // do checks on the environments themselves
     env match {
       case env: ClassEnvironment =>
+        // verify there are no duplicate imported types
+        val importedTypes = env.getImportSets.map(importSet => importSet._2).filter(types => types != "*")
+        if (importedTypes.length != importedTypes.distinct.length) {
+          throw new RuntimeException("Duplicated imported types!")
+        }
       case _                     =>
     }
 
