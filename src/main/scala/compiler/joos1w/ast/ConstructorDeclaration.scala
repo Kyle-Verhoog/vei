@@ -36,9 +36,9 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
 
   def signature: (String, Option[List[String]]) = {
     if (header.isDefined) return header.get.signature
-    (identifier,
+    (identifier.split('.').last,
      Some(constructorDeclarator.parameters.children.map(child =>
-       child.asInstanceOf[FormalParameter].ttype)))
+       child.asInstanceOf[FormalParameter].ttype.split('.').last)))
   }
 
   def constructorDeclarator: ConstructorDeclarator = {

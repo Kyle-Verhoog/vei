@@ -20,7 +20,7 @@ object Joos1WCompiler {
 
   def compileFiles(files: List[String]): Unit = {
     println("Scanning, parsing, weeding files...")
-    val weededAst = files.map(file => compileFile(file))
+    val weededAst = (files :+ "src/main/resources/AbstractKevin.java").map(file => compileFile(file))
     println("Building environments...")
     Joos1WEnvironment.buildEnvironment(weededAst)
     println("done")

@@ -6,6 +6,7 @@ import compiler.scanner.Token
 import compiler.parser.Parser
 import compiler.scanner.Token
 
+import scala.collection.immutable.Stream.Empty
 import scala.collection.mutable
 
 object ClassDeclaration extends ASTConstructor {
@@ -66,32 +67,13 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
     None
   }
 
-  def getInterfaces: Option[List[String]] = {
-    if (children.nonEmpty) {
-      val head = children.head
-      // check if interfaces is heard, otherwise it has to be the second child (or no where)
-      if (head.isInstanceOf[ASTList] && head
-            .asInstanceOf[ASTList]
-            .getFieldName
-            .equals("interface_type_list")) {
-        return Option(
-          head
-            .asInstanceOf[ASTList]
-            .children
-            .map(child => child.asInstanceOf[Name].name))
-      } else if (children.length > 1 && children(1)
-                   .isInstanceOf[ASTList] && children(1)
-                   .asInstanceOf[ASTList]
-                   .getFieldName
-                   .equals("interface_type_list")) {
-        return Option(
-          children(1)
-            .asInstanceOf[ASTList]
-            .children
-            .map(child => child.asInstanceOf[Name].name))
-      }
+  def getInterfaces: List[String] = {
+    children(1) match {
+      case ast: Name => List(ast.name)
+      case ast: ASTList =>
+        ast.children.map(child => child.asInstanceOf[Name].name)
+      case ast: Empty => List()
     }
-    None
   }
 
   def getSuperSet: List[String] = {
@@ -103,8 +85,7 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
     if (extendsList.isDefined) superSet = superSet :+ extendsList.get
     if (superSet.isEmpty) superSet = List("java.lang.Object")
 
-    if (interfacesList.isDefined)
-      superSet = List.concat(superSet, interfacesList.get)
+    superSet = List.concat(superSet, interfacesList)
 
     // TODO determine what to do wyth java.lang.object if set is empty
     superSet

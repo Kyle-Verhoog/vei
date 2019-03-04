@@ -137,7 +137,7 @@ package object environment {
     ast match {
       case ast: LocalVariableDeclaration =>
         parentEnvironment = Some(environment)
-      case ast: FormalParameter => parentEnvironment = Some(environment)
+      //case ast: FormalParameter => parentEnvironment = Some(environment)
       case _                    =>
     }
 
@@ -208,6 +208,54 @@ package object environment {
     // do checks on the environments themselves
     env match {
       case env: ClassEnvironment =>
+        println("verifying class env " + env.qualifiedName)
+        // verify no cycle
+        env.verifyNoCyclesInExtends()
+       /* println("INHERITS----")
+        env.inheritSet
+          .filter(ele => ele._2.isInstanceOf[MethodEnvironment])
+          .foreach(
+            ele =>
+              println(
+                "sig " + ele._1 + " mods " + ele._2
+                  .asInstanceOf[MethodEnvironment]
+                  .modifiers + " returns " + ele._2
+                  .asInstanceOf[MethodEnvironment]
+                  .returnType))
+        println("CONTAINS     ----")
+        env.containSet
+          .filter(ele => ele._2.isInstanceOf[MethodEnvironment])
+          .foreach(
+            ele =>
+              println(
+                "sig " + ele._1 + " mods " + ele._2
+                  .asInstanceOf[MethodEnvironment]
+                  .modifiers + " returns " + ele._2
+                  .asInstanceOf[MethodEnvironment]
+                  .returnType))
+                  */
+
+        // verify all imported packages exist
+        env.verifyImportedPackagsExist()
+
+        env.verifyNoPackageCollidesWithName()
+
+        env.verifySingleTypeImportsExist()
+
+        env.verifyAbstractProperties()
+
+        env.verifyImplementsAreInterfaces()
+
+        // if we are an interface, we cannot have a (Class getClass) method declared
+        env.ast match {
+          case ast: InterfaceDeclaration =>
+            if (env.declareSet.contains("getClass", Option(List()))) {
+              throw EnvironmentError(
+                "Cannot declare getClass( ) in an Interface")
+            }
+          case _ =>
+        }
+
         // verify there are no duplicate imported types
         val importedTypes = env.getImportSets
           .map(importSet => importSet._2)
@@ -216,31 +264,38 @@ package object environment {
           throw new RuntimeException("Duplicated imported types!")
         }
 
-        // verify that class doesnt depend on itself
-        env.superSet
+        // verify replace sets
+        for (replaceSet <- env.replaceSet) {
+          val m1Env = replaceSet._1
+          val m2Env = replaceSet._2
+          //println("comparing ")
+          //println(m1Env.signature)
+          //println(m1Env.modifiers)
+          //println(m2Env.signature)
+          //println(m2Env.modifiers)
 
-        // check that an interface doesnt overwrite a method with wrong return type
-        env.ast match {
-          case ast: InterfaceDeclaration =>
+          if ((m1Env.modifiers.contains("static") && !m2Env.modifiers.contains(
+                "static")) || (!m1Env.modifiers.contains("static") && m2Env.modifiers
+                .contains("static"))) {
+            throw EnvironmentError(
+              "Replacing static with non static method or vice versa. Replacing " + m1Env.signature + " with " + m2Env.signature)
+          }
 
+          if (m1Env.returnType != m2Env.returnType) {
+            throw EnvironmentError(
+              "Attempting to replace method with another of a different return type! Replacing " + m1Env.signature + " with " + m2Env.signature)
+          }
 
+          if (m2Env.modifiers.contains("public") && !m1Env.modifiers.contains(
+                "public")) {
+            throw EnvironmentError(
+              "Attempting to replace public method with non public method! Replacing " + m1Env.signature + " with " + m2Env.signature)
+          }
 
-            if (env.superSet.length == 1) {
-              println("super set " + env.superSet)
-              println(" declare set " + env.declareSet.keys)
-              println("   inherit set" + env.inheritSet.keys)
-              println("      contain set" + env.inheritSet.keys)
-            }
-
-            val inherited = env.getPublicInheritedSet
-            env.declareSet
-              .filter(e => e._2.isInstanceOf[MethodEnvironment])
-              .foreach(method => {
-                if (inherited.contains(method._1)) {
-                  // TODO val returnType1 = method.
-                }
-              })
-          case _ =>
+          if (m2Env.modifiers.contains("final")) {
+            throw EnvironmentError(
+              "Cannot replace a final method! Replacing " + m1Env.signature + " with " + m2Env.signature)
+          }
         }
       case _ =>
     }
@@ -265,6 +320,7 @@ package object environment {
       case ast: FieldAccess => // TODO
       // check methods are defined
       case ast: ClassInstanceCreation =>
+        println("looking up created instance of type " + ast.name)
         if (env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
@@ -277,12 +333,19 @@ package object environment {
       case ast: InterfaceDeclaration      => return
       case ast: AbstractMethodDeclaration => return
       case ast: MethodDeclaration         => return
-      case ast: MethodInvocation          => return
-      case ast: ClassDeclaration          => return
-      case ast: ConstructorDeclaration    => return
-      case ast: ForStatement              => return
-      case ast: WhileStatement            => return
-      case _                              =>
+      case ast: MethodInvocation => {
+        ast.primary match {
+          // TODO neemd to handle these names in A3
+          case Some(a: Name) => return
+          case None          => return
+          case _             =>
+        }
+      }
+      case ast: ClassDeclaration       => return
+      case ast: ConstructorDeclaration => return
+      case ast: ForStatement           => return
+      case ast: WhileStatement         => return
+      case _                           =>
     }
 
     if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)

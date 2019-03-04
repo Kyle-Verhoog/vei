@@ -55,7 +55,20 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
   }
 
+  // gets all extends recursively upward, with lower envs to compare against for cycles
+  def verifyNoCyclesInExtends(
+      previousExtends: List[ClassEnvironment] = List()): Unit = {
+    superSetClasses.foreach(klass => {
+      if (previousExtends.contains(klass))
+        throw EnvironmentError("Cycle found with class " + klass.qualifiedName)
+
+      klass.verifyNoCyclesInExtends(previousExtends :+ klass)
+    })
+  }
   def superSet: List[String] = {
+    if (qualifiedName == "java.lang.Object" || qualifiedName == "java.lang.AbstractKevin")
+      return List()
+
     myAst match {
       case ast: ClassDeclaration => {
         ast.getSuperSet
@@ -64,6 +77,12 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
         ast.getExtends
       }
     }
+  }
+
+  def superSetClasses: List[ClassEnvironment] = {
+    superSet.map(superClass => {
+      serarchForClass(superClass).get
+    })
   }
 
   def declareSet: Map[Signature, GenericEnvironment] = {
@@ -98,36 +117,47 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
+  def verifySingleTypeImportsExist(): Unit = {
+    singleTypeImports.foreach(importSet => {
+      if (searchForQualifiedClass(importSet._2).isEmpty) {
+        throw EnvironmentError(
+          "Single type import does not exist: " + importSet)
+      }
+    })
+  }
+
   def inheritSet: Map[Signature, GenericEnvironment] = {
     val map = mutable.Map[Signature, GenericEnvironment]()
 
     // special case for java.lang.Object, it cant inherit anything since it is the root
-    if (qualifiedName == "java.lang.Object") return map.toMap
+    if (qualifiedName == "java.lang.Object" || qualifiedName == "java.lang.AbstractKevin")
+      return map.toMap
 
-    superSet.foreach(superClass => {
-      serarchForClass(superClass).get.containSet
-        .foreach(entry => {
-          val signature = entry._1
-          val env = entry._2
-          //if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
+    superSetClasses.foreach(classEnv => {
+      classEnv.containSet.foreach(entry => {
+        val signature = entry._1
+        val env = entry._2
+        //if (map.contains(entry._1)) throw new RuntimeException("duplicate ")
 
-          // check that we should inherit this
-          env match {
-            case e: MethodEnvironment =>
-              if (nodecl(signature)) {
-                if (e.modifiers.contains("abstract")) {
-                  // only inherit abstract mmethod if its in allabs
-                  if (allabs(signature)) map += entry._1 -> entry._2
-                } else { // non abstract method can be inherited
-                  map += entry._1 -> entry._2
-                }
+        // check that we should inherit this
+        env match {
+          case e: MethodEnvironment =>
+            if (nodecl(signature)) {
+              // only inherit abstract mmethod if its in allabs
+              if (e.modifiers.contains("abstract")) {
+                // only inherit abstract mmethod if its in allabs
+                if (allabs(signature)) map += signature -> env
+              } else { // non abstract method can be inherited
+                map += signature -> env
               }
-            case e: VariableEnvironment =>
-              // only inherit field if it is not declared in this environment
-              if (nodecl(signature)) map += entry._1 -> entry._2
-          }
-        })
+            }
+          case e: VariableEnvironment =>
+            // only inherit field if it is not declared in this environment
+            if (nodecl(signature)) map += entry._1 -> entry._2
+        }
+      })
     })
+
     map.toMap
   }
 
@@ -136,15 +166,73 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   def allabs(signature: Signature): Boolean = {
-    superSet.foreach(superClass => {
-      serarchForClass(superClass).get.containSet
-        .foreach(entry => {
-          val sig = entry._1
-          val env = entry._2
-          if (signature == signature) return true
-        })
+    var bool = true
+    superSetClasses.foreach(classEnv => {
+      classEnv.containSet.foreach(entry => {
+        val sig = entry._1
+        val env = entry._2
+        if (env.isInstanceOf[MethodEnvironment] && signature == sig) {
+          bool = bool && env
+            .asInstanceOf[MethodEnvironment]
+            .modifiers
+            .contains("abstract")
+        }
+      })
     })
-    false
+
+    bool
+  }
+
+  def findDeclaredMethod(signature: Signature): Option[MethodEnvironment] = {
+    val declared = declareSet.get(signature)
+    if (declared.isEmpty) return None
+
+    declared.get match {
+      case e: MethodEnvironment => Option(e)
+      case _                    => None
+    }
+  }
+
+  // NOTE order matters within the replaced elements!!!
+  def replaceSet: List[(MethodEnvironment, MethodEnvironment)] = {
+    var replaced = List[(MethodEnvironment, MethodEnvironment)]()
+
+    val superClasses = superSetClasses
+
+    for (i <- superClasses.indices) {
+      val klass1 = superClasses(i)
+      for (m1 <- klass1.containSet.filter(e =>
+             e._2.isInstanceOf[MethodEnvironment])) {
+        val m1Sig = m1._1
+        val m1Env = m1._2.asInstanceOf[MethodEnvironment]
+
+        // add it to the replace set if needed
+        val declaredMethod = findDeclaredMethod(m1Sig)
+        //println("considering replacing for method in class " + m1Sig)
+        if (declaredMethod.isDefined && declaredMethod.get.signature == m1Sig) {
+          replaced = replaced :+ (declaredMethod.get, m1Env)
+        }
+
+        // check against all other super classes and their methods
+        for (j <- superClasses.indices) {
+          if (i != j) { // dont want to compare same class
+            val klass2 = superClasses(j)
+            for (m2 <- klass2.containSet.filter(e =>
+                   e._2.isInstanceOf[MethodEnvironment])) {
+              val m2Sig = m2._1
+              val m2Env = m2._2.asInstanceOf[MethodEnvironment]
+
+              if (!m1Env.modifiers.contains("abstract") && m2Env.modifiers
+                    .contains("abstract") && m1Sig == m2Sig) {
+                replaced = replaced :+ (m1Env, m2Env)
+              }
+            }
+          }
+        }
+      }
+    }
+
+    replaced
   }
 
   def containSet: Map[Signature, GenericEnvironment] = {
@@ -208,6 +296,62 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     })
 
     imported.get(klass)
+  }
+
+  def verifyImportedPackagsExist(): Unit = {
+    getImportSets.foreach(importSet => {
+      if (findPackageEnv(importSet._1).isEmpty) {
+        throw EnvironmentError("Imported package not found " + importSet._1)
+      }
+    })
+  }
+
+  def verifyNoPackageCollidesWithName(): Unit = {
+    if (findPackageEnv(qualifiedName).isDefined) {
+      throw EnvironmentError(
+        "Package exists with class/interface name: " + qualifiedName)
+    }
+  }
+
+  def verifyAbstractProperties(): Unit = {
+    ast match {
+      // verify classes with abstract methods are abstract
+      case ast: ClassDeclaration => {
+        containSet.values.foreach(env => {
+          env match {
+            case e: MethodEnvironment =>
+              if (e.modifiers.contains("abstract") && !ast.modifiers.contains(
+                    "abstract")) {
+                throw EnvironmentError(
+                  "Class " + qualifiedName + " is not abstract but has abstract method " + e.signature)
+              }
+
+            case _ =>
+          }
+        })
+      }
+      case _ =>
+    }
+  }
+
+  def verifyImplementsAreInterfaces(): Unit = {
+    ast match {
+      case klass: ClassDeclaration =>
+        val interfaces = klass.getInterfaces.map(interface => serarchForClass(interface).get)
+        if (interfaces.distinct.length != interfaces.length) {
+          throw EnvironmentError("Duplicate interfaces implemented")
+        }
+
+        interfaces.foreach(interface => {
+          if (!interface
+                .ast
+                .isInstanceOf[InterfaceDeclaration]) {
+            throw EnvironmentError(
+              "Using class " + interface + " as interface!")
+          }
+        })
+      case _ =>
+    }
   }
 
   override def searchForSimpleClass(name: String): Option[ClassEnvironment] = {

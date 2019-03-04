@@ -8,7 +8,7 @@
  * - (Joos 2) A protected method must not override a public method
  * (8.4.6.3). (Interface methods are implicitly public).
  */
-public abstract class Main implements Foo{
+public abstract class Main implements Foo {
     
     public Main() { }
     
