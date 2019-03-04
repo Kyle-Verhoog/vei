@@ -14,9 +14,23 @@ public class Main {
 	return new Integer(123).intValue();
     }
 
-    public static void temp() {
+    public static void temp(int i) {
         if (1 > 3) {
         } else {
+
+        }
+
+        {
+            int x =0;
+            {
+                {
+                    int a = 2;
+                }
+                int a = 3;
+            }
+        }
+
+        if (4 && 1) {
 
         }
 

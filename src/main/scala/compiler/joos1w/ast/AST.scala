@@ -1091,6 +1091,32 @@ class AST(
     }
   }
 
+  def removeChildFromEnd(): Unit = {
+    leftChild match {
+      case Some(node) => {
+        if (node.rightSibling.isEmpty) { // special case if only one child
+          leftChild = None
+          return
+        }
+        node.removeLastSibling
+      }
+      case None =>
+    }
+  }
+
+  def removeLastSibling(): Unit = {
+    rightSibling match {
+      case Some(node) => {
+        if (node.rightSibling.get.rightSibling.isEmpty) { // end case
+          node.rightSibling = None
+          return
+        }
+        node.removeLastSibling
+      }
+      case None =>
+    }
+  }
+
   override def toString: String = {
     s"$strClass($strFields)"
   }

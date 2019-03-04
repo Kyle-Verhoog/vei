@@ -4,19 +4,23 @@ import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
 class IfStatement() extends AST {
-  // returns the children for the if and else (if present) statements
-  def getStatementChildren: List[AST] = {
-    val ifStatementBody = getChild(1)
+  def getTopLevelStatements(): List[AST] = {
+    var topLevelStatements = List[AST](this)
 
-    if (ifStatementBody.isEmpty) return List()
+    if (children.length == 3) { // pull up
+      topLevelStatements = topLevelStatements ++ List(children(2))
 
-    try {
-      val elseStatementBody = getChild(2)
-      List(ifStatementBody.get, elseStatementBody.get)
-    } catch {
-      case _: Throwable => List(ifStatementBody.get)
+      children(2) match {
+        case child: IfStatement =>
+          topLevelStatements = topLevelStatements ++ child
+            .getTopLevelStatements()
+        case _ =>
+      }
+
+      removeChildFromEnd()
     }
 
+    topLevelStatements
   }
 
   override def fromParseTree(parseTree: ParseTreeNode[Token]): AST = {

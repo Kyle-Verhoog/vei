@@ -44,7 +44,15 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
+  }
 
-    if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
+  override def insertLocalVariable(name: String, env: VariableEnvironment): Unit = {
+    if (variableTable.contains(name)) {
+      println("the keys" + variableTable.keySet)
+      throw EnvironmentError(
+        "Local variable: " + name + " already declared in current scope")
+    }
+    verifyVariable(name)
+    variableTable += name -> env
   }
 }

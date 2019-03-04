@@ -63,6 +63,7 @@ package object environment {
         throw new RuntimeException("should not recurse on package decl")
       // variable declaration
       case ast: LocalVariableDeclaration =>
+        println("inserting variable" + ast)
         // we insert variables into their own environment, instead of parents
         // so we can tell if a variable is used before being declared
         environment = new VariableEnvironment(ast, parentEnvironment)
@@ -75,6 +76,7 @@ package object environment {
           ast.name,
           environment.asInstanceOf[VariableEnvironment])
       case ast: FormalParameter =>
+        println("inserting formal " + ast)
         environment = new VariableEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertLocalVariable(
           ast.name,
@@ -115,17 +117,6 @@ package object environment {
           environment = new BlockEnvironment(ast, parentEnvironment)
         }
       }
-      // TODO I dont think we will need anything now that they all have blocks
-      /*case ast: IfStatement => {
-        // special case for if statement where each statement child gets its own environment
-        ast.getStatementChildren.foreach(statement => {
-          val env = buildEnvironment(
-            statement,
-            Some(new BlockEnvironment(statement, parentEnvironment)))
-          parentEnvironment.get.insertChild(env)
-        })
-        // TODO figure out special case for IF and ELSE statements
-      }*/
       case _ =>
     }
 
@@ -141,10 +132,6 @@ package object environment {
       case _                    =>
     }
 
-    // recurse across
-    if (ast.rightSibling.isDefined)
-      buildEnvironment(ast.rightSibling.get, parentEnvironment)
-
     // recurse down
     if (ast.leftChild.isDefined) {
       if (environment != null) {
@@ -153,6 +140,10 @@ package object environment {
         buildEnvironment(ast.leftChild.get, parentEnvironment)
       }
     }
+
+    // recurse across
+    if (ast.rightSibling.isDefined)
+      buildEnvironment(ast.rightSibling.get, parentEnvironment)
 
     environment
   }

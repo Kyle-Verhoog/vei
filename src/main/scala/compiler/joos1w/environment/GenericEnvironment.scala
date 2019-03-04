@@ -26,6 +26,7 @@ class GenericEnvironment(val ast: AST,
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
+    println("looking up for " + name)
 
     if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
   }
@@ -36,8 +37,8 @@ class GenericEnvironment(val ast: AST,
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
-    verifyVariable(name)
     variableTable += name -> env
+    if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
   }
 
   def insertMethod(sig: Signature, env: MethodEnvironment): Unit = {

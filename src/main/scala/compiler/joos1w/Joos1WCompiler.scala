@@ -20,9 +20,15 @@ object Joos1WCompiler {
 
   def compileFiles(files: List[String]): Unit = {
     println("Scanning, parsing, weeding files...")
-    val weededAst = (files :+ "src/main/resources/AbstractKevin.java").map(file => compileFile(file))
+    val weededAsts =
+      (files :+ "src/main/resources/AbstractKevin.java").map(file =>
+        compileFile(file))
+
+    weededAsts.foreach(ast => {
+      Joos1WIfStatement.fixIfs(ast)
+    })
     println("Building environments...")
-    Joos1WEnvironment.buildEnvironment(weededAst)
+    Joos1WEnvironment.buildEnvironment(weededAsts)
     println("done")
   }
 }
