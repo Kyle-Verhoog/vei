@@ -4,6 +4,8 @@ import compiler.joos1w.ast.literals._
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
+import scala.reflect.ClassTag
+
 final case class MalformedASTException(
     private val message: String = "Malformed AST error.",
     private val cause: Throwable = None.orNull
@@ -1059,6 +1061,147 @@ object AST {
   def throws(): Unit = {
     throw new RuntimeException("Unmatched children!")
   }
+
+  /*
+  /**
+   * Finds and applies mapFn to all nodes of type T, inserting the results of mapFn into a map
+   * @param combineResults combines the results of the recursion
+   * @tparam K type of keys in the result map
+   * @tparam V type of values in the result map
+   * @tparam T type of ASTNode to operate on
+   * @return
+   */
+  def reduceToMap[T, K, V](
+                    mapFn: T => (K, V),
+                    ast: Option[AST],
+                    recursionOptions: RecursionOptions[T,T] = RecursionOptions(true, false, true),
+                    combineResults: (Map[K, V], Map[K, V]) => Map[K, V] = (m1, m2) => m1 ++ m2
+                  ): Map[K, V] = {
+    ast match {
+      case Some(ast: AST) =>
+        ast match {
+          case ast: T =>
+            val (k, v) = mapFn(ast)
+
+            val resultMap = if (recursionOptions.acrossFirst) {
+              combineResults(
+                if (recursionOptions.across) reduceToMap(mapFn, ast.rightSibling, recursionOptions, combineResults) else Map(),
+                if (recursionOptions.down) reduceToMap(mapFn, ast.leftChild, recursionOptions, combineResults) else Map()
+              )
+            } else {
+              combineResults(
+                if (recursionOptions.down) reduceToMap(mapFn, ast.leftChild, recursionOptions, combineResults) else Map(),
+                if (recursionOptions.across) reduceToMap(mapFn, ast.rightSibling, recursionOptions) else Map()
+              )
+            }
+            resultMap + (k -> v)
+          case _ =>
+            if (recursionOptions.acrossFirst) {
+              combineResults(
+                if (recursionOptions.across) reduceToMap(mapFn, ast.rightSibling, recursionOptions) else Map(),
+                if (recursionOptions.down) reduceToMap(mapFn, ast.leftChild) else Map()
+              )
+            } else {
+              combineResults(
+                if (recursionOptions.down) reduceToMap(mapFn, ast.leftChild) else Map(),
+                if (recursionOptions.across) reduceToMap(mapFn, ast.rightSibling, recursionOptions) else Map()
+              )
+            }
+        }
+      case None => Map()
+    }
+  }
+   */
+
+  /**
+    * @param across whether or not to recurse across past a match
+    * @param down whether or not to descend below a match
+    * @param acrossFirst recurse across first if true, else recurse down first
+    */
+  case class RecursionOptions[T, R](across: Boolean,
+                                    down: Boolean,
+                                    acrossFirst: Boolean,
+                                    combine: (T, T) => R)
+
+  /**
+    * @tparam K type of keys in the result map
+    * @tparam V type of values in the result map
+    * @tparam T type of ASTNode to operate on
+    * @return
+    */
+  def foldUp[T <: AST: ClassTag, R](
+      fn: (T, R) => R,
+      ast: Option[AST],
+      initAcc: R,
+      recOpts: RecursionOptions[R, R],
+  ): R = {
+    ast match {
+      case Some(ast: AST) =>
+        val acrossRec = () => foldDown(fn, ast.rightSibling, initAcc, recOpts)
+        val downRec = () => foldDown(fn, ast.leftChild, initAcc, recOpts)
+        ast match {
+          case ast: T =>
+            val acc =
+              if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
+                recOpts.combine(acrossRec(), downRec())
+              } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
+                recOpts.combine(downRec(), acrossRec())
+              } else {
+                if (recOpts.across) acrossRec() else downRec()
+              }
+            fn(ast, acc)
+          case _ =>
+            if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
+              recOpts.combine(acrossRec(), downRec())
+            } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
+              recOpts.combine(downRec(), acrossRec())
+            } else {
+              if (recOpts.across) acrossRec() else downRec()
+            }
+        }
+      case None => initAcc
+    }
+  }
+
+  /**
+    * @tparam K type of keys in the result map
+    * @tparam V type of values in the result map
+    * @tparam T type of ASTNode to operate on
+    * @return
+    */
+  def foldDown[T <: AST: ClassTag, R](
+      fn: (T, R) => R,
+      ast: Option[AST],
+      initAcc: R,
+      recOpts: RecursionOptions[R, R],
+  ): R = {
+    ast match {
+      case Some(ast: AST) =>
+        val acrossRec = () => foldDown(fn, ast.rightSibling, initAcc, recOpts)
+        val downRec = () => foldDown(fn, ast.leftChild, initAcc, recOpts)
+        ast match {
+          case ast: T =>
+            val acc =
+              if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
+                recOpts.combine(acrossRec(), downRec())
+              } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
+                recOpts.combine(downRec(), acrossRec())
+              } else {
+                if (recOpts.across) acrossRec() else downRec()
+              }
+            fn(ast, acc)
+          case _ =>
+            if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
+              recOpts.combine(acrossRec(), downRec())
+            } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
+              recOpts.combine(downRec(), acrossRec())
+            } else {
+              if (recOpts.across) acrossRec() else downRec()
+            }
+        }
+      case None => initAcc
+    }
+  }
 }
 
 class AST(
@@ -1183,5 +1326,9 @@ class AST(
       childNum: Option[Integer] = None
   ): Option[AST] = {
     AST.getDescendant(this, depth, childNum)
+  }
+
+  def allNodesOfType(): List[AST] = {
+    Nil
   }
 }

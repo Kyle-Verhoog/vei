@@ -89,18 +89,24 @@ class ASTTest extends FunSuite {
     val parseTree = TestUtils.parseSrc(s"""
                                      |public class A {
                                      |  public static void test() {
-                                     |    if (x) {
+                                     |    if (a) {
+                                     |      if (b)
+                                     |        x = 1;
+                                     |      else if (c)
+                                     |        x = 1;
+                                     |      else
+                                     |        x = 1;
                                      |    }
-                                     |    else if (x) {
+                                     |    else if (d) {
                                      |    }
                                      |    else {
                                      |    }
                                      |  }
                                      |}
        """.stripMargin)(1)
-    // println(parseTree)
+    // println(parseTree.)
     val ast = AST.fromParseTree(parseTree, new Empty)
-    println(ast)
+    println(ast.toStrTree)
   }
 
   test("Maximal") {

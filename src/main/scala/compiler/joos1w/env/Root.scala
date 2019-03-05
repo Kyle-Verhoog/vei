@@ -2,41 +2,95 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast._
 
+import scala.collection.mutable
+
 object Root {
-  def makeRoot(ast: AST): Root = {
-    new Root(Map[String, Package]()).addAST(Some(ast))
-  }
+  val ROOT_PKG_NAME = ""
 }
 
-class Root(val packages: Map[String, Package],
-           val defaultPkg: Package = new Package("", Map())) extends Env {
+class Root(val asts: List[AST]) extends Env {
+  type PackageMap = Map[String, Option[Package]]
+  var packages: PackageMap = Map()
+
   def hasPackage(name: String): Boolean = {
     packages.contains(name)
   }
 
-  def addPackage(pkg: Package): Root = {
-    // If a package already exists, then combine it with the new one
-    // NOTE: this should only happen if a subpackage was added before a parent
-    // eg. A.B.C was added and then A added, 'A' would be overwritten
-    val newPkg = if (packages.contains(pkg.name)) {
-      val existingPkg = packages(pkg.name)
-      if (existingPkg.numClasses > 0) {
-        throw new RuntimeException("Adding package for existing")
-      }
-      existingPkg + pkg
-    }
-    else {
-      pkg
-    }
-    val newPackages = packages + (newPkg.name -> newPkg)
-    new Root(
-      newPackages,
-      defaultPkg,
-    )
+  def addPackagesFromASTs(asts: List[AST] = asts): Unit = {
+    asts.foreach(ast => {
+      val pkg = packageFromAST(Some(ast))
+      addPackage(pkg.name, Some(pkg))
+    })
   }
 
-  def getPackage(name: String): Package = {
-    packages(name)
+  def packageFromAST(ast: Option[AST]): Package = {
+    AST
+      .foldDown[PackageDeclaration, List[Package]](
+        (ast, acc) => new Package(this, ast) :: acc,
+        ast,
+        List(),
+        AST.RecursionOptions(true, true, true, (r1, r2) => r1 ++ r2)
+      )
+      .head
+  }
+
+  def addNewPackage(name: String, pkg: Option[Package]): Unit = {
+    pkg match {
+      case Some(newPkg) =>
+        packages = packages + (name -> Some(newPkg))
+        newPkg.parentNames.foreach(name => {
+          println(name)
+          addEmptyPackageIfDNE(name)
+        })
+      case None =>
+        packages = packages + (name -> None)
+    }
+  }
+
+  def addEmptyPackageIfDNE(name: String): Unit = {
+    if (!hasPackage(name)) {
+      addNewPackage(name, None)
+    }
+  }
+
+  def addPackage(name: String, pkg: Option[Package]): Unit = {
+    if (hasPackage(name)) {
+      getPackage(name) match {
+        case Some(existingPkg) =>
+          throw new RuntimeException(
+            s"Overwriting existing pkg on name '$name', existing: $existingPkg")
+        case None =>
+          addNewPackage(name, pkg)
+      }
+    } else {
+      addNewPackage(name, pkg)
+    }
+  }
+
+  def getPackage(name: String): Option[Package] = {
+    if (hasPackage(name)) packages(name) else None
+  }
+
+  def getClass(qualifiedName: String): Option[Class] = {
+    val split = qualifiedName.split("\\.")
+    val pkg = split.slice(0, split.length - 1).mkString(".")
+    val cls = split(split.length)
+
+    getPackage(pkg) match {
+      case Some(pkg) => pkg.getClass(cls)
+      case None      => None
+    }
+  }
+
+  def getAllClasses: List[Class] = {
+    packages
+      .foldLeft(Nil: List[Class]) {
+        case (acc, (_, pkg)) =>
+          pkg match {
+            case Some(pkg) => pkg.getAllClasses ++ acc
+            case None      => acc
+          }
+      }
   }
 
   /*
@@ -70,35 +124,17 @@ class Root(val packages: Map[String, Package],
     }
   }*/
 
-  def +(other: Root): Root = {
-    new Root(
-      packages ++ other.packages,
-      defaultPkg + other.defaultPkg,
-    )
-  }
-
-  def addAST(ast: Option[AST]): Root = {
-    ast match {
-      case Some(ast) =>
-        ast match {
-          case ast: PackageDeclaration =>
-            val root = addAST(ast.rightSibling)
-            val pkg = Package.fromAST(ast)
-            root.addPackage(pkg)
-          case _ => // just recursively merge all results we get
-            val nodes = ast.rightSibling :: ast.children.map(c => Option(c))
-            val results = nodes.foldLeft[Root](new Root(Map())) {
-              (prev, ast) =>
-                val root = addAST(ast)
-                prev + root
-            }
-            results
-        }
-      case None => this
-    }
-  }
-
-  override def lookup(name: String): Option[Env] = {
+  override def globalLookup(qualifiedName: _root_.scala.Predef.String)
+    : _root_.scala.Option[_root_.compiler.joos1w.env.Env] = {
     None
   }
+
+  //override def globalLookup[T](qualifiedName: String): Option[Env] = {
+  //  T match {
+  //    case Package => getPackage(qualifiedName)
+  //    case Class => getClass(qualifiedName)
+  //    case None => None
+  //  }
+  //  None
+  //}
 }

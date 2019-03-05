@@ -2,13 +2,12 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast.ClassDeclaration
 
-
-object Class {
-  def fromAST(parent: Package, ast: ClassDeclaration): Class = {
-    val name = ast.identifier
-    new Class(name, parent)
+class Class(val parent: Package, ast: ClassDeclaration) extends Env {
+  def name: String = {
+    ast.identifier
   }
-}
 
-class Class(val name: String, val parent: Package) extends Env {
+  override def globalLookup(qualifiedName: String): Option[Env] = {
+    parent.globalLookup(qualifiedName)
+  }
 }

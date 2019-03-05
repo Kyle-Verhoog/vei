@@ -1,10 +1,8 @@
 package compiler.joos1w.env
 
-import compiler.joos1w.ast.AST
 
+abstract class Env() {
+  def globalLookup(qualifiedName: String): Option[Env]
 
-class Env() {
-  def lookup(name: String): Option[Env] = {
-    None
-  }
+  // def lookup(name: String): Option[Env]
 }
