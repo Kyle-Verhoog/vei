@@ -1137,8 +1137,8 @@ object AST {
   ): R = {
     ast match {
       case Some(ast: AST) =>
-        val acrossRec = () => foldDown(fn, ast.rightSibling, initAcc, recOpts)
-        val downRec = () => foldDown(fn, ast.leftChild, initAcc, recOpts)
+        val acrossRec = () => foldUp(fn, ast.rightSibling, initAcc, recOpts)
+        val downRec = () => foldUp(fn, ast.leftChild, initAcc, recOpts)
         ast match {
           case ast: T =>
             val acc =
@@ -1169,39 +1169,13 @@ object AST {
     * @tparam T type of ASTNode to operate on
     * @return
     */
-  def foldDown[T <: AST: ClassTag, R](
-      fn: (T, R) => R,
-      ast: Option[AST],
-      initAcc: R,
-      recOpts: RecursionOptions[R, R],
-  ): R = {
-    ast match {
-      case Some(ast: AST) =>
-        val acrossRec = () => foldDown(fn, ast.rightSibling, initAcc, recOpts)
-        val downRec = () => foldDown(fn, ast.leftChild, initAcc, recOpts)
-        ast match {
-          case ast: T =>
-            val acc =
-              if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
-                recOpts.combine(acrossRec(), downRec())
-              } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
-                recOpts.combine(downRec(), acrossRec())
-              } else {
-                if (recOpts.across) acrossRec() else downRec()
-              }
-            fn(ast, acc)
-          case _ =>
-            if (recOpts.acrossFirst && recOpts.down && recOpts.across) {
-              recOpts.combine(acrossRec(), downRec())
-            } else if (!recOpts.acrossFirst && recOpts.down && recOpts.across) {
-              recOpts.combine(downRec(), acrossRec())
-            } else {
-              if (recOpts.across) acrossRec() else downRec()
-            }
-        }
-      case None => initAcc
-    }
-  }
+  // def foldDown[T <: AST: ClassTag, R](
+  //     fn: (T, R) => R,
+  //     ast: Option[AST],
+  //     acc: R,
+  //     recOpts: RecursionOptions[R, R],
+  // ): R = {
+  // }
 }
 
 class AST(

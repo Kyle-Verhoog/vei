@@ -1,64 +1,117 @@
 package compiler.joos1w.env
 
+import compiler.joos1w.ast.PackageDeclaration
 import compiler.joos1w.ast._
 
-import scala.collection.mutable
+final case class QualifiedNameCollision(
+    private val message: String = "Name collision",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
 
 object Root {
   val ROOT_PKG_NAME = ""
 }
 
 class Root(val asts: List[AST]) extends Env {
-  type PackageMap = Map[String, Option[Package]]
-  var packages: PackageMap = Map()
+  private val emptyAST = new PackageDeclaration()
+  emptyAST.addChildToEnd(new compiler.joos1w.ast.Name(""))
+  private val EmptyPackage = new Package(this, emptyAST)
 
-  def hasPackage(name: String): Boolean = {
-    packages.contains(name)
+  type Namespace = Map[Name, Option[Env]]
+
+  var namespace: Namespace = Map(
+    PackageName.ROOT -> Some(EmptyPackage)
+  )
+
+  def hasPackage(name: Name): Boolean = {
+    namespace.contains(name)
+  }
+
+  def hasItem(name: Name): Boolean = {
+    namespace.contains(name)
+  }
+
+  def getItem(name: Name): Option[Env] = {
+    if (hasItem(name)) {
+      namespace(name) match {
+        case Some(cls: Class) =>
+          name match {
+            case _: ClassName => Some(cls)
+            case _ =>
+              throw new RuntimeException(
+                s"Got class $cls for non-classname $name")
+          }
+        case Some(pkg: Package) =>
+          name match {
+            case _: PackageName => Some(pkg)
+            case _ =>
+              throw new RuntimeException(
+                s"Got pkg $pkg for non-classname $name")
+          }
+        case _ =>
+          throw new RuntimeException(s"Got unexpected name for getItem $name")
+      }
+    } else {
+      None
+    }
   }
 
   def addPackagesFromASTs(asts: List[AST] = asts): Unit = {
     asts.foreach(ast => {
       val pkg = packageFromAST(Some(ast))
       addPackage(pkg.name, Some(pkg))
+      pkg.getAllClasses.foreach(cls => {
+        addClass(cls.name, Some(cls))
+      })
     })
   }
 
   def packageFromAST(ast: Option[AST]): Package = {
-    AST
-      .foldDown[PackageDeclaration, List[Package]](
-        (ast, acc) => new Package(this, ast) :: acc,
-        ast,
-        List(),
-        AST.RecursionOptions(true, true, true, (r1, r2) => r1 ++ r2)
-      )
-      .head
+    // TODO: have to look for Empty packages
+    val pkgs: List[Package] = AST.foldUp[PackageDeclaration, List[Package]](
+      (ast, acc) => new Package(this, ast) :: acc,
+      ast,
+      List(),
+      AST.RecursionOptions(true, true, true, (r1, r2) => r1 ++ r2)
+    ) ++ List(EmptyPackage)
+    pkgs.head
   }
 
-  def addNewPackage(name: String, pkg: Option[Package]): Unit = {
+  def addClass(name: ClassName, cls: Option[Class]): Unit = {
+    if (hasItem(name)) {
+      throw QualifiedNameCollision(s"Duplicate class $name")
+    }
+    namespace = namespace + (name -> cls)
+  }
+
+  def addNewPackage(name: PackageName, pkg: Option[Package]): Unit = {
     pkg match {
       case Some(newPkg) =>
-        packages = packages + (name -> Some(newPkg))
-        newPkg.parentNames.foreach(name => {
-          println(name)
+        namespace = namespace + (name -> Some(newPkg))
+        newPkg.name.parentPackageNames.foreach(name => {
           addEmptyPackageIfDNE(name)
         })
       case None =>
-        packages = packages + (name -> None)
+        namespace = namespace + (name -> None)
     }
   }
 
-  def addEmptyPackageIfDNE(name: String): Unit = {
+  def addEmptyPackageIfDNE(name: PackageName): Unit = {
     if (!hasPackage(name)) {
       addNewPackage(name, None)
     }
   }
 
-  def addPackage(name: String, pkg: Option[Package]): Unit = {
+  def addPackage(name: PackageName, pkg: Option[Package]): Unit = {
     if (hasPackage(name)) {
       getPackage(name) match {
-        case Some(existingPkg) =>
-          throw new RuntimeException(
-            s"Overwriting existing pkg on name '$name', existing: $existingPkg")
+        case Some(curPkg) =>
+          pkg match {
+            case Some(newPkg) =>
+              val mergePkg = curPkg + newPkg
+              namespace = namespace + (mergePkg.name -> Some(mergePkg))
+            case None =>
+          }
         case None =>
           addNewPackage(name, pkg)
       }
@@ -67,74 +120,38 @@ class Root(val asts: List[AST]) extends Env {
     }
   }
 
-  def getPackage(name: String): Option[Package] = {
-    if (hasPackage(name)) packages(name) else None
-  }
-
-  def getClass(qualifiedName: String): Option[Class] = {
-    val split = qualifiedName.split("\\.")
-    val pkg = split.slice(0, split.length - 1).mkString(".")
-    val cls = split(split.length)
-
-    getPackage(pkg) match {
-      case Some(pkg) => pkg.getClass(cls)
-      case None      => None
+  def getPackage(name: Name): Option[Package] = {
+    getItem(name) match {
+      case Some(pkg: Package) => Some(pkg)
+      case None               => None
     }
   }
 
-  def getAllClasses: List[Class] = {
-    packages
-      .foldLeft(Nil: List[Class]) {
-        case (acc, (_, pkg)) =>
-          pkg match {
-            case Some(pkg) => pkg.getAllClasses ++ acc
-            case None      => acc
+  def getClass(name: ClassName): Option[Class] = {
+    getItem(name) match {
+      case Some(cls: Class) => Some(cls)
+      case None             => None
+    }
+  }
+
+  def getAllClasses: List[Option[Env]] = {
+    namespace
+      .filter {
+        case (_, item) =>
+          item match {
+            case Some(_: Class) => true
+            case _              => false
           }
       }
+      .values
+      .toList
   }
 
-  /*
-  type PkgClasses = (List[Package], List[Class])
-  def getPackagesAndClassesFromAST(ast: Option[AST]): PkgClasses = {
-    ast match {
-      case Some(ast) =>
-        ast match {
-          case ast: PackageDeclaration =>
-            val (pkgs, classes) = getPackagesAndClassesFromAST(ast.rightSibling)
-            (new Package(ast.name) :: pkgs, classes)
-          case ast: ClassDeclaration =>
-            val (pkgs: List[Package], classes) = getPackagesAndClassesFromAST(ast.rightSibling)
-            val parent = pkgs match {
-              case pkg :: Nil => pkg
-              case Nil => defaultPkg
-              case _ => defaultPkg // NOTE: not technically possible w/ grammar
-            }
-            (pkgs, new Class(ast.identifier, Some(parent)) :: classes)
-          case _ =>
-            val (rpkgs, rclasses) = getPackagesAndClassesFromAST(ast.rightSibling)
-            val nodes = ast.rightSibling :: ast.children.map(c => Option(c))
-            val results = nodes.foldLeft[PkgClasses]((Nil, Nil)) {
-              (prev: PkgClasses, ast: Option[AST]) =>
-                val (pkgs, classes) = getPackagesAndClassesFromAST(ast)
-                (pkgs ::: prev._1, classes ::: prev._2): PkgClasses
-            }
-            results
-        }
-      case None => (Nil, Nil)
-    }
-  }*/
-
-  override def globalLookup(qualifiedName: _root_.scala.Predef.String)
-    : _root_.scala.Option[_root_.compiler.joos1w.env.Env] = {
+  override def lookup(qualifiedName: Name): Option[Env] = {
     None
   }
 
-  //override def globalLookup[T](qualifiedName: String): Option[Env] = {
-  //  T match {
-  //    case Package => getPackage(qualifiedName)
-  //    case Class => getClass(qualifiedName)
-  //    case None => None
-  //  }
-  //  None
-  //}
+  override def globalLookup(qualifiedName: Name): Option[Env] = {
+    None
+  }
 }
