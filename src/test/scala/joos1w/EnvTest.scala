@@ -94,6 +94,36 @@ class NameTest extends FunSuite {
     assert(ClassName(PackageName(""), "B") == ClassName(PackageName(""), "B"))
   }
 
+  test("QualifiedName.toClassName") {
+    assert(
+      new QualifiedName("A.B.C").toClassName ==
+        ClassName(PackageName("A.B"), "C"))
+    assert(
+      new QualifiedName("A").toClassName ==
+        ClassName(PackageName.ROOT, "A"))
+  }
+
+  test("QualifiedName.toInterfaceName") {
+    assert(
+      new QualifiedName("A.B.C").toInterfaceName ==
+        InterfaceName(PackageName("A.B"), "C"))
+    assert(
+      new QualifiedName("A").toInterfaceName ==
+        InterfaceName(PackageName.ROOT, "A"))
+  }
+
+  test("QualifiedName.toPackageName") {
+    assert(
+      new QualifiedName("A.B.C").toPackageName ==
+        PackageName("A.B.C"))
+    assert(
+      new QualifiedName("A").toPackageName ==
+        PackageName("A"))
+    assert(
+      new QualifiedName("A.B").toPackageName ==
+        PackageName("A.B"))
+  }
+
   test("Hash usage") {
     var m = Map(new Name("hi") -> 0)
     assert(m contains Name("hi"))
@@ -105,7 +135,6 @@ class NameTest extends FunSuite {
     assert(m contains Name("hi"))
     assert(m(Name("hi")) == 0)
     assert(m(PackageName("hi")) == 1)
-    // val intClsMap = Map(Pack)
   }
 }
 
@@ -178,7 +207,6 @@ class EnvTest extends FunSuite {
     assert(root.hasItem(new ClassName(PackageName.ROOT, "B")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "C")))
     assert(root.hasItem(new InterfaceName(PackageName.ROOT, "D")))
-    println(root.toStrTree)
   }
 
   test("Global class collisions") {
@@ -204,31 +232,20 @@ class EnvTest extends FunSuite {
   }
 
   test("""
-      | Resolving imports
+      | Resolving class/interface name usage within package
     """.stripMargin) {
-    /*
-    val ast = TestUtils.ASTForSrc(s"""
-         |package B;
-         |public class C {
-         |  public static int main() {
-         |    A.B.C.D.E abcde;
-         |  }
-         |}
-       """.stripMargin)
-     */
-    val root = new Root().populateNamespace(List(ABCA_CLS, ABCB_CLS))
-    val qualifiedCls =
+    val root = new Root().populateNamespace(List(ABCB_CLS, ABCA_INT))
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    val pkgABC =
       root
-        .getItem(ClassName(PackageName("A.B.C"), "A"))
-        .asInstanceOf[Some[Class]]
+        .getItem(PackageName("A.B.C"))
+        .asInstanceOf[Some[Package]]
         .get
-    assert(qualifiedCls.lookup(Name("A.B.C.A")).isDefined)
-    val cls =
-      root
-        .getItem(Name("A"))
-        .asInstanceOf[Some[Class]]
-        .get
-    assert(cls.lookup(Name("A")).isDefined)
-    // assert(cls.globalLookup(Name("")))
+    assert(pkgABC.lookup(InterfaceName(PackageName("A.B.C"), "A")).isDefined)
+    assert(pkgABC.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(pkgABC.lookup(Name("A")).isDefined)
+    assert(pkgABC.lookup(Name("B")).isDefined)
+    assert(pkgABC.lookup(Name("C")).isEmpty)
   }
 }

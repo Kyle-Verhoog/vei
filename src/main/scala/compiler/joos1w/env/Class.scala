@@ -6,10 +6,6 @@ class Class(override val parent: Package, ast: ClassDeclaration)
     extends PackageItem(parent, ast) {
   val name: ClassName = new ClassName(parent.name, ast.identifier)
 
-  def hasItem(name: Name): Boolean = {
-    parent.hasItem(name)
-  }
-
   def getItem(name: Name): Option[Env] = {
     parent.getItem(name)
   }

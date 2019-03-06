@@ -19,10 +19,6 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     this
   }
 
-  def numClasses: Int = {
-    namespace.size
-  }
-
   def hasClass(name: ClassName): Boolean = {
     namespace.contains(name)
   }
@@ -52,18 +48,20 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     this
   }
 
-  def hasItem(name: Name): Boolean = {
-    name match {
-      case c: ClassName =>
-        namespace contains c
-      case n: Name =>
-        namespace contains ClassName(this.name, n.toString)
-      case _ => false
-    }
-  }
-
   def getItem(name: Name): Option[PackageItem] = {
-    if (hasItem(name)) Some(namespace(name)) else None
+    name match {
+      case clsName: ClassName     => namespace.get(clsName)
+      case intName: InterfaceName => namespace.get(intName)
+      case name: Name =>
+        val clsName = ClassName(this.name, name.name)
+        val intName = InterfaceName(this.name, name.name)
+        if (namespace.contains(clsName))
+          Some(namespace(clsName))
+        else if (namespace.contains(intName))
+          Some(namespace(intName))
+        else
+          None
+    }
   }
 
   def getAllItems: List[PackageItem] = {
@@ -106,10 +104,9 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   }
 
   override def lookup(name: Name): Option[Env] = {
-    if (hasItem(name)) {
-      getItem(name)
-    } else {
-      parent.lookup(name)
+    getItem(name) match {
+      case Some(item) => Some(item)
+      case None       => parent.lookup(name.toQualifiedName)
     }
   }
 }

@@ -74,7 +74,7 @@ class QualifiedName(override val qualifiedName: String)
     if (qualifiedName == "") {
       PackageName.ROOT
     } else {
-      parentPackageNames.lastOption match {
+      parentPackageNames.headOption match {
         case Some(pkg) => pkg
         case None      => PackageName.ROOT
       }
@@ -96,6 +96,18 @@ class QualifiedName(override val qualifiedName: String)
     } else {
       Nil
     }
+  }
+
+  def toClassName: ClassName = {
+    ClassName(parentName, split.last)
+  }
+
+  def toInterfaceName: InterfaceName = {
+    InterfaceName(parentName, split.last)
+  }
+
+  def toPackageName: PackageName = {
+    PackageName(qualifiedName)
   }
 
   override def equals(that: Any): Boolean = {

@@ -16,51 +16,31 @@ class Root() extends Env {
   private val emptyAST = new Empty()
   private val EmptyPackage = new Package(this, Right(emptyAST))
 
-  type Namespace = Map[Name, Option[Env]]
+  type Namespace = Map[Name, Env]
 
   var namespace: Namespace = Map(
-    PackageName.ROOT -> Some(EmptyPackage)
+    PackageName.ROOT -> EmptyPackage
   )
 
-  def hasPackage(name: Name): Boolean = {
-    namespace.contains(name)
-  }
-
-  def hasItem(name: Name): Boolean = {
-    namespace.contains(name)
-  }
-
-  def getItem(name: Name): Option[Env] = {
-    if (hasItem(name)) {
-      namespace(name) match {
-        case Some(cls: Class) =>
-          name match {
-            case _: ClassName => Some(cls)
-            case _ =>
-              throw new RuntimeException(
-                s"Got class $cls for non-classname $name")
-          }
-        case Some(pkg: Package) =>
-          name match {
-            case _: PackageName => Some(pkg)
-            case _ =>
-              throw new RuntimeException(
-                s"Got pkg $pkg for non-classname $name")
-          }
-        case _ =>
-          throw new RuntimeException(s"Got unexpected name for getItem $name")
-      }
-    } else {
-      None
+  // Attempts to interpret a general qualified name as a package name, class name or interface name
+  def getItem(name: QualifiedName): Option[Env] = {
+    namespace.get(name.toClassName) match {
+      case None =>
+        namespace.get(name.toInterfaceName) match {
+          case None =>
+            namespace.get(name.toPackageName)
+          case Some(item: Env) => Some(item)
+        }
+      case Some(item: Env) => Some(item)
     }
   }
 
   def populateNamespace(asts: List[AST]): Root = {
     asts.foreach(ast => {
       val pkg = packageFromAST(Some(ast)).populateNamespace
-      addPackage(pkg.name, Some(pkg))
+      addItem(pkg.name, pkg)
       pkg.getAllItems.foreach(item => {
-        addItem(item.name, Some(item))
+        addItem(item.name, item)
       })
     })
     this
@@ -89,50 +69,23 @@ class Root() extends Env {
     pkgs.head
   }
 
-  def addItem(name: QualifiedName, cls: Option[PackageItem]): Unit = {
-    if (hasItem(name)) {
-      throw QualifiedNameCollision(s"Duplicate item $name")
-    }
-    namespace = namespace + (name -> cls)
+  // def hasItem(name: QualifiedName): Boolean = {
+  //   namespace contains name
+  // }
+
+  def hasPackage(name: QualifiedName): Boolean = {
+    namespace contains name.toPackageName
   }
 
-  def addNewPackage(name: PackageName, pkg: Option[Package]): Unit = {
-    pkg match {
-      case Some(newPkg) =>
-        namespace = namespace + (name -> Some(newPkg))
-        newPkg.name.parentPackageNames.foreach(name => {
-          addEmptyPackageIfDNE(name)
-        })
-      case None =>
-        namespace = namespace + (name -> None)
-    }
+  def hasClass(name: QualifiedName): Boolean = {
+    namespace contains name.toClassName
   }
 
-  def addEmptyPackageIfDNE(name: PackageName): Unit = {
-    if (!hasPackage(name)) {
-      addNewPackage(name, None)
-    }
+  def hasInterface(name: QualifiedName): Boolean = {
+    namespace contains name.toInterfaceName
   }
 
-  def addPackage(name: PackageName, pkg: Option[Package]): Unit = {
-    if (hasPackage(name)) {
-      getPackage(name) match {
-        case Some(curPkg) =>
-          pkg match {
-            case Some(newPkg) =>
-              val mergePkg = curPkg + newPkg
-              namespace = namespace + (mergePkg.name -> Some(mergePkg))
-            case None =>
-          }
-        case None =>
-          addNewPackage(name, pkg)
-      }
-    } else {
-      addNewPackage(name, pkg)
-    }
-  }
-
-  def getPackage(name: Name): Option[Package] = {
+  def getPackage(name: PackageName): Option[Package] = {
     getItem(name) match {
       case Some(pkg: Package) => Some(pkg)
       case _                  => None
@@ -146,35 +99,94 @@ class Root() extends Env {
     }
   }
 
-  def getAllClasses: List[Option[Env]] = {
+  def getInterface(name: InterfaceName): Option[Interface] = {
+    getItem(name) match {
+      case Some(int: Interface) => Some(int)
+      case _                    => None
+    }
+  }
+
+  def getAllClasses: List[Env] = {
     namespace
       .filter {
         case (_, item) =>
           item match {
-            case Some(_: Class) => true
-            case _              => false
+            case _: Class => true
+            case _        => false
           }
       }
       .values
       .toList
   }
 
+  def addPackage(name: PackageName, pkg: Package): Root = {
+    if (hasClass(name.toQualifiedName)) {
+      throw QualifiedNameCollision(
+        s"Class exists with same qualified name as package $name")
+    }
+    if (hasInterface(name.toQualifiedName)) {
+      throw QualifiedNameCollision(
+        s"Interface exists with same qualified name as package $name")
+    }
+    getItem(name) match {
+      case Some(existingPkg: Package) => // existing package, merge it
+        val mergedPkg = existingPkg + pkg
+        namespace = namespace + (name -> mergedPkg)
+      case None => // new package
+        namespace = namespace + (name -> pkg)
+        pkg.name.parentPackageNames.foreach(name => {
+          addPackage(name, new Package(this, Right(new Empty)))
+        })
+      case _ => throw new RuntimeException("should never happen")
+    }
+    this
+  }
+
+  def hasItem(name: QualifiedName): Boolean = {
+    hasClass(name) || hasInterface(name) || hasPackage(name)
+  }
+
+  def addClass(name: ClassName, cls: Class): Root = {
+    if (hasItem(name.toQualifiedName)) {
+      throw QualifiedNameCollision(
+        s"Item exists with same name as class $name $toStrTree")
+    }
+    namespace = namespace + (name -> cls)
+    this
+  }
+
+  def addInterface(name: InterfaceName, int: Interface): Root = {
+    if (hasItem(name.toQualifiedName)) {
+      throw QualifiedNameCollision(
+        s"Item exists with same name as class $name $toStrTree")
+    }
+    namespace = namespace + (name -> int)
+    this
+  }
+
+  def addItem(name: QualifiedName, item: Env): Root = {
+    (name, item) match {
+      case (clsName: ClassName, cls: Class) =>
+        addClass(clsName, cls)
+      case (intName: InterfaceName, int: Interface) =>
+        addInterface(intName, int)
+      case (pkgName: PackageName, pkg: Package) =>
+        addPackage(pkgName, pkg)
+      case _ => throw new RuntimeException("should not happen")
+    }
+  }
+
   override def toStrTree: String = {
     val cs: List[String] = namespace.toList
       .map({
-        case (name: Name, item: Option[Env]) =>
-          item match {
-            case Some(env: Env) =>
-              val childStrs = env.toStrTree.split("\n")
-              val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
-              s"┠─ " + childStrs.head + tailChar + childStrs.tail
-                .map(
-                  line => "┃  " + line
-                )
-                .mkString("\n")
-            case None => s"┠─ $name: None"
-            case _    => ""
-          }
+        case (name: Name, env: Env) =>
+          val childStrs = env.toStrTree.split("\n")
+          val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+          s"┠─ " + childStrs.head + tailChar + childStrs.tail
+            .map(
+              line => "┃  " + line
+            )
+            .mkString("\n")
       })
     val scs = cs.mkString("\n")
     s"$toString\n$scs"
@@ -193,8 +205,8 @@ class Root() extends Env {
     s"Environment(npackages: $nPkg, nclasses: $nCls, ninterfaces: $nInt)"
   }
 
-  override def lookup(qualifiedName: Name): Option[Env] = {
-    None
+  override def lookup(name: Name): Option[Env] = {
+    getItem(name.toQualifiedName)
   }
 
   override def globalLookup(qualifiedName: Name): Option[Env] = {
