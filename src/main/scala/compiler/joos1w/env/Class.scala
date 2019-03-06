@@ -16,4 +16,8 @@ class Class(val parent: Package, ast: ClassDeclaration) extends Env {
   override def toString: String = {
     s"ClassEnv($name)"
   }
+
+  override def toStrTree: String = {
+    toString
+  }
 }

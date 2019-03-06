@@ -1169,6 +1169,31 @@ object AST {
     * @tparam T type of ASTNode to operate on
     * @return
     */
+  def visit[R](
+      fn: (Option[AST], R => R, R => R) => R,
+      ast: Option[AST],
+      acc: R,
+  ): R = {
+    val acrossRec = (acc: R) =>
+      ast match {
+        case Some(ast) => visit(fn, ast.rightSibling, acc)
+        case None      => acc
+    }
+    val downRec = (acc: R) =>
+      ast match {
+        case Some(ast) => visit(fn, ast.leftChild, acc)
+        case None      => acc
+    }
+
+    fn(ast, acrossRec, downRec)
+  }
+
+  /**
+    * @tparam K type of keys in the result map
+    * @tparam V type of values in the result map
+    * @tparam T type of ASTNode to operate on
+    * @return
+    */
   // def foldDown[T <: AST: ClassTag, R](
   //     fn: (T, R) => R,
   //     ast: Option[AST],

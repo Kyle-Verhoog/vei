@@ -13,9 +13,8 @@ object Root {
 }
 
 class Root(val asts: List[AST]) extends Env {
-  private val emptyAST = new PackageDeclaration()
-  emptyAST.addChildToEnd(new compiler.joos1w.ast.Name(""))
-  private val EmptyPackage = new Package(this, emptyAST)
+  private val emptyAST = new Empty()
+  private val EmptyPackage = new Package(this, Right(emptyAST))
 
   type Namespace = Map[Name, Option[Env]]
 
@@ -67,13 +66,25 @@ class Root(val asts: List[AST]) extends Env {
   }
 
   def packageFromAST(ast: Option[AST]): Package = {
-    // TODO: have to look for Empty packages
-    val pkgs: List[Package] = AST.foldUp[PackageDeclaration, List[Package]](
-      (ast, acc) => new Package(this, ast) :: acc,
-      ast,
-      List(),
-      AST.RecursionOptions(true, true, true, (r1, r2) => r1 ++ r2)
-    ) ++ List(EmptyPackage)
+    val pkgs: List[Package] =
+      AST.visit(
+        (ast: Option[AST],
+         acrossRec: List[Package] => List[Package],
+         downRec: List[Package] => List[Package]) => {
+          ast match {
+            case Some(pkgAST: PackageDeclaration) =>
+              List(new Package(this, Left(pkgAST)))
+            case Some(emptyAST: Empty) =>
+              if (emptyAST.fieldName == "package_declaration")
+                List(new Package(this, Right(emptyAST)))
+              else Nil
+            case None => Nil
+            case _    => downRec(Nil) ++ acrossRec(Nil)
+          }
+        },
+        ast,
+        List()
+      )
     pkgs.head
   }
 
@@ -145,6 +156,38 @@ class Root(val asts: List[AST]) extends Env {
       }
       .values
       .toList
+  }
+
+  override def toStrTree: String = {
+    val cs: List[String] = namespace.toList
+      .map({
+        case (name: Name, item: Option[Env]) =>
+          item match {
+            case Some(env: Env) =>
+              val childStrs = env.toStrTree.split("\n")
+              val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+              s"┠─ " + childStrs.head + tailChar + childStrs.tail
+                .map(
+                  line => "┃  " + line
+                )
+                .mkString("\n")
+            case None => s"$name: None"
+            case _    => ""
+          }
+      })
+    val scs = cs.mkString("\n")
+    s"$toString\n$cs"
+  }
+
+  override def toString: String = {
+    val (nPackages, nClasses) = namespace.keys.foldLeft[(Int, Int)]((0, 0))({
+      case ((npkg, ncls), name) =>
+        name match {
+          case _: PackageName => (npkg + 1, ncls)
+          case _: ClassName   => (npkg, ncls + 1)
+        }
+    })
+    s"Environment(npackages: $nPackages, nclasses: $nClasses)"
   }
 
   override def lookup(qualifiedName: Name): Option[Env] = {

@@ -1,44 +1,48 @@
 package compiler.joos1w.env
 
-import compiler.joos1w.ast.{AST, ClassDeclaration, PackageDeclaration}
+import compiler.joos1w.ast.{AST, Empty, ClassDeclaration, PackageDeclaration}
 
 object Package {}
 
-class Package(val parent: Root, val ast: PackageDeclaration) extends Env {
-  val name: PackageName = new PackageName(ast.name)
+class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
+    extends Env {
+  val name: PackageName = ast match {
+    case Left(pkgAST)    => new PackageName(pkgAST.name)
+    case Right(emptyAST) => PackageName.ROOT
+  }
 
-  type ClassMap = Map[Name, Class]
-  var classes: ClassMap =
-    AST.foldUp[ClassDeclaration, ClassMap](
+  type Namespace = Map[Name, Class]
+  var namespace: Namespace =
+    AST.foldUp[ClassDeclaration, Namespace](
       (ast, accMap) => {
         val cls = new Class(this, ast)
         accMap + (cls.name -> cls)
       },
-      Some(ast),
+      ast.fold(a => Some(a), a => Some(a)),
       Map(),
       AST.RecursionOptions(true, true, true, (m1, m2) => m1 ++ m2)
     )
 
   def addClass(cls: Class): Package = {
-    classes = classes + (cls.name -> cls)
+    namespace = namespace + (cls.name -> cls)
     this
   }
 
   def numClasses: Int = {
-    classes.size
+    namespace.size
   }
 
   def hasClass(name: Name): Boolean = {
-    println(name, classes)
-    classes.contains(name)
+    println(name, namespace)
+    namespace.contains(name)
   }
 
   def getClass(name: Name): Option[Class] = {
-    if (hasClass(name)) Some(classes(name)) else None
+    if (hasClass(name)) Some(namespace(name)) else None
   }
 
   def getAllClasses: List[Class] = {
-    classes.foldLeft(Nil: List[Class]) {
+    namespace.foldLeft(Nil: List[Class]) {
       case (acc, (_, cls)) =>
         cls :: acc
     }
@@ -48,8 +52,28 @@ class Package(val parent: Root, val ast: PackageDeclaration) extends Env {
     if (other.name != name) {
       throw new RuntimeException()
     }
-    classes = classes ++ other.classes
+    namespace = namespace ++ other.namespace
     this
+  }
+
+  override def toString: String = {
+    s"Package(${namespace.size})"
+  }
+
+  override def toStrTree: String = {
+    val cs: List[String] = namespace.toList
+      .map({
+        case (name: Name, cls: Class) =>
+          val childStrs = cls.toStrTree.split("\n")
+          val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
+          s"┠─ " + childStrs.head + tailChar + childStrs.tail
+            .map(
+              line => "┃  " + line
+            )
+            .mkString("\n")
+      })
+    val scs = cs.mkString("\n")
+    s"$toString\n$scs"
   }
 
   override def globalLookup(name: Name): Option[Env] = {

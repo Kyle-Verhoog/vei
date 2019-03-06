@@ -84,7 +84,7 @@ class EnvTest extends FunSuite {
     println("\n\n")
     var root = new Root(List(ABCA, BC))
     root.addPackagesFromASTs()
-    println(root.getAllClasses)
+    println(root)
     assert(root.hasPackage(PackageName("A.B.C")))
     assert(
       root
@@ -113,12 +113,14 @@ class EnvTest extends FunSuite {
 
     println("\n\n\n\n\n")
     // Root package
+  }
+
+  test("Root package") {
     val A = TestUtils.ASTForSrc(s"""
-                                    |public class A {}
+                                   |public class A {}
        """.stripMargin)
-    root = new Root(List(A))
+    val root = new Root(List(A))
     root.addPackagesFromASTs()
-    println(root.)
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
   }
 
