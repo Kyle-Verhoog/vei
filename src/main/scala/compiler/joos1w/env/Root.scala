@@ -55,12 +55,12 @@ class Root() extends Env {
     }
   }
 
-  def addPackagesFromASTs(asts: List[AST]): Root = {
+  def populateNamespace(asts: List[AST]): Root = {
     asts.foreach(ast => {
-      val pkg = packageFromAST(Some(ast))
+      val pkg = packageFromAST(Some(ast)).populateNamespace
       addPackage(pkg.name, Some(pkg))
-      pkg.getAllClasses.foreach(cls => {
-        addClass(cls.name, Some(cls))
+      pkg.getAllItems.foreach(item => {
+        addItem(item.name, Some(item))
       })
     })
     this
@@ -89,9 +89,9 @@ class Root() extends Env {
     pkgs.head
   }
 
-  def addClass(name: ClassName, cls: Option[Class]): Unit = {
+  def addItem(name: QualifiedName, cls: Option[PackageItem]): Unit = {
     if (hasItem(name)) {
-      throw QualifiedNameCollision(s"Duplicate class $name")
+      throw QualifiedNameCollision(s"Duplicate item $name")
     }
     namespace = namespace + (name -> cls)
   }
@@ -135,14 +135,14 @@ class Root() extends Env {
   def getPackage(name: Name): Option[Package] = {
     getItem(name) match {
       case Some(pkg: Package) => Some(pkg)
-      case None               => None
+      case _                  => None
     }
   }
 
   def getClass(name: ClassName): Option[Class] = {
     getItem(name) match {
       case Some(cls: Class) => Some(cls)
-      case None             => None
+      case _                => None
     }
   }
 

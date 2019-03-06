@@ -71,6 +71,10 @@ class EnvTest extends FunSuite {
                                     |package A.B.C;
                                     |public class A {}
        """.stripMargin)
+  val ABCA_INT = TestUtils.ASTForSrc(s"""
+                                        |package A.B.C;
+                                        |interface A {}
+       """.stripMargin)
   val BC_CLS = TestUtils.ASTForSrc(s"""
                                           |package B;
                                           |public class C {}
@@ -98,11 +102,14 @@ class EnvTest extends FunSuite {
   val C_CLS = TestUtils.ASTForSrc(s"""
                                      |public class C {}
        """.stripMargin)
+  val D_INT = TestUtils.ASTForSrc(s"""
+                                     |interface D {}
+       """.stripMargin)
 
   test("""
       | Global env
     """.stripMargin) {
-    val root = new Root().addPackagesFromASTs(List(ABCA_CLS, BC_CLS))
+    val root = new Root().populateNamespace(List(ABCA_CLS, BC_CLS))
     assert(root.hasPackage(PackageName("A.B.C")))
     assert(
       root
@@ -120,37 +127,33 @@ class EnvTest extends FunSuite {
   }
 
   test("Root package") {
-    var root = new Root().addPackagesFromASTs(List(A_CLS))
+    var root = new Root().populateNamespace(List(A_CLS))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
-    root = new Root().addPackagesFromASTs(List(A_CLS, B_CLS, C_CLS))
+    root = new Root().populateNamespace(List(A_CLS, B_CLS, C_CLS, D_INT))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "B")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "C")))
-    // assert(root.hasItem(new ClassName(PackageName.ROOT, "D")))
+    assert(root.hasItem(new InterfaceName(PackageName.ROOT, "D")))
   }
 
-  test("Global collisions") {
-    val BC = TestUtils.ASTForSrc(s"""
-                                    |package B;
-                                    |public class C {}
-
-       """.stripMargin)
+  test("Global class collisions") {
     assertThrows[QualifiedNameCollision](
-      new Root().addPackagesFromASTs(List(BC, BC)))
-    val BD = TestUtils.ASTForSrc(s"""
-                                    |package B;
-                                    |public class D {}
-       """.stripMargin)
-    val root = new Root().addPackagesFromASTs(List(BC, BD))
+      new Root().populateNamespace(List(BC_CLS, BC_CLS)))
+    val root = new Root().populateNamespace(List(BC_CLS, BD_CLS))
     assert(root.hasItem(ClassName(PackageName("B"), "C")))
     assert(root.hasItem(ClassName(PackageName("B"), "D")))
   }
 
+  test("Global interface collisions") {
+    assertThrows[QualifiedNameCollision](
+      new Root().populateNamespace(List(ABCA_CLS, ABCA_INT)))
+  }
+
   test("Root package collisions") {
     assertThrows[QualifiedNameCollision](
-      new Root().addPackagesFromASTs(List(A_CLS, A_CLS)))
+      new Root().populateNamespace(List(A_CLS, A_CLS)))
     assertThrows[QualifiedNameCollision](
-      new Root().addPackagesFromASTs(List(A_CLS, A_INT)))
+      new Root().populateNamespace(List(A_CLS, A_INT)))
   }
   /*
   test("""

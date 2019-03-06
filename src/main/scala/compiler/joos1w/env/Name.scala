@@ -123,10 +123,23 @@ class PackageName(override val qualifiedName: String)
   }
 }
 
+class PackageItemName(pkgName: PackageName, itemName: String)
+    extends QualifiedName(
+      s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
+      else ""}$itemName") {
+  val packageName: PackageName = getParentPackageName
+
+  override def getParentPackageName: PackageName = {
+    if (parentPackageNames.nonEmpty) parentPackageNames.last
+    else PackageName.ROOT
+  }
+}
+
 object ClassName {
   def apply(pkgName: PackageName, clsName: String): ClassName = {
     new ClassName(pkgName, clsName)
   }
+
 }
 
 class ClassName(pkgName: PackageName, clsName: String)
@@ -134,10 +147,17 @@ class ClassName(pkgName: PackageName, clsName: String)
       s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
       else ""}$clsName") {
   val className: Name = Name(clsName)
-  val packageName: PackageName = getParentPackageName
+}
 
-  override def getParentPackageName: PackageName = {
-    if (parentPackageNames.nonEmpty) parentPackageNames.last
-    else PackageName.ROOT
+object InterfaceName {
+  def apply(pkgName: PackageName, intName: String): InterfaceName = {
+    new InterfaceName(pkgName, intName)
   }
+}
+
+class InterfaceName(pkgName: PackageName, intName: String)
+    extends QualifiedName(
+      s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
+      else ""}$intName") {
+  val interfaceName: Name = Name(intName)
 }

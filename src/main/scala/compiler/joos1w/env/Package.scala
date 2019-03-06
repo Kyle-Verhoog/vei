@@ -1,6 +1,6 @@
 package compiler.joos1w.env
 
-import compiler.joos1w.ast.{AST, Empty, ClassDeclaration, PackageDeclaration}
+import compiler.joos1w.ast._
 
 object Package {}
 
@@ -11,17 +11,18 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     case Right(emptyAST) => PackageName.ROOT
   }
 
-  type Namespace = Map[Name, Class]
-  var namespace: Namespace =
-    AST.foldUp[ClassDeclaration, Namespace](
-      (ast, accMap) => {
-        val cls = new Class(this, ast)
-        accMap + (cls.name -> cls)
-      },
-      ast.fold(a => Some(a), a => Some(a)),
-      Map(),
-      AST.RecursionOptions(true, true, true, (m1, m2) => m1 ++ m2)
-    )
+  type Namespace = Map[Name, PackageItem]
+  var namespace: Namespace = Map()
+
+  //    AST.foldUp[ClassDeclaration, Namespace](
+  //      (ast, accMap) => {
+  //        val cls = new Class(this, ast)
+  //        accMap + (cls.name -> cls)
+  //      },
+  //      ast.fold(a => Some(a), a => Some(a)),
+  //      Map(),
+  //      AST.RecursionOptions(true, true, true, (m1, m2) => m1 ++ m2)
+  //    )
 
   def addClass(cls: Class): Package = {
     namespace = namespace + (cls.name -> cls)
@@ -32,16 +33,45 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     namespace.size
   }
 
-  def hasClass(name: Name): Boolean = {
+  def hasClass(name: ClassName): Boolean = {
     namespace.contains(name)
   }
 
-  def getClass(name: Name): Option[Class] = {
-    if (hasClass(name)) Some(namespace(name)) else None
+  def populateNamespace: Package = {
+    val items: List[PackageItem] = AST.visit(
+      (ast: Option[AST],
+       acrossRec: List[PackageItem] => List[PackageItem],
+       downRec: List[PackageItem] => List[PackageItem]) => {
+        ast match {
+          case Some(clsAST: ClassDeclaration) =>
+            val cls = new Class(this, clsAST)
+            List(cls)
+          case Some(intAST: InterfaceDeclaration) =>
+            val int = new Interface(this, intAST)
+            List(int)
+          case _ => downRec(Nil) ++ acrossRec(Nil)
+        }
+      },
+      ast.fold(a => Some(a), a => Some(a)),
+      List()
+    )
+
+    items.foreach(item => {
+      namespace = namespace + (item.name -> item)
+    })
+    this
   }
 
-  def getAllClasses: List[Class] = {
-    namespace.foldLeft(Nil: List[Class]) {
+  def hasItem(name: Name): Boolean = {
+    namespace contains name
+  }
+
+  def getItem(name: Name): Option[PackageItem] = {
+    if (hasItem(name)) Some(namespace(name)) else None
+  }
+
+  def getAllItems: List[PackageItem] = {
+    namespace.foldLeft(Nil: List[PackageItem]) {
       case (acc, (_, cls)) =>
         cls :: acc
     }
@@ -62,8 +92,8 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   override def toStrTree: String = {
     val cs: List[String] = namespace.toList
       .map({
-        case (_: Name, cls: Class) =>
-          val childStrs = cls.toStrTree.split("\n")
+        case (_: Name, item: PackageItem) =>
+          val childStrs = item.toStrTree.split("\n")
           val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
           s"┠─ " + childStrs.head + tailChar + childStrs.tail
             .map(

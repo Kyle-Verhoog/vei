@@ -1,9 +1,10 @@
 package compiler.joos1w.env
 
-import compiler.joos1w.ast.ClassDeclaration
+import compiler.joos1w.ast.{ClassDeclaration, InterfaceDeclaration}
 
-class Class(val parent: Package, ast: ClassDeclaration) extends PackageItem {
-  val name: ClassName = new ClassName(parent.name, ast.identifier)
+class Interface(val parent: Package, ast: InterfaceDeclaration)
+    extends PackageItem {
+  val name: InterfaceName = new InterfaceName(parent.name, ast.identifier)
 
   override def globalLookup(name: Name): Option[Env] = {
     parent.globalLookup(name)
