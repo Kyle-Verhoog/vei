@@ -12,7 +12,7 @@ object Root {
   val ROOT_PKG_NAME = ""
 }
 
-class Root(val asts: List[AST]) extends Env {
+class Root() extends Env {
   private val emptyAST = new Empty()
   private val EmptyPackage = new Package(this, Right(emptyAST))
 
@@ -55,7 +55,7 @@ class Root(val asts: List[AST]) extends Env {
     }
   }
 
-  def addPackagesFromASTs(asts: List[AST] = asts): Unit = {
+  def addPackagesFromASTs(asts: List[AST]): Root = {
     asts.foreach(ast => {
       val pkg = packageFromAST(Some(ast))
       addPackage(pkg.name, Some(pkg))
@@ -63,6 +63,7 @@ class Root(val asts: List[AST]) extends Env {
         addClass(cls.name, Some(cls))
       })
     })
+    this
   }
 
   def packageFromAST(ast: Option[AST]): Package = {
@@ -171,12 +172,12 @@ class Root(val asts: List[AST]) extends Env {
                   line => "┃  " + line
                 )
                 .mkString("\n")
-            case None => s"$name: None"
+            case None => s"┠─ $name: None"
             case _    => ""
           }
       })
     val scs = cs.mkString("\n")
-    s"$toString\n$cs"
+    s"$toString\n$scs"
   }
 
   override def toString: String = {

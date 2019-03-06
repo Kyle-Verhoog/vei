@@ -67,24 +67,42 @@ class NameTest extends FunSuite {
 }
 
 class EnvTest extends FunSuite {
+  val ABCA_CLS = TestUtils.ASTForSrc(s"""
+                                    |package A.B.C;
+                                    |public class A {}
+       """.stripMargin)
+  val BC_CLS = TestUtils.ASTForSrc(s"""
+                                          |package B;
+                                          |public class C {}
+       """.stripMargin)
+  val BD_CLS = TestUtils.ASTForSrc(s"""
+                                      |package B;
+                                      |public class D {}
+       """.stripMargin)
+  val ABCB_CLS = TestUtils.ASTForSrc(s"""
+                                          |package A.B.C;
+                                          |public class B {}
+       """.stripMargin)
+  val A_CLS = TestUtils.ASTForSrc(s"""
+                                       |public class A {}
+       """.stripMargin)
+  val A_INT = TestUtils.ASTForSrc(s"""
+                                     |interface A {}
+       """.stripMargin)
+  val B_CLS = TestUtils.ASTForSrc(s"""
+                                       |public class B {}
+       """.stripMargin)
+  val B_INT = TestUtils.ASTForSrc(s"""
+                                     |interface B {}
+       """.stripMargin)
+  val C_CLS = TestUtils.ASTForSrc(s"""
+                                     |public class C {}
+       """.stripMargin)
+
   test("""
       | Global env
     """.stripMargin) {
-    val ABCA = TestUtils.ASTForSrc(s"""
-         |package A.B.C;
-         |public class A {}
-       """.stripMargin)
-    val BC = TestUtils.ASTForSrc(s"""
-         |package B;
-         |public class C {}
-       """.stripMargin)
-
-    println(ABCA.toStrTree)
-    println(BC.toStrTree)
-    println("\n\n")
-    var root = new Root(List(ABCA, BC))
-    root.addPackagesFromASTs()
-    println(root)
+    val root = new Root().addPackagesFromASTs(List(ABCA_CLS, BC_CLS))
     assert(root.hasPackage(PackageName("A.B.C")))
     assert(
       root
@@ -99,31 +117,41 @@ class EnvTest extends FunSuite {
         .getPackage(PackageName("B"))
         .get
         .hasClass(ClassName(PackageName("B"), "C")))
-
-    assertThrows[QualifiedNameCollision](
-      new Root(List(BC, BC)).addPackagesFromASTs())
-    val BA = TestUtils.ASTForSrc(s"""
-                                   |package B;
-                                   |public class D {}
-       """.stripMargin)
-    root = new Root(List(BC, BA))
-    root.addPackagesFromASTs()
-    assert(root.hasItem(ClassName(PackageName("B"), "D")))
-    assert(root.hasItem(ClassName(PackageName("B"), "D")))
-
-    println("\n\n\n\n\n")
-    // Root package
   }
 
   test("Root package") {
-    val A = TestUtils.ASTForSrc(s"""
-                                   |public class A {}
-       """.stripMargin)
-    val root = new Root(List(A))
-    root.addPackagesFromASTs()
+    var root = new Root().addPackagesFromASTs(List(A_CLS))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
+    root = new Root().addPackagesFromASTs(List(A_CLS, B_CLS, C_CLS))
+    assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
+    assert(root.hasItem(new ClassName(PackageName.ROOT, "B")))
+    assert(root.hasItem(new ClassName(PackageName.ROOT, "C")))
+    // assert(root.hasItem(new ClassName(PackageName.ROOT, "D")))
   }
 
+  test("Global collisions") {
+    val BC = TestUtils.ASTForSrc(s"""
+                                    |package B;
+                                    |public class C {}
+
+       """.stripMargin)
+    assertThrows[QualifiedNameCollision](
+      new Root().addPackagesFromASTs(List(BC, BC)))
+    val BD = TestUtils.ASTForSrc(s"""
+                                    |package B;
+                                    |public class D {}
+       """.stripMargin)
+    val root = new Root().addPackagesFromASTs(List(BC, BD))
+    assert(root.hasItem(ClassName(PackageName("B"), "C")))
+    assert(root.hasItem(ClassName(PackageName("B"), "D")))
+  }
+
+  test("Root package collisions") {
+    assertThrows[QualifiedNameCollision](
+      new Root().addPackagesFromASTs(List(A_CLS, A_CLS)))
+    assertThrows[QualifiedNameCollision](
+      new Root().addPackagesFromASTs(List(A_CLS, A_INT)))
+  }
   /*
   test("""
       | Resolving imports

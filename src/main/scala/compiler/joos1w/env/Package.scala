@@ -33,7 +33,6 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   }
 
   def hasClass(name: Name): Boolean = {
-    println(name, namespace)
     namespace.contains(name)
   }
 
@@ -57,13 +56,13 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   }
 
   override def toString: String = {
-    s"Package(${namespace.size})"
+    s"Package(name: $name, nitems: ${namespace.size})"
   }
 
   override def toStrTree: String = {
     val cs: List[String] = namespace.toList
       .map({
-        case (name: Name, cls: Class) =>
+        case (_: Name, cls: Class) =>
           val childStrs = cls.toStrTree.split("\n")
           val tailChar = if (childStrs.tail.isEmpty) "" else "\n"
           s"┠─ " + childStrs.head + tailChar + childStrs.tail

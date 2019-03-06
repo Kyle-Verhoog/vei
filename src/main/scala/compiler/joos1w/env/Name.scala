@@ -130,11 +130,14 @@ object ClassName {
 }
 
 class ClassName(pkgName: PackageName, clsName: String)
-    extends QualifiedName(s"${pkgName.qualifiedName}.$clsName") {
+    extends QualifiedName(
+      s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
+      else ""}$clsName") {
   val className: Name = Name(clsName)
   val packageName: PackageName = getParentPackageName
 
   override def getParentPackageName: PackageName = {
-    parentPackageNames.last
+    if (parentPackageNames.nonEmpty) parentPackageNames.last
+    else PackageName.ROOT
   }
 }
