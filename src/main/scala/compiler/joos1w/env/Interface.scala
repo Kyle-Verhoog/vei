@@ -2,8 +2,8 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast.{ClassDeclaration, InterfaceDeclaration}
 
-class Interface(val parent: Package, ast: InterfaceDeclaration)
-    extends PackageItem {
+class Interface(override val parent: Package, ast: InterfaceDeclaration)
+    extends PackageItem(parent, ast) {
   val name: InterfaceName = new InterfaceName(parent.name, ast.identifier)
 
   override def globalLookup(name: Name): Option[Env] = {
@@ -15,7 +15,7 @@ class Interface(val parent: Package, ast: InterfaceDeclaration)
   }
 
   override def toString: String = {
-    s"ClassEnv($name)"
+    s"Interface($name)"
   }
 
   override def toStrTree: String = {

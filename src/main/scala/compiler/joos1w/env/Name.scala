@@ -2,6 +2,11 @@ package compiler.joos1w.env
 
 import scala.reflect.ClassTag
 
+final case class NameError(
+    private val message: String = "Name error",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
+
 object Name {
   def apply(name: String): Name = {
     new Name(name)
@@ -23,8 +28,7 @@ class Name(val name: String) {
     if (qualified) {
       name
     } else {
-      throw new RuntimeException(
-        s"Attempt to get qualified name for unqualified $name")
+      throw NameError(s"Attempt to get qualified name for unqualified $name")
     }
   }
 
@@ -32,7 +36,7 @@ class Name(val name: String) {
     if (qualified) {
       new QualifiedName(name)
     } else {
-      throw new RuntimeException("TODO")
+      throw NameError("TODO")
     }
   }
 
@@ -62,9 +66,9 @@ class Name(val name: String) {
 
 class QualifiedName(override val qualifiedName: String)
     extends Name(qualifiedName) {
-  protected val split: Array[String] = mkSplit
-  val parentPackageNames: List[PackageName] = mkParentPackageNames
-  val parentName: PackageName = getParentPackageName
+  lazy protected val split: Array[String] = mkSplit
+  lazy val parentPackageNames: List[PackageName] = mkParentPackageNames
+  lazy val parentName: PackageName = getParentPackageName
 
   def getParentPackageName: PackageName = {
     if (qualifiedName == "") {
@@ -91,6 +95,14 @@ class QualifiedName(override val qualifiedName: String)
       (1 to len).map(i => mkNthParentPackageName(i)).toList
     } else {
       Nil
+    }
+  }
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: QualifiedName => that.qualifiedName == qualifiedName
+      case that: Name          => throw NameError("comparing Name and QualifiedName")
+      case _                   => false
     }
   }
 }
@@ -147,6 +159,13 @@ class ClassName(pkgName: PackageName, clsName: String)
       s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
       else ""}$clsName") {
   val className: Name = Name(clsName)
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: ClassName => that.qualifiedName == qualifiedName
+      case _               => false
+    }
+  }
 }
 
 object InterfaceName {
@@ -160,4 +179,11 @@ class InterfaceName(pkgName: PackageName, intName: String)
       s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
       else ""}$intName") {
   val interfaceName: Name = Name(intName)
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: InterfaceName => that.qualifiedName == qualifiedName
+      case _                   => false
+    }
+  }
 }

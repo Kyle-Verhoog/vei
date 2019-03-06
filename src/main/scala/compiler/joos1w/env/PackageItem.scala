@@ -1,7 +1,7 @@
 package compiler.joos1w.env
 
-import compiler.joos1w.ast.{AST, ClassDeclaration, Empty, PackageDeclaration}
+import compiler.joos1w.ast.AST
 
-abstract class PackageItem() extends Env {
+abstract class PackageItem(val parent: Package, ast: AST) extends Env {
   val name: QualifiedName
 }

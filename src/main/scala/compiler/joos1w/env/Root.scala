@@ -181,14 +181,16 @@ class Root() extends Env {
   }
 
   override def toString: String = {
-    val (nPackages, nClasses) = namespace.keys.foldLeft[(Int, Int)]((0, 0))({
-      case ((npkg, ncls), name) =>
-        name match {
-          case _: PackageName => (npkg + 1, ncls)
-          case _: ClassName   => (npkg, ncls + 1)
-        }
-    })
-    s"Environment(npackages: $nPackages, nclasses: $nClasses)"
+    val (nPkg, nCls, nInt) =
+      namespace.keys.foldLeft((0, 0, 0))({
+        case ((npkg, ncls, nint), name) =>
+          name match {
+            case _: PackageName   => (npkg + 1, ncls, nint)
+            case _: ClassName     => (npkg, ncls + 1, nint)
+            case _: InterfaceName => (npkg, ncls, nint + 1)
+          }
+      })
+    s"Environment(npackages: $nPkg, nclasses: $nCls, ninterfaces: $nInt)"
   }
 
   override def lookup(qualifiedName: Name): Option[Env] = {

@@ -2,8 +2,17 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast.ClassDeclaration
 
-class Class(val parent: Package, ast: ClassDeclaration) extends PackageItem {
+class Class(override val parent: Package, ast: ClassDeclaration)
+    extends PackageItem(parent, ast) {
   val name: ClassName = new ClassName(parent.name, ast.identifier)
+
+  def hasItem(name: Name): Boolean = {
+    parent.hasItem(name)
+  }
+
+  def getItem(name: Name): Option[Env] = {
+    parent.getItem(name)
+  }
 
   override def globalLookup(name: Name): Option[Env] = {
     parent.globalLookup(name)
@@ -14,7 +23,7 @@ class Class(val parent: Package, ast: ClassDeclaration) extends PackageItem {
   }
 
   override def toString: String = {
-    s"ClassEnv($name)"
+    s"Class($name)"
   }
 
   override def toStrTree: String = {

@@ -14,16 +14,6 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   type Namespace = Map[Name, PackageItem]
   var namespace: Namespace = Map()
 
-  //    AST.foldUp[ClassDeclaration, Namespace](
-  //      (ast, accMap) => {
-  //        val cls = new Class(this, ast)
-  //        accMap + (cls.name -> cls)
-  //      },
-  //      ast.fold(a => Some(a), a => Some(a)),
-  //      Map(),
-  //      AST.RecursionOptions(true, true, true, (m1, m2) => m1 ++ m2)
-  //    )
-
   def addClass(cls: Class): Package = {
     namespace = namespace + (cls.name -> cls)
     this
@@ -63,7 +53,13 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   }
 
   def hasItem(name: Name): Boolean = {
-    namespace contains name
+    name match {
+      case c: ClassName =>
+        namespace contains c
+      case n: Name =>
+        namespace contains ClassName(this.name, n.toString)
+      case _ => false
+    }
   }
 
   def getItem(name: Name): Option[PackageItem] = {
@@ -110,6 +106,10 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
   }
 
   override def lookup(name: Name): Option[Env] = {
-    parent.lookup(name)
+    if (hasItem(name)) {
+      getItem(name)
+    } else {
+      parent.lookup(name)
+    }
   }
 }

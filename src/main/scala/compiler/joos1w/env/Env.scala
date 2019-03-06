@@ -5,6 +5,8 @@ abstract class Env() {
 
   // namespace???
   // def populateNamespace()
+  // getItem
+  // hasItem
 
   def globalLookup(name: Name): Option[Env]
 

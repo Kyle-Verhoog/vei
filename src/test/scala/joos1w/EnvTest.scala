@@ -10,7 +10,6 @@ import compiler.joos1w.env.{
 import org.scalatest.FunSuite
 
 class NameTest extends FunSuite {
-
   test("Name equality") {
     assert(Name("hi") != Name("asdf"))
     assert(Name("hi") == Name("hi"))
@@ -25,6 +24,7 @@ class NameTest extends FunSuite {
     assert(PackageName("A") == PackageName("A"))
     assert(PackageName("A") != PackageName("B"))
     assert(PackageName("A.C") != PackageName("B.A"))
+    assert(ClassName(PackageName(""), "A.C") != PackageName("A.C"))
   }
 
   test("Qualified parents") {
@@ -52,6 +52,48 @@ class NameTest extends FunSuite {
 
   test("PackageName") {}
 
+  test("ClassName equality") {
+    assert(
+      ClassName(PackageName(""), "A") ==
+        ClassName(PackageName(""), "A"))
+    assert(
+      ClassName(PackageName("A"), "A") ==
+        ClassName(PackageName("A"), "A"))
+    assert(
+      ClassName(PackageName("A"), "A") !=
+        InterfaceName(PackageName("A"), "A"))
+    assert(
+      ClassName(PackageName("A"), "A") !=
+        PackageName("A.A"))
+  }
+
+  test("InterfaceName equality") {
+    assert(
+      InterfaceName(PackageName(""), "A") ==
+        InterfaceName(PackageName(""), "A"))
+    assert(
+      InterfaceName(PackageName("A"), "A") ==
+        InterfaceName(PackageName("A"), "A"))
+    assert(
+      ClassName(PackageName("A"), "A") !=
+        InterfaceName(PackageName("A"), "A"))
+  }
+
+  test("Comparing Names") {
+    assert(
+      PackageName("A.B.C").qualifiedName == PackageName("A.B.C").qualifiedName)
+    assert(ClassName(PackageName("A.B"), "C").qualifiedName == PackageName(
+      "A.B.C").qualifiedName)
+    assert(ClassName(PackageName("A.B"), "C") != PackageName("A.B.C"))
+    assert(
+      ClassName(PackageName("A.B"), "C") != InterfaceName(PackageName("A.B"),
+                                                          "C"))
+    assert(
+      ClassName(PackageName("A.B"), "C") == ClassName(PackageName("A.B"), "C"))
+    assert(PackageName("A.B") == PackageName("A.B"))
+    assert(ClassName(PackageName(""), "B") == ClassName(PackageName(""), "B"))
+  }
+
   test("Hash usage") {
     var m = Map(new Name("hi") -> 0)
     assert(m contains Name("hi"))
@@ -63,6 +105,7 @@ class NameTest extends FunSuite {
     assert(m contains Name("hi"))
     assert(m(Name("hi")) == 0)
     assert(m(PackageName("hi")) == 1)
+    // val intClsMap = Map(Pack)
   }
 }
 
@@ -130,10 +173,12 @@ class EnvTest extends FunSuite {
     var root = new Root().populateNamespace(List(A_CLS))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
     root = new Root().populateNamespace(List(A_CLS, B_CLS, C_CLS, D_INT))
+    assert(root.hasItem(PackageName("")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "A")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "B")))
     assert(root.hasItem(new ClassName(PackageName.ROOT, "C")))
     assert(root.hasItem(new InterfaceName(PackageName.ROOT, "D")))
+    println(root.toStrTree)
   }
 
   test("Global class collisions") {
@@ -147,6 +192,8 @@ class EnvTest extends FunSuite {
   test("Global interface collisions") {
     assertThrows[QualifiedNameCollision](
       new Root().populateNamespace(List(ABCA_CLS, ABCA_INT)))
+    assertThrows[QualifiedNameCollision](
+      new Root().populateNamespace(List(ABCA_INT, ABCA_INT)))
   }
 
   test("Root package collisions") {
@@ -155,16 +202,12 @@ class EnvTest extends FunSuite {
     assertThrows[QualifiedNameCollision](
       new Root().populateNamespace(List(A_CLS, A_INT)))
   }
-  /*
+
   test("""
       | Resolving imports
     """.stripMargin) {
-    val ast1 = TestUtils.ASTForSrc(s"""
-         |import A.B.C.D;
-         |public class E {
-         |}
-       """.stripMargin)
-    val ast2 = TestUtils.ASTForSrc(s"""
+    /*
+    val ast = TestUtils.ASTForSrc(s"""
          |package B;
          |public class C {
          |  public static int main() {
@@ -172,10 +215,20 @@ class EnvTest extends FunSuite {
          |  }
          |}
        """.stripMargin)
-
-    println(ast1.toStrTree)
-    println(ast2.toStrTree)
-    val root = new Root(List(ast1, ast2))
+     */
+    val root = new Root().populateNamespace(List(ABCA_CLS, ABCB_CLS))
+    val qualifiedCls =
+      root
+        .getItem(ClassName(PackageName("A.B.C"), "A"))
+        .asInstanceOf[Some[Class]]
+        .get
+    assert(qualifiedCls.lookup(Name("A.B.C.A")).isDefined)
+    val cls =
+      root
+        .getItem(Name("A"))
+        .asInstanceOf[Some[Class]]
+        .get
+    assert(cls.lookup(Name("A")).isDefined)
+    // assert(cls.globalLookup(Name("")))
   }
- */
 }
