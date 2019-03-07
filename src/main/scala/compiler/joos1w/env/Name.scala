@@ -16,6 +16,10 @@ object Name {
 class Name(val name: String) {
   val qualified: Boolean = isQualified(name)
 
+  def +(other: Name): Name = {
+    new QualifiedName(s"${this.name}.${other.name}")
+  }
+
   def isQualified(name: String): Boolean = {
     // TODO: determine exact defn
     // name.contains(".")
@@ -98,6 +102,10 @@ class QualifiedName(override val qualifiedName: String)
     }
   }
 
+  def toPackageItemName: PackageItemName = {
+    new PackageItemName(parentName, split.last)
+  }
+
   def toClassName: ClassName = {
     ClassName(parentName, split.last)
   }
@@ -147,14 +155,14 @@ class PackageName(override val qualifiedName: String)
   }
 }
 
-class PackageItemName(pkgName: PackageName, itemName: String)
+class PackageItemName(val pkgName: PackageName, val itemName: String)
     extends QualifiedName(
       s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
       else ""}$itemName") {
   val packageName: PackageName = getParentPackageName
 
   override def getParentPackageName: PackageName = {
-    if (parentPackageNames.nonEmpty) parentPackageNames.last
+    if (parentPackageNames.nonEmpty) parentPackageNames.head
     else PackageName.ROOT
   }
 }
@@ -208,7 +216,8 @@ class MethodName(mods: List[String],
   lazy val argNames: List[VariableName] = mkArgNames
 
   def mkArgNames: List[VariableName] = {
-    args.map((c: (String, String)) => new VariableName(c._1, c._2))
+    args.map((c: (String, String)) =>
+      new VariableName(new QualifiedName(c._1), c._2))
   }
 
   // TODO
@@ -250,12 +259,14 @@ class FieldName(pkgItem: PackageItemName,
   }
 }
 
-class VariableName(stype: String, name: String) extends Name(name) {
-  val typeName = new QualifiedName(stype)
-
+class VariableName(typeName: QualifiedName, name: String) extends Name(name) {
   override def equals(that: Any): Boolean = {
     that match {
       case that: VariableName => that.name == name
     }
+  }
+
+  override def toString: String = {
+    s"Variable(type: $typeName, name: $name)"
   }
 }

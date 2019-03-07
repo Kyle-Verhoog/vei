@@ -19,7 +19,11 @@ class Root() extends Env {
   type Namespace = Map[Name, Env]
 
   var namespace: Namespace = Map(
-    PackageName.ROOT -> EmptyPackage
+    PackageName.ROOT -> EmptyPackage,
+    Name("int") -> new Primitive("int"),
+    Name("boolean") -> new Primitive("boolean"),
+    Name("char") -> new Primitive("char"),
+    Name("byte") -> new Primitive("byte"),
   )
 
   // Attempts to interpret a general qualified name as a package name, class name or interface name
@@ -220,23 +224,24 @@ class Root() extends Env {
   }
 
   override def toString: String = {
-    val (nPkg, nCls, nInt) =
-      namespace.keys.foldLeft((0, 0, 0))({
-        case ((npkg, ncls, nint), name) =>
+    val (nPkg, nCls, nInt, nPrim) =
+      namespace.keys.foldLeft((0, 0, 0, 0))({
+        case ((npkg, ncls, nint, nprim), name) =>
           name match {
-            case _: PackageName   => (npkg + 1, ncls, nint)
-            case _: ClassName     => (npkg, ncls + 1, nint)
-            case _: InterfaceName => (npkg, ncls, nint + 1)
+            case _: PackageName   => (npkg + 1, ncls, nint, nprim)
+            case _: ClassName     => (npkg, ncls + 1, nint, nprim)
+            case _: InterfaceName => (npkg, ncls, nint + 1, nprim)
+            case _: Name          => (npkg, ncls, nint, nprim + 1)
           }
       })
     s"Environment(npackages: $nPkg, nclasses: $nCls, ninterfaces: $nInt)"
   }
 
   override def lookup(name: Name): Option[Env] = {
-    getItem(name.toQualifiedName)
+    namespace.get(name)
   }
 
-  override def globalLookup(qualifiedName: Name): Option[Env] = {
-    None
+  override def globalLookup(name: Name): Option[Env] = {
+    namespace.get(name)
   }
 }

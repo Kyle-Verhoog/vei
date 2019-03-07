@@ -13,11 +13,33 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
   var namespace: Namespace = Array()
   val name: Option[VariableName] = ast match {
     case formalParameter: FormalParameter =>
-      Some(new VariableName(formalParameter.ttype, formalParameter.name))
+      Some(
+        new VariableName(
+          lookup(Name(formalParameter.ttype)) match {
+            case Some(pkgItem: PackageItem) => pkgItem.name
+            case Some(prim: Primitive)      => prim.name
+            case _                          =>
+              // TODO: throw exception
+              println(
+                s"WARN: type look up failed for type ${formalParameter.ttype}")
+              new QualifiedName("???")
+          },
+          formalParameter.name
+        ))
     case localVariableDeclaration: LocalVariableDeclaration =>
       Some(
-        new VariableName(localVariableDeclaration.ttype,
-                         localVariableDeclaration.name))
+        new VariableName(
+          lookup(Name(localVariableDeclaration.ttype)) match {
+            case Some(pkgItem: PackageItem) => pkgItem.name
+            case Some(prim: Primitive)      => prim.name
+            case _                          =>
+              // TODO: throw exception
+              println(
+                s"WARN: type look up failed for type ${localVariableDeclaration.ttype}")
+              new QualifiedName("???")
+          },
+          localVariableDeclaration.name
+        ))
     case _ => None
   }
 
@@ -31,7 +53,10 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
   }
 
   override def toString: String = {
-    s"Block($name)"
+    name match {
+      case Some(vn: VariableName) => s"Block($vn)"
+      case _                      => s"Block()"
+    }
   }
 
   def addBlock(block: Block): Block = {

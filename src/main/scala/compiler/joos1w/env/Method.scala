@@ -40,7 +40,7 @@ abstract class GeneralMethod(parent: PackageItem, ast: ASTMethodDeclaration)
   }
 
   override def lookup(name: Name): Option[Env] = {
-    None
+    parent.lookup(name)
   }
 }
 
@@ -54,14 +54,6 @@ class Method(parent: PackageItem, ast: ASTMethodDeclaration)
                      ast.header.get.params)
     case _ => throw new RuntimeException(s"Unexpected method ast node $ast")
   }
-
-  override def globalLookup(name: Name): Option[Env] = {
-    parent.globalLookup(name)
-  }
-
-  override def lookup(name: Name): Option[Env] = {
-    None
-  }
 }
 
 class Constructor(parent: PackageItem, ast: ConstructorDeclaration)
@@ -72,12 +64,4 @@ class Constructor(parent: PackageItem, ast: ConstructorDeclaration)
     ast.identifier,
     ast.constructorDeclarator.params
   )
-
-  override def globalLookup(name: Name): Option[Env] = {
-    parent.globalLookup(name)
-  }
-
-  override def lookup(name: Name): Option[Env] = {
-    None
-  }
 }

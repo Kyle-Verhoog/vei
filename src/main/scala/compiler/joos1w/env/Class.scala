@@ -14,8 +14,8 @@ class Class(parent: Package, ast: ClassDeclaration)
     parent.globalLookup(name)
   }
 
-  override def lookup(qualifiedName: Name): Option[Env] = {
-    parent.lookup(qualifiedName)
+  override def lookup(name: Name): Option[Env] = {
+    parent.lookup(name)
   }
 
   override def toString: String = {

@@ -25,6 +25,14 @@ class NameTest extends FunSuite {
     assert(PackageName("A") != PackageName("B"))
     assert(PackageName("A.C") != PackageName("B.A"))
     assert(ClassName(PackageName(""), "A.C") != PackageName("A.C"))
+    assert(new QualifiedName("A.B") == new PackageName("A.B"))
+    assert(new QualifiedName("A.B.C") == ClassName(PackageName("A.B"), "C"))
+
+    assert(
+      Map(ClassName(PackageName("A"), "B") -> 0, PackageName("A") -> 1)
+        contains
+          new QualifiedName("A.B")
+    )
   }
 
   test("Qualified parents") {
@@ -122,6 +130,14 @@ class NameTest extends FunSuite {
     assert(
       new QualifiedName("A.B").toPackageName ==
         PackageName("A.B"))
+  }
+
+  test("PackageItemName *") {
+    // val t = new QualifiedName("B.D.*").toPackageItemName
+    assert(
+      new QualifiedName("B.D.*").toPackageItemName.packageName ==
+        PackageName("B.D"))
+    assert(new QualifiedName("B.D.*").toPackageItemName.itemName == "*")
   }
 
   test("Hash usage") {
@@ -297,12 +313,25 @@ class RootEnvTest extends FunSuite {
   * Test methods, fields
   */
 class ClassEnvTests extends FunSuite {
-  val ABC = TestUtils.ASTForSrc(s"""
+  val BH = TestUtils.ASTForSrc(s"""
+       |package B;
+       |public class H {}
+       """.stripMargin)
+  val CDE = TestUtils.ASTForSrc(s"""
+       |package B.D;
+       |public class E {}
+       """.stripMargin)
+  val CDF = TestUtils.ASTForSrc(s"""
+       |package B.D;
+       |public class F {}
+       """.stripMargin)
+  val ABD = TestUtils.ASTForSrc(s"""
        |package A.B;
-       |public class C {
+       |
+       |public class D {
        |  public static int x = 10;
-       |  //public C(int x, int y) {}
-       |  public int method1(int arg1, string arg2) {
+       |  public int method1(int arg1, boolean arg2) {
+       |    D d = null;
        |    A.B.C abc = new A.B.C();
        |    int x;
        |    int y;
@@ -326,7 +355,51 @@ class ClassEnvTests extends FunSuite {
        |    }
        |    int z;
        |  }
-       |  public int method2(A.B.C arg1, string arg2) {
+       |}
+       """.stripMargin)
+  val Z = TestUtils.ASTForSrc(s"""
+       |public class Z {}
+       |""".stripMargin)
+  val ABC = TestUtils.ASTForSrc(s"""
+       |package A.B;
+       |import B.D.*;
+       |import B.H;
+       |import Z;
+       |
+       |public class C {
+       |  public static int staticVar = 10;
+       |  public int method1(int arg1, boolean arg2) {
+       |    staticVar = 10;
+       |    A.B.C abc = new A.B.C();  // self reference should be resolved to A.B.C
+       |    C abc = new A.B.C();  // self reference should be resolved to A.B.C
+       |    D d = null; // from package, should be linked to A.B.D
+       |    E e = null; // from import-on-demand should be linked to B.D.E
+       |    F f = null; // from import-on-demand should be linked to B.D.F
+       |    H h = null; // from import, should be linked to B.H;
+       |    Z z = null; // from import, should be linked to Z (empty pkg)
+       |    int x;
+       |    int y;
+       |    for (int i = 0; i < 10; i = i + 1) {
+       |      int z;
+       |    }
+       |    for (x = 0; x < 10; x = x + 1) {
+       |      int z;
+       |    }
+       |    for (; i < 10; i = i + 1) {
+       |      int z;
+       |    }
+       |    {
+       |      {
+       |        {
+       |          int z;
+       |        }
+       |        int z;
+       |      }
+       |      int z;
+       |    }
+       |    int z;
+       |  }
+       |  public int method2(A.B.C arg1, boolean arg2) {
        |    int x;
        |    int y = 4;
        |    if (x < 10)
@@ -351,7 +424,7 @@ class ClassEnvTests extends FunSuite {
        """.stripMargin)
   test("All methods") {
     println(ABC.toStrTree)
-    val root = new Root().populateNamespace(List(ABC))
+    val root = new Root().populateNamespace(List(BH, CDE, CDF, ABC, ABD, Z))
     println("\n\n\n\n")
     println(root.toStrTree)
   }

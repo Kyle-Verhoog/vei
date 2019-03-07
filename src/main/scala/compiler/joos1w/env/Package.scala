@@ -2,13 +2,24 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast._
 
-object Package {}
-
 class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     extends Env {
   val name: PackageName = ast match {
-    case Left(pkgAST)    => new PackageName(pkgAST.name)
-    case Right(emptyAST) => PackageName.ROOT
+    case Left(pkgAST) => new PackageName(pkgAST.name)
+    case Right(_)     => PackageName.ROOT
+  }
+
+  // Gather the imports as a list of qualified names
+  // TODO: verify imports
+  val imports: List[PackageItemName] = ast match {
+    case Left(pkgAST) =>
+      pkgAST.rightSibling match {
+        case Some(importList: ImportDeclarationsList) =>
+          importList.getImports.map(imp =>
+            new QualifiedName(imp.name).toPackageItemName)
+        case _ => Nil
+      }
+    case Right(_) => Nil
   }
 
   type Namespace = Map[Name, PackageItem]
@@ -21,6 +32,10 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
 
   def hasClass(name: ClassName): Boolean = {
     namespace.contains(name)
+  }
+
+  def importLookup(name: Name): Option[QualifiedName] = {
+    None
   }
 
   def populateNamespace: Package = {
@@ -112,10 +127,49 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     parent.globalLookup(name)
   }
 
+  // TODO can cache look-ups, as easy as add to namespace??
+  def importsLookup(name: Name): Option[Env] = {
+    var item: Option[Env] = None
+    imports.foreach(imp => {
+      // if the import is on-demand then ask the parent for the name
+      // with the package prefix
+      if (imp.itemName == "*") {
+        parent.lookup(imp.packageName + name) match {
+          case Some(env: Env) =>
+            if (item.isDefined) {
+              throw new RuntimeException(
+                s"Ambiguous import $item for name $name")
+            }
+            item = Some(env)
+          case _ =>
+        }
+      }
+      // else the name is just the PackageItemName, look it up to get the env
+      else if (imp.itemName == name.name) {
+        parent.lookup(imp) match {
+          case Some(env: Env) =>
+            if (item.isDefined) {
+              throw new RuntimeException(
+                s"Ambiguous import $item for name $name")
+            }
+            item = Some(env)
+          case _ =>
+        }
+      }
+    })
+    item
+  }
+
   override def lookup(name: Name): Option[Env] = {
-    getItem(name) match {
-      case Some(item) => Some(item)
-      case None       => parent.lookup(name.toQualifiedName)
-    }
+    // 1. search the local package namespace for the name; if that fails
+    getItem(name) orElse
+      // 2. try the searching the package namespace (via the parent) by qualifying the name
+      //    with the package name; if that fails
+      parent.lookup(this.name + name) orElse
+      // 3. look through the single-type imports for the name; if that fails
+      // 4. look through the import-on-demand imports for the name; if that fails
+      importsLookup(name) orElse
+      // 5. let the parent deal with it... maybe it's in the root package
+      parent.lookup(name)
   }
 }
