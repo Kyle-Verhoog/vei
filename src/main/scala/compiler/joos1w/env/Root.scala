@@ -36,6 +36,7 @@ class Root() extends Env {
   }
 
   def populateNamespace(asts: List[AST]): Root = {
+    // Populate all packages with their classes + interfaces
     asts.foreach(ast => {
       val pkg = packageFromAST(Some(ast)).populateNamespace
       addItem(pkg.name, pkg)
@@ -43,6 +44,17 @@ class Root() extends Env {
         addItem(item.name, item)
       })
     })
+
+    // Once the packages, classes and interfaces are defined,
+    // populate all classes with their fields, constructors, methods
+    namespace.values.foreach({
+      case pkg: Package =>
+        pkg.getAllItems.foreach(item => {
+          item.populateNamespace()
+        })
+      case _ =>
+    })
+
     this
   }
 

@@ -17,8 +17,4 @@ class Interface(parent: Package, ast: InterfaceDeclaration)
   override def toString: String = {
     s"Interface($name)"
   }
-
-  override def toStrTree: String = {
-    toString
-  }
 }

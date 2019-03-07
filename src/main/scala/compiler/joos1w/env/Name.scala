@@ -43,7 +43,7 @@ class Name(val name: String) {
 
   override def toString: String = {
     val shortClass = getClass.toString.split("\\.").last
-    s"$shortClass($name)"
+    s"""$shortClass("$name")"""
   }
 
   def equals(other: ClassTag[Name]): Boolean = {
@@ -212,10 +212,11 @@ class MethodName(mods: List[String],
     args.map((c: (String, String)) => new VariableName(c._1, c._2))
   }
 
+  // TODO
   override def equals(that: Any): Boolean = {
     that match {
-      case that: InterfaceName => that.qualifiedName == qualifiedName
-      case _                   => false
+      case that: MethodName => that.name == name
+      case _                => false
     }
   }
 }
@@ -223,11 +224,17 @@ class MethodName(mods: List[String],
 // TODO[kyle] parent constructor arg
 class FieldName(pkgItem: PackageItemName,
                 mods: List[String],
-                stype: String,
+                strtype: String,
                 name: String)
-    extends ClassItemName(s"") {
+    extends ClassItemName(s"$name") {
+  val qtype = new QualifiedName(strtype)
+
   override def equals(that: Any): Boolean = {
     false
+  }
+
+  override def toString: String = {
+    s"${mods.mkString(" ")} $qtype $toQualifiedName"
   }
 }
 

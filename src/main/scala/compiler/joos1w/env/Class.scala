@@ -19,10 +19,14 @@ class Class(parent: Package, ast: ClassDeclaration)
   }
 
   override def toString: String = {
-    s"Class($name)"
-  }
-
-  override def toStrTree: String = {
-    toString
+    val (nmeths, nfields, ncons) =
+      namespace.keys.foldLeft((0, 0, 0))({
+        case ((nmeths, nfields, ncons), name) =>
+          name match {
+            case _: MethodName => (nmeths + 1, nfields, ncons)
+            case _: FieldName  => (nmeths, nfields + 1, ncons)
+          }
+      })
+    s"Class(name: $name, nmethods:$nmeths, nfields:$nfields)"
   }
 }

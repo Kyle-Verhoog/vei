@@ -295,15 +295,16 @@ class RootEnvTest extends FunSuite {
   */
 class ClassEnvTests extends FunSuite {
   val ABC = TestUtils.ASTForSrc(s"""
-                                        |package A.B;
-                                        |public class C {
-                                        |  public static int x = 10;
-                                        |  public int method1(int arg1, string arg2) {
-                                        |  }
-                                        |  public int method2(A.B.C arg1, string arg2) {
-                                        |  }
-                                        |}
+                                   |package A.B;
+                                   |public class C {
+                                   |  public static int x = 10;
+                                   |  public int method1(int arg1, string arg2) {
+                                   |  }
+                                   |  public int method2(A.B.C arg1, string arg2) {
+                                   |  }
+                                   |}
        """.stripMargin)
   println(ABC.toStrTree)
   val root = new Root().populateNamespace(List(ABC))
+  println(root.toStrTree)
 }
