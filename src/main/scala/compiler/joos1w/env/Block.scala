@@ -14,6 +14,10 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
   val name: Option[VariableName] = ast match {
     case formalParameter: FormalParameter =>
       Some(new VariableName(formalParameter.ttype, formalParameter.name))
+    case localVariableDeclaration: LocalVariableDeclaration =>
+      Some(
+        new VariableName(localVariableDeclaration.ttype,
+                         localVariableDeclaration.name))
     case _ => None
   }
 
@@ -57,9 +61,14 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
       case Some(list: ASTList) =>
         if (list.length > 0) {
           list.fieldName match {
-            case "formal_parameter_list" =>
+            case "block_statements" =>
+              val block = new Block(parentEnv)
+              parentEnv.addBlock(block)
+              fromAST(list.leftChild, block)
+              fromAST(list.rightSibling, parentEnv)
+            case _ =>
               fromAST(list.leftChild, parentEnv)
-            case _ => parentEnv
+              fromAST(list.rightSibling, parentEnv)
           }
         } else {
           fromAST(list.rightSibling, parentEnv)
@@ -70,30 +79,28 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
         fromAST(formalParameter.rightSibling, block)
       case Some(methodDeclarator: MethodDeclarator) =>
         fromAST(methodDeclarator.leftChild, parentEnv)
+      case Some(methodBody: MethodBody) =>
+        fromAST(methodBody.leftChild, parentEnv)
+      case Some(localVariableDeclaration: LocalVariableDeclaration) =>
+        val block = new Block(parentEnv, localVariableDeclaration)
+        parentEnv.addBlock(block)
+        fromAST(localVariableDeclaration.rightSibling, block)
+      case Some(forStatement: ForStatement) =>
+        if (forStatement.hasBody) {
+          val block = if (forStatement.hasDeclaration) {
+            new Block(parentEnv, forStatement.initialization)
+          } else {
+            new Block(parentEnv, forStatement.initialization)
+          }
+          parentEnv.addBlock(block)
+          fromAST(Some(forStatement.body), block)
+        }
+        fromAST(forStatement.rightSibling, parentEnv)
       case None => parentEnv
-      case _    => parentEnv
-      // case Some(ast: AST) =>
-      //   parentEnv
-      //     .addBlock(fromAST(ast.leftChild, parentEnv))
-      //     .addBlock(fromAST(ast.rightSibling, parentEnv))
+      case Some(n: AST) =>
+        fromAST(n.leftChild, parentEnv)
+        fromAST(n.rightSibling, parentEnv)
     }
-    // val items: List[PackageItem] = AST.visit(
-    //   (ast: Option[AST],
-    //    acrossRec: List[PackageItem] => List[PackageItem],
-    //    downRec: List[PackageItem] => List[PackageItem]) => {
-    //     ast match {
-    //       case Some(clsAST: ClassDeclaration) =>
-    //         val cls = new Class(this, clsAST)
-    //         List(cls)
-    //       case Some(intAST: InterfaceDeclaration) =>
-    //         val int = new Interface(this, intAST)
-    //         List(int)
-    //       case _ => downRec(Nil) ++ acrossRec(Nil)
-    //     }
-    //   },
-    //   ast.fold(a => Some(a), a => Some(a)),
-    //   List()
-    // )
   }
 
   // Add an AST to this block

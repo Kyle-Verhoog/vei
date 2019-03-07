@@ -306,6 +306,21 @@ class ClassEnvTests extends FunSuite {
        |    for (int i = 0; i < 10; i = i + 1) {
        |      int z;
        |    }
+       |    for (x = 0; x < 10; x = x + 1) {
+       |      int z;
+       |    }
+       |    for (; i < 10; i = i + 1) {
+       |      int z;
+       |    }
+       |    {
+       |      {
+       |        {
+       |          int z;
+       |        }
+       |        int z;
+       |      }
+       |      int z;
+       |    }
        |    int z;
        |  }
        |  /*

@@ -12,7 +12,7 @@ abstract class GeneralMethod(parent: PackageItem, ast: ASTMethodDeclaration)
   def populateNamespace(ast: ASTMethodDeclaration = ast): GeneralMethod = {
     // add parameters to method block
     var block = namespace + ast.header.get.methodDeclarator
-    println(s"block: $block")
+    block = block + ast.body
     this
   }
 
