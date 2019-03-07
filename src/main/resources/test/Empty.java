@@ -21,7 +21,6 @@ public class Empty {
         //int k = l;
 
         if (i < 0) {
-            int j = j;
             //int m = l;
             int m = i;
         } else if (1) {
