@@ -40,7 +40,7 @@ class Root() extends Env {
     asts.foreach(ast => {
       val pkg = packageFromAST(Some(ast)).populateNamespace
       addItem(pkg.name, pkg)
-      pkg.getAllItems.foreach(item => {
+      pkg.allItems.foreach(item => {
         addItem(item.name, item)
       })
     })
@@ -49,8 +49,24 @@ class Root() extends Env {
     // populate all classes with their fields, constructors, methods
     namespace.values.foreach({
       case pkg: Package =>
-        pkg.getAllItems.foreach(item => {
+        pkg.allItems.foreach(item => {
           item.populateNamespace()
+        })
+      case _ =>
+    })
+
+    // Lastly, now that packages are populated with their classes
+    // and interfaces; and classes, interfaces populated with their
+    // methods and fields, we have all we need to populate variable
+    // and block environments
+    namespace.values.foreach({
+      case pkg: Package =>
+        pkg.allItems.foreach(pkgItem => {
+          pkgItem.allItems.foreach({
+            case clsItem: Method =>
+              clsItem.populateNamespace()
+            case _ =>
+          })
         })
       case _ =>
     })
@@ -114,7 +130,7 @@ class Root() extends Env {
     }
   }
 
-  def getAllClasses: List[Env] = {
+  def allClasses: List[Env] = {
     namespace
       .filter {
         case (_, item) =>

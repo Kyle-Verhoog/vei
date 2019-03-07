@@ -143,42 +143,42 @@ class NameTest extends FunSuite {
   */
 class RootEnvTest extends FunSuite {
   val ABCA_CLS = TestUtils.ASTForSrc(s"""
-                                    |package A.B.C;
-                                    |public class A {}
+       |package A.B.C;
+       |public class A {}
        """.stripMargin)
   val ABCA_INT = TestUtils.ASTForSrc(s"""
-                                        |package A.B.C;
-                                        |interface A {}
+       |package A.B.C;
+       |interface A {}
        """.stripMargin)
   val BC_CLS = TestUtils.ASTForSrc(s"""
-                                          |package B;
-                                          |public class C {}
+       |package B;
+       |public class C {}
        """.stripMargin)
   val BD_CLS = TestUtils.ASTForSrc(s"""
-                                      |package B;
-                                      |public class D {}
+       |package B;
+       |public class D {}
        """.stripMargin)
   val ABCB_CLS = TestUtils.ASTForSrc(s"""
-                                          |package A.B.C;
-                                          |public class B {}
+       |package A.B.C;
+       |public class B {}
        """.stripMargin)
   val A_CLS = TestUtils.ASTForSrc(s"""
-                                       |public class A {}
+       |public class A {}
        """.stripMargin)
   val A_INT = TestUtils.ASTForSrc(s"""
-                                     |interface A {}
+       |interface A {}
        """.stripMargin)
   val B_CLS = TestUtils.ASTForSrc(s"""
-                                       |public class B {}
+       |public class B {}
        """.stripMargin)
   val B_INT = TestUtils.ASTForSrc(s"""
-                                     |interface B {}
+       |interface B {}
        """.stripMargin)
   val C_CLS = TestUtils.ASTForSrc(s"""
-                                     |public class C {}
+       |public class C {}
        """.stripMargin)
   val D_INT = TestUtils.ASTForSrc(s"""
-                                     |interface D {}
+       |interface D {}
        """.stripMargin)
 
   test("""
@@ -295,17 +295,47 @@ class RootEnvTest extends FunSuite {
   */
 class ClassEnvTests extends FunSuite {
   val ABC = TestUtils.ASTForSrc(s"""
-                                   |package A.B;
-                                   |public class C {
-                                   |  public static int x = 10;
-                                   |  public C(int x, int y) {}
-                                   |  public int method1(int arg1, string arg2) {
-                                   |  }
-                                   |  public int method2(A.B.C arg1, string arg2) {
-                                   |  }
-                                   |}
+       |package A.B;
+       |public class C {
+       |  public static int x = 10;
+       |  //public C(int x, int y) {}
+       |  public int method1(int arg1, string arg2) {
+       |    A.B.C abc = new A.B.C();
+       |    int x;
+       |    int y;
+       |    for (int i = 0; i < 10; i = i + 1) {
+       |      int z;
+       |    }
+       |    int z;
+       |  }
+       |  /*
+       |  public int method2(A.B.C arg1, string arg2) {
+       |    int x;
+       |    int y = 4;
+       |    if (x < 10)
+       |      x = 5;
+       |    else
+       |      y = 3;
+       |
+       |    if (x) {
+       |      if (x+x) {
+       |        int z = 1;
+       |      }
+       |      int z = 1;
+       |    }
+       |    else if (y) {
+       |      int z = 2;
+       |    }
+       |    else {
+       |      int z = 3;
+       |    }
+       |  }*/
+       |}
        """.stripMargin)
-  println(ABC.toStrTree)
-  val root = new Root().populateNamespace(List(ABC))
-  println(root.toStrTree)
+  test("All methods") {
+    println(ABC.toStrTree)
+    val root = new Root().populateNamespace(List(ABC))
+    println("\n\n\n\n")
+    println(root.toStrTree)
+  }
 }

@@ -1,6 +1,5 @@
 package compiler.joos1w.env
 
-import scala.Boolean
 import scala.reflect.ClassTag
 
 final case class NameError(
@@ -221,7 +220,20 @@ class MethodName(mods: List[String],
   }
 }
 
-// TODO[kyle] parent constructor arg
+class ConstructorName(mods: List[String],
+                      returnType: String,
+                      name: String,
+                      args: List[(String, String)])
+    extends MethodName(mods, returnType, name, args) {
+  // TODO
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: MethodName => that.name == name
+      case _                => false
+    }
+  }
+}
+
 class FieldName(pkgItem: PackageItemName,
                 mods: List[String],
                 strtype: String,

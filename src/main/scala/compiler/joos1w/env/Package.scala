@@ -64,7 +64,7 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     }
   }
 
-  def getAllItems: List[PackageItem] = {
+  def allItems: List[PackageItem] = {
     namespace.foldLeft(Nil: List[PackageItem]) {
       case (acc, (_, cls)) =>
         cls :: acc

@@ -1,6 +1,6 @@
 package compiler.joos1w.ast
 
-class ASTList(fieldName: String = "") extends AST {
+class ASTList(val fieldName: String = "") extends AST {
   def length: Int = {
     children.length
   }

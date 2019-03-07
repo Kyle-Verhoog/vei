@@ -26,6 +26,13 @@ abstract class PackageItem(var parent: Package, ast: AST) extends Env {
     this
   }
 
+  def allItems: List[ClassItem] = {
+    namespace.foldLeft(Nil: List[ClassItem]) {
+      case (acc, (_, cls)) =>
+        cls :: acc
+    }
+  }
+
   def populateNamespace(ast: AST = ast): PackageItem = {
     val items: List[ClassItem] = AST.visit(
       (ast: Option[AST],

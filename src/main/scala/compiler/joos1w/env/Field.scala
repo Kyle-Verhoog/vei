@@ -14,4 +14,8 @@ class Field(parent: PackageItem, ast: FieldDeclaration)
   override def lookup(name: Name): Option[Env] = {
     None
   }
+
+  override def toStrTree: String = {
+    s"Field(name: $name)"
+  }
 }

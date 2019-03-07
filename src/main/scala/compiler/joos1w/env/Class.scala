@@ -23,8 +23,9 @@ class Class(parent: Package, ast: ClassDeclaration)
       namespace.keys.foldLeft((0, 0, 0))({
         case ((nmeths, nfields, ncons), name) =>
           name match {
-            case _: MethodName => (nmeths + 1, nfields, ncons)
-            case _: FieldName  => (nmeths, nfields + 1, ncons)
+            case _: MethodName      => (nmeths + 1, nfields, ncons)
+            case _: FieldName       => (nmeths, nfields + 1, ncons)
+            case _: ConstructorName => (nmeths, nfields + 1, ncons)
           }
       })
     s"Class(name: $name, nmethods:$nmeths, nfields:$nfields)"
