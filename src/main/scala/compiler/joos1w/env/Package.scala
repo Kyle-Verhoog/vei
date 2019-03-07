@@ -75,6 +75,12 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     if (other.name != name) {
       throw new RuntimeException()
     }
+
+    other.namespace.foreach({
+      case (name: Name, item: PackageItem) =>
+        item.parent = this // update parent reference
+        namespace = namespace + (name -> item)
+    })
     namespace = namespace ++ other.namespace
     this
   }

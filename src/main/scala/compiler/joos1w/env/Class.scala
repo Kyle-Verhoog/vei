@@ -2,7 +2,7 @@ package compiler.joos1w.env
 
 import compiler.joos1w.ast.ClassDeclaration
 
-class Class(override val parent: Package, ast: ClassDeclaration)
+class Class(parent: Package, ast: ClassDeclaration)
     extends PackageItem(parent, ast) {
   val name: ClassName = new ClassName(parent.name, ast.identifier)
 

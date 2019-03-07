@@ -60,6 +60,16 @@ class MethodHeader(val modifiers: List[String]) extends AST {
     }
   }
 
+  def params: List[(String, String)] = {
+    var ps: List[(String, String)] = List()
+    parameters.children.foreach((c: AST) =>
+      c match {
+        case c: FormalParameter => ps = (c.ttype, c.name) :: ps
+        case _                  => throw new RuntimeException("should not happen")
+    })
+    ps
+  }
+
   def parameters: ASTList = {
     methodDeclarator.parameters
   }

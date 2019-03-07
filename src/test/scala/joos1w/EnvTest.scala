@@ -138,7 +138,10 @@ class NameTest extends FunSuite {
   }
 }
 
-class EnvTest extends FunSuite {
+/**
+  * Test package and root environments, global namespace
+  */
+class RootEnvTest extends FunSuite {
   val ABCA_CLS = TestUtils.ASTForSrc(s"""
                                     |package A.B.C;
                                     |public class A {}
@@ -248,4 +251,59 @@ class EnvTest extends FunSuite {
     assert(pkgABC.lookup(Name("B")).isDefined)
     assert(pkgABC.lookup(Name("C")).isEmpty)
   }
+
+  test("""
+         | Resolving empty package class/interface name usage within package
+       """.stripMargin) {
+    val root = new Root().populateNamespace(List(ABCB_CLS, ABCA_INT, C_CLS))
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    val pkgABC =
+      root
+        .getItem(PackageName("A.B.C"))
+        .asInstanceOf[Some[Package]]
+        .get
+    assert(pkgABC.lookup(InterfaceName(PackageName("A.B.C"), "A")).isDefined)
+    assert(pkgABC.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(pkgABC.lookup(Name("A")).isDefined)
+    assert(pkgABC.lookup(Name("B")).isDefined)
+    assert(pkgABC.lookup(Name("C")).isDefined)
+  }
+
+  test("""
+         | Package scoping
+         | - Class defined in a parent package should _not_ be visible
+       """.stripMargin) {
+    val root = new Root().populateNamespace(List(ABCB_CLS, ABCA_INT, C_CLS))
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(root.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    val pkgABC =
+      root
+        .getItem(PackageName("A.B.C"))
+        .asInstanceOf[Some[Package]]
+        .get
+    assert(pkgABC.lookup(InterfaceName(PackageName("A.B.C"), "A")).isDefined)
+    assert(pkgABC.lookup(ClassName(PackageName("A.B.C"), "B")).isDefined)
+    assert(pkgABC.lookup(Name("A")).isDefined)
+    assert(pkgABC.lookup(Name("B")).isDefined)
+    assert(pkgABC.lookup(Name("C")).isDefined)
+  }
+}
+
+/**
+  * Test methods, fields
+  */
+class ClassEnvTests extends FunSuite {
+  val ABC = TestUtils.ASTForSrc(s"""
+                                        |package A.B;
+                                        |public class C {
+                                        |  public static int x = 10;
+                                        |  public int method1(int arg1, string arg2) {
+                                        |  }
+                                        |  public int method2(A.B.C arg1, string arg2) {
+                                        |  }
+                                        |}
+       """.stripMargin)
+  println(ABC.toStrTree)
+  val root = new Root().populateNamespace(List(ABC))
 }

@@ -1,5 +1,6 @@
 package compiler.joos1w.env
 
+import scala.Boolean
 import scala.reflect.ClassTag
 
 final case class NameError(
@@ -167,9 +168,8 @@ object ClassName {
 }
 
 class ClassName(pkgName: PackageName, clsName: String)
-    extends QualifiedName(
-      s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
-      else ""}$clsName") {
+    extends PackageItemName(pkgName, clsName) {
+
   val className: Name = Name(clsName)
 
   override def equals(that: Any): Boolean = {
@@ -187,15 +187,56 @@ object InterfaceName {
 }
 
 class InterfaceName(pkgName: PackageName, intName: String)
-    extends QualifiedName(
-      s"${pkgName.qualifiedName}${if (pkgName.qualifiedName.nonEmpty) "."
-      else ""}$intName") {
+    extends PackageItemName(pkgName, intName) {
   val interfaceName: Name = Name(intName)
 
   override def equals(that: Any): Boolean = {
     that match {
       case that: InterfaceName => that.qualifiedName == qualifiedName
       case _                   => false
+    }
+  }
+}
+
+class ClassItemName(name: String) extends Name(name) {}
+
+class MethodName(mods: List[String],
+                 returnType: String,
+                 name: String,
+                 args: List[(String, String)])
+    extends ClassItemName(name) {
+  lazy val methodName: Name = Name(name)
+  lazy val argNames: List[VariableName] = mkArgNames
+
+  def mkArgNames: List[VariableName] = {
+    args.map((c: (String, String)) => new VariableName(c._1, c._2))
+  }
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: InterfaceName => that.qualifiedName == qualifiedName
+      case _                   => false
+    }
+  }
+}
+
+// TODO[kyle] parent constructor arg
+class FieldName(pkgItem: PackageItemName,
+                mods: List[String],
+                stype: String,
+                name: String)
+    extends ClassItemName(s"") {
+  override def equals(that: Any): Boolean = {
+    false
+  }
+}
+
+class VariableName(stype: String, name: String) extends Name(name) {
+  val typeName = new QualifiedName(stype)
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: VariableName => that.name == name
     }
   }
 }

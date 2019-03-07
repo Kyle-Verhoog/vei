@@ -15,6 +15,8 @@ abstract class ASTMethodDeclaration extends AST {
     }
   }
 
+  // TODO: this return type can just be made MethodHeader since we
+  //       throw an exception if it isn't present.
   def header: Option[MethodHeader] = {
     this.getDescendant(1, Some(0)) match {
       case Some(header: MethodHeader) => Some(header)
@@ -49,7 +51,7 @@ abstract class ASTMethodDeclaration extends AST {
       case Some(n: MethodDeclarator) => n.identifier
       case e =>
         throw MalformedASTException(
-          s"Method does not have MethodDeclarator child (got $e."
+          s"Method does not have MethodDeclarator child (got $e)."
         )
     }
   }

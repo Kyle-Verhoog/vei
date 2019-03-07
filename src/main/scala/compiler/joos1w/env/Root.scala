@@ -69,10 +69,6 @@ class Root() extends Env {
     pkgs.head
   }
 
-  // def hasItem(name: QualifiedName): Boolean = {
-  //   namespace contains name
-  // }
-
   def hasPackage(name: QualifiedName): Boolean = {
     namespace contains name.toPackageName
   }
