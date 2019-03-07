@@ -52,6 +52,7 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
     name match {
       case clsName: ClassName     => namespace.get(clsName)
       case intName: InterfaceName => namespace.get(intName)
+      case pkgName: PackageName   => namespace.get(pkgName)
       case name: Name =>
         val clsName = ClassName(this.name, name.name)
         val intName = InterfaceName(this.name, name.name)
@@ -73,7 +74,9 @@ class Package(val parent: Root, val ast: Either[PackageDeclaration, Empty])
 
   def +(other: Package): Package = {
     if (other.name != name) {
-      throw new RuntimeException()
+      throw new RuntimeException(
+        s"${other.name} $name ${other.name == name}  ${other.name.qualifiedName} ${other.name} ${name.toString} ${other.name.toString} ${other.name
+          .hashCode()} ${name.hashCode()}")
     }
 
     other.namespace.foreach({

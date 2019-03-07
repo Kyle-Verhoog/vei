@@ -1,5 +1,6 @@
 package compiler.joos1w
 
+import env.Root
 import ast.{AST, Weeder}
 
 object Joos1WCompiler {
@@ -29,6 +30,7 @@ object Joos1WCompiler {
     })
     println("Building environments...")
     Joos1WEnvironment.buildEnvironment(weededAsts)
+    new Root().populateNamespace(weededAsts)
     println("done")
   }
 }

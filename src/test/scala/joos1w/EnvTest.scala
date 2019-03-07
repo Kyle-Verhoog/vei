@@ -135,6 +135,9 @@ class NameTest extends FunSuite {
     assert(m contains Name("hi"))
     assert(m(Name("hi")) == 0)
     assert(m(PackageName("hi")) == 1)
+
+    var mm = Map(new PackageName("") -> 3)
+    assert(!(mm contains PackageName("java.lang")))
   }
 }
 

@@ -158,8 +158,11 @@ class Root() extends Env {
         namespace = namespace + (name -> mergedPkg)
       case None => // new package
         namespace = namespace + (name -> pkg)
+        // insert empty packages for parents
         pkg.name.parentPackageNames.foreach(name => {
-          addPackage(name, new Package(this, Right(new Empty)))
+          val placeholderPkg = new PackageDeclaration()
+          placeholderPkg.addChildToEnd(new compiler.joos1w.ast.Name(name.name))
+          addPackage(name, new Package(this, Left(placeholderPkg)))
         })
       case _ => throw new RuntimeException("should never happen")
     }

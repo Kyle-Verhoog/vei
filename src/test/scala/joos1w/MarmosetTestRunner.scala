@@ -52,7 +52,8 @@ class MarmosetTestRunner extends FunSuite {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
-        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(0))
+        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(
+          0))
       println(files.mkString(" "))
 
       val filePaths = files.map(f => "src/main/resources/" + f)
@@ -104,7 +105,8 @@ class MarmosetTestRunner extends FunSuite {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
-        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(0))
+        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(
+          0))
       println(files.mkString(" "))
 
       val filePaths = files.map(f => "src/main/resources/" + f)

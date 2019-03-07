@@ -56,7 +56,7 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
   }
 
   def fromAST(ast: Option[AST], parentEnv: Block): Block = {
-    println(ast, parentEnv)
+    // println(ast, parentEnv)
     ast match {
       case Some(list: ASTList) =>
         if (list.length > 0) {
