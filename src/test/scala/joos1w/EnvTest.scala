@@ -326,7 +326,6 @@ class ClassEnvTests extends FunSuite {
        |    }
        |    int z;
        |  }
-       |  /*
        |  public int method2(A.B.C arg1, string arg2) {
        |    int x;
        |    int y = 4;
@@ -347,7 +346,7 @@ class ClassEnvTests extends FunSuite {
        |    else {
        |      int z = 3;
        |    }
-       |  }*/
+       |  }
        |}
        """.stripMargin)
   test("All methods") {

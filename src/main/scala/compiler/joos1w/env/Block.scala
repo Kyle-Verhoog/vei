@@ -66,6 +66,9 @@ class Block(var parent: Env, val ast: AST = new Empty) extends Env {
               parentEnv.addBlock(block)
               fromAST(list.leftChild, block)
               fromAST(list.rightSibling, parentEnv)
+            case "formal_parameter_list" =>
+              // only want to add next parameter
+              fromAST(list.leftChild, parentEnv)
             case _ =>
               fromAST(list.leftChild, parentEnv)
               fromAST(list.rightSibling, parentEnv)
