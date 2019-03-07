@@ -63,7 +63,6 @@ package object environment {
         throw new RuntimeException("should not recurse on package decl")
       // variable declaration
       case ast: LocalVariableDeclaration =>
-        println("inserting variable" + ast)
         // we insert variables into their own environment, instead of parents
         // so we can tell if a variable is used before being declared
         environment = new VariableEnvironment(ast, parentEnvironment)
@@ -76,7 +75,6 @@ package object environment {
           ast.name,
           environment.asInstanceOf[VariableEnvironment])
       case ast: FormalParameter =>
-        println("inserting formal " + ast)
         environment = new VariableEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertLocalVariable(
           ast.name,
@@ -105,7 +103,9 @@ package object environment {
           environment.asInstanceOf[MethodEnvironment])
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
-      // TODO NOTE we do not add consturctor methods to the parent env. they arent callable
+        parentEnvironment.get.insertMethod(
+          ast.signature,
+          environment.asInstanceOf[MethodEnvironment])
       // other blocks (for, while, etc...)
       case ast: ForStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
@@ -157,6 +157,7 @@ package object environment {
     env match {
       case env: RootEnvironment    => // do nothing for root env AST
       case env: PackageEnvironment => // do nothing for package env AST
+        //env.classTable.keys
       // TODO
       /*
            we need to traverse down only some of the children nodes (eg. the bodies for the
@@ -311,7 +312,6 @@ package object environment {
       case ast: FieldAccess => // TODO
       // check methods are defined
       case ast: ClassInstanceCreation =>
-        println("looking up created instance of type " + ast.name)
         if (env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)

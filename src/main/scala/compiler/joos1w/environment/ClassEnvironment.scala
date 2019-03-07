@@ -337,14 +337,14 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   def verifyImplementsAreInterfaces(): Unit = {
     ast match {
       case klass: ClassDeclaration =>
-        val interfaces = klass.getInterfaces.map(interface => serarchForClass(interface).get)
+        val interfaces =
+          klass.getInterfaces.map(interface => serarchForClass(interface).get)
         if (interfaces.distinct.length != interfaces.length) {
           throw EnvironmentError("Duplicate interfaces implemented")
         }
 
         interfaces.foreach(interface => {
-          if (!interface
-                .ast
+          if (!interface.ast
                 .isInstanceOf[InterfaceDeclaration]) {
             throw EnvironmentError(
               "Using class " + interface + " as interface!")
@@ -352,6 +352,18 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
         })
       case _ =>
     }
+  }
+
+  def verifyDontExtendFinalClass(): Unit = {
+    superSetClasses.foreach(klass => {
+      klass.ast match {
+        case k: ClassDeclaration =>
+          if (k.modifiers.contains("final")) {
+            throw EnvironmentError("Cannot extend final class!")
+          }
+        case _ =>
+      }
+    })
   }
 
   override def searchForSimpleClass(name: String): Option[ClassEnvironment] = {

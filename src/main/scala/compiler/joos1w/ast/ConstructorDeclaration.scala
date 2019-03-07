@@ -34,11 +34,19 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
     mods
   }
 
+  /*
+    ------ NOTE ------
+    HACK: Constructors have a special signature where the first argument type
+    is the type of the class itself! yes this has bad side effects if someone
+    makes a method with the same signature... but relaly this wont happen :)
+
+   */
   def signature: (String, Option[List[String]]) = {
     if (header.isDefined) return header.get.signature
     (identifier.split('.').last,
-     Some(constructorDeclarator.parameters.children.map(child =>
-       child.asInstanceOf[FormalParameter].ttype.split('.').last)))
+     Some(
+       List(identifier) ++ constructorDeclarator.parameters.children.map(
+         child => child.asInstanceOf[FormalParameter].ttype.split('.').last)))
   }
 
   def constructorDeclarator: ConstructorDeclarator = {

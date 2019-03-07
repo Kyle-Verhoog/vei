@@ -26,7 +26,6 @@ class GenericEnvironment(val ast: AST,
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
-    println("looking up for " + name)
 
     if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
   }
@@ -52,6 +51,7 @@ class GenericEnvironment(val ast: AST,
     if (classTable.contains(name))
       throw EnvironmentError(
         "Class: " + name + " already declared in current scope")
+
     classTable += name -> env
   }
 
@@ -122,6 +122,9 @@ class GenericEnvironment(val ast: AST,
 
   def serarchForClass(name: String): Option[ClassEnvironment] = {
     if (name.contains('.')) {
+      if (serarchForClass(name.split('.').dropRight(1).mkString(".")).isDefined) {
+        throw EnvironmentError("prefix of a type cannot itself be a type!")
+      }
       return searchForQualifiedClass(name)
     }
     searchForSimpleClass(name)
