@@ -298,6 +298,7 @@ class ClassEnvTests extends FunSuite {
                                    |package A.B;
                                    |public class C {
                                    |  public static int x = 10;
+                                   |  public C(int x, int y) {}
                                    |  public int method1(int arg1, string arg2) {
                                    |  }
                                    |  public int method2(A.B.C arg1, string arg2) {

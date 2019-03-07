@@ -8,7 +8,7 @@ class Constructor(parent: PackageItem, ast: ConstructorDeclaration)
     ast.modifiers,
     ast.returnType,
     ast.identifier,
-    ast.header.get.params
+    ast.constructorDeclarator.params
   )
 
   override def globalLookup(name: Name): Option[Env] = {
