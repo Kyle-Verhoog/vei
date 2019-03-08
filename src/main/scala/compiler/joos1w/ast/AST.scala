@@ -677,7 +677,8 @@ object AST {
         childrenTypes match {
           case "-" :: "unary_expression" :: Nil =>
             val ast = fromParseTreeAttachChildren(
-              new GeneralExpression(Some(getValue(children.head))),
+              // changed from general to unary
+              new UnaryExpression(getValue(children.head)),
               children(1) :: Nil
             )
             // check if unary expression was IntegerLiteral, if so negate it
