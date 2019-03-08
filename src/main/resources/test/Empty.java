@@ -19,6 +19,7 @@ public class Empty {
         int i =  0;
         int j = i;
         //int k = l;
+        int y = A.B.B.B;
 
         if (i < 0) {
             //int m = l;

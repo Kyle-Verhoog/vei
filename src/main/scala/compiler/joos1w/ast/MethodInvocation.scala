@@ -1,6 +1,8 @@
 package compiler.joos1w.ast
 
 class MethodInvocation(id: Option[String]) extends AST {
+  var returnType: Option[String] = None
+
   def name: String = {
     if (id.isDefined) return id.get
     children.last.asInstanceOf[Name].name

@@ -129,7 +129,7 @@ package object environment {
       case ast: LocalVariableDeclaration =>
         parentEnvironment = Some(environment)
       //case ast: FormalParameter => parentEnvironment = Some(environment)
-      case _                    =>
+      case _ =>
     }
 
     // recurse down
@@ -157,7 +157,7 @@ package object environment {
     env match {
       case env: RootEnvironment    => // do nothing for root env AST
       case env: PackageEnvironment => // do nothing for package env AST
-        //env.classTable.keys
+      //env.classTable.keys
       // TODO
       /*
            we need to traverse down only some of the children nodes (eg. the bodies for the
@@ -203,7 +203,7 @@ package object environment {
         println("verifying class env " + env.qualifiedName)
         // verify no cycle
         env.verifyNoCyclesInExtends()
-       /* println("INHERITS----")
+        /* println("INHERITS----")
         env.inheritSet
           .filter(ele => ele._2.isInstanceOf[MethodEnvironment])
           .foreach(
@@ -225,7 +225,7 @@ package object environment {
                   .modifiers + " returns " + ele._2
                   .asInstanceOf[MethodEnvironment]
                   .returnType))
-                  */
+         */
 
         // verify all imported packages exist
         env.verifyImportedPackagsExist()
@@ -237,6 +237,8 @@ package object environment {
         env.verifyAbstractProperties()
 
         env.verifyImplementsAreInterfaces()
+
+        env.verifyDontExtendFinalClass()
 
         // if we are an interface, we cannot have a (Class getClass) method declared
         env.ast match {
@@ -336,7 +338,30 @@ package object environment {
       case ast: ConstructorDeclaration => return
       case ast: ForStatement           => return
       case ast: WhileStatement         => return
-      case _                           =>
+      // Name disamibuation
+      case ast: Name => {
+        val splitName = ast.name.split('.')
+
+        if (env.findLocalVariable(splitName.head).isDefined || env
+              .findEnclosingClass()
+              .containSet.contains((splitName.head, None))) {
+          ast.objectPart = Some(splitName.head)
+          ast.instanceField = Some(splitName.head.drop(1).mkString("."))
+        } else {
+          var i = 1
+          while (i <= splitName.length) {
+            if (env.serarchForClass(splitName.slice(0, i).mkString(".")).isDefined) {
+              ast.objectPart = Some(splitName.slice(0, i).mkString("."))
+              ast.staticField = Some (splitName(i+1))
+              ast.instanceField = Some(splitName.slice(i+2, splitName.length).mkString("."))
+            }
+          }
+        }
+
+        // TODO verify that parts of name are identified and verify they actually exist
+
+      }
+      case _ =>
     }
 
     if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)

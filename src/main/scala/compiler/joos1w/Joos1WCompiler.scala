@@ -2,6 +2,7 @@ package compiler.joos1w
 
 import env.Root
 import ast.{AST, Weeder}
+import compiler.joos1w.env.Root
 
 object Joos1WCompiler {
   Joos1WScanner.loadSavedScanner()
@@ -30,7 +31,9 @@ object Joos1WCompiler {
     })
     println("Building environments...")
     Joos1WEnvironment.buildEnvironment(weededAsts)
-    new Root().populateNamespace(weededAsts)
+    println("Other tree...")
+    val root = new Root().populateNamespace(weededAsts)
+    println(root.toStrTree)
     println("done")
   }
 }

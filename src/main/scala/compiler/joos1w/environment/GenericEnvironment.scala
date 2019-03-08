@@ -149,4 +149,8 @@ class GenericEnvironment(val ast: AST,
   def insertChild(genericEnvironment: GenericEnvironment): Unit = {
     childrenEnvironments.append(genericEnvironment)
   }
+
+  def findEnclosingClass(): ClassEnvironment = {
+    parentEnvironment.get.findEnclosingClass()
+  }
 }

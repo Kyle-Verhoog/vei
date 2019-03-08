@@ -395,4 +395,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     inheritSet.get((name, None)).asInstanceOf[Option[VariableEnvironment]]
   }
 
+  override def findEnclosingClass(): ClassEnvironment = {
+    this
+  }
 }

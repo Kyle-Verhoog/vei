@@ -60,7 +60,7 @@ class MarmosetTestRunner extends FunSuite {
 
       val libFiles =
         getMarmosetLibFiles("2").map(f => "src/main/resources/" + f)
-      try {
+
         expectedResult(1) match {
           case "fail" =>
             assertThrows[Exception](
@@ -69,12 +69,7 @@ class MarmosetTestRunner extends FunSuite {
             Joos1WCompiler.compileFiles(filePaths ++ libFiles)
         }
         println("✓ TEST PASSED")
-      } catch {
-        case e: Throwable =>
-          failedTests += e
-          println(e)
-          println("✗ TEST FAILED")
-      }
+
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")
     }
@@ -99,9 +94,9 @@ class MarmosetTestRunner extends FunSuite {
         .head
     }
 
-    var i = 0
+    var i = 48
     var failedTests = ListBuffer[Throwable]()
-    for (files <- listOfFiles.drop(0)) {
+    for (files <- listOfFiles.drop(48)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
@@ -127,6 +122,7 @@ class MarmosetTestRunner extends FunSuite {
           failedTests += e
           println(e)
           println("✗ TEST FAILED")
+          throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")

@@ -42,6 +42,12 @@ object Name {
 class Name(val name: String) extends AST {
   val partsOfName = name.split('.')
 
+  // eg. for A.B.C() where A is a class, B a class, C a field
+  // we have instance = "C" object = ""A.B""
+  var instanceField: Option[String] = None
+  var objectPart: Option[String] = None
+  var staticField: Option[String] = None
+
   override def strFields: String = {
     s"$name"
   }
