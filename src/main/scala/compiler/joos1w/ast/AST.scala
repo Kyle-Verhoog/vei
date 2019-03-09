@@ -569,7 +569,7 @@ object AST {
         childrenTypes match {
           case "conditional_or_expression" :: "||" :: "conditional_and_expression" :: Nil =>
             fromParseTreeAttachChildren(
-              new GeneralExpression(Some("||")),
+              new ConditionalExpression("||"),
               children.head :: children(2) :: Nil
             )
           case "conditional_and_expression" :: Nil =>
@@ -580,7 +580,7 @@ object AST {
         childrenTypes match {
           case "conditional_and_expression" :: "&&" :: "inclusive_or_expression" :: Nil =>
             fromParseTreeAttachChildren(
-              new GeneralExpression(Some("&&")),
+              new ConditionalExpression("&&"),
               children.head :: children(2) :: Nil
             )
           case "inclusive_or_expression" :: Nil =>
@@ -621,7 +621,7 @@ object AST {
             fromParseTree(children.head, parent)
           case "equality_expression" :: _ :: "relational_expression" :: Nil =>
             fromParseTreeAttachChildren(
-              new GeneralExpression(Some(getValue(children(1)))),
+              new ConditionalExpression(getValue(children(1))),
               children.head :: children(2) :: Nil
             )
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
