@@ -8,4 +8,8 @@ class ClassInstanceCreation extends AST {
         throw new RuntimeException("Class Instance Creation needs a class")
     }
   }
+
+  def primary: Name = {
+    children.head.asInstanceOf[Name]
+  }
 }

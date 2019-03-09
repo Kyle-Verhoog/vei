@@ -89,7 +89,7 @@ package object environment {
         parentEnvironment.get.insertClass(
           ast.identifier,
           environment.asInstanceOf[ClassEnvironment])
-        print(ast.toStrTree)
+      //print(ast.toStrTree)
       case ast: InterfaceDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertClass(
@@ -385,6 +385,7 @@ package object environment {
       case ast: NullLiteral             => ast.ttype
       case ast: StringLiteral           => ast.ttype
       case ast: ArrayCreationExpression => determineType(ast.primary, env)
+      case ast: ClassInstanceCreation   => determineNameType(ast.primary, env)
       case ast: PrimitiveType           => ast.ttype
       case _ =>
         throw new RuntimeException("Unknown how to get type for ast: " + ast)
@@ -441,7 +442,7 @@ package object environment {
 
       types.buildTypeFromString(method.get.returnType)
     } else { // just look up the name
-      println("looking up method " + ast.name)
+      //println("looking up method " + ast.name)
       val methodName = ast.name.split('.')
       val sig: Signature = (methodName.last, Some(paramsSig))
 
@@ -567,14 +568,6 @@ package object environment {
   def determineNameType(ast: Name, env: GenericEnvironment): AbstractType = {
     val splitName = ast.name.split('.')
     val enclosingClass = env.findEnclosingClass()
-    println(
-      "determining name " + ast.name + " in env " + enclosingClass.qualifiedName)
-
-    println(
-      "did find local? " + env
-        .serarchForVariable(splitName.head)
-        .isDefined)
-
     if (env
           .serarchForVariable(splitName.head)
           .isDefined) {
