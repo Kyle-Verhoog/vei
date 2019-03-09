@@ -1,3 +1,11 @@
 package compiler.joos1w.ast
 
-class ConditionalExpression extends AST {}
+class ConditionalExpression(val operator: String) extends AST {
+  def firstExpr: AST = {
+    children.head
+  }
+
+  def secondExpr: AST = {
+    children(1)
+  }
+}

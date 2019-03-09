@@ -53,6 +53,11 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
     children.head.asInstanceOf[ConstructorDeclarator]
   }
 
+  def parameters: List[String] = {
+    constructorDeclarator.parameters.children.map(child =>
+      child.asInstanceOf[FormalParameter].ttype.split('.').last)
+  }
+
   override def header: Option[MethodHeader] = {
     None
   }

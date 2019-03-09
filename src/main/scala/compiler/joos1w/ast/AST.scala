@@ -632,7 +632,7 @@ object AST {
             fromParseTree(children.head, parent)
           case "relational_expression" :: _ :: "additive_expression" :: Nil =>
             fromParseTreeAttachChildren(
-              new GeneralExpression(Some(getValue(children(1)))),
+              new ConditionalExpression(getValue(children(1))),
               children.head :: children(2) :: Nil
             )
           case "relational_expression" :: "INSTANCEOF" :: "reference_type" :: Nil =>
@@ -831,8 +831,8 @@ object AST {
           case "NEW" :: "primitive_type" :: "dim_exprs" :: Nil |
               "NEW" :: "class_or_interface_type" :: "dim_exprs" :: Nil =>
             fromParseTreeAttachChildren(
-              new ArrayCreationExpression(getValue(children(1))),
-              children(2) :: Nil
+              new ArrayCreationExpression(),
+              children(1) :: children(2) :: Nil
             )
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }

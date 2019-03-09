@@ -118,6 +118,17 @@ class ClassDeclaration(val modifiers: List[String], val identifier: String)
     imports.get.getImports
   }
 
+  def hasZeroArgConstructor: Boolean = {
+    constructors
+      .exists(constructor => constructor.parameters.isEmpty)
+  }
+
+  def constructors: List[ConstructorDeclaration] = {
+    getClassBody.children
+      .filter(child => child.isInstanceOf[ConstructorDeclaration])
+      .asInstanceOf[List[ConstructorDeclaration]]
+  }
+
   override def strFields: String = {
     s"${modifiers.mkString(" ")} $identifier"
   }

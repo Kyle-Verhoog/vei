@@ -1,3 +1,10 @@
 package compiler.joos1w.ast
 
-class PrimitiveType(typeName: String) extends AST {}
+import compiler.joos1w.environment.types
+import compiler.joos1w.environment.types.{AbstractType, BooleanType}
+
+class PrimitiveType(val typeName: String) extends AST {
+  def ttype: AbstractType = {
+    types.buildTypeFromString(typeName)
+  }
+}

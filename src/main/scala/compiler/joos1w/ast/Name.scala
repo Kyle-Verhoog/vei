@@ -1,5 +1,6 @@
 package compiler.joos1w.ast
 
+import compiler.joos1w.environment.types.AbstractType
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
@@ -45,8 +46,11 @@ class Name(val name: String) extends AST {
   // eg. for A.B.C() where A is a class, B a class, C a field
   // we have instance = "C" object = ""A.B""
   var instanceField: Option[String] = None
+  var instanceType: Option[AbstractType] = None
   var objectPart: Option[String] = None
+  var objectType: Option[AbstractType] = None
   var staticField: Option[String] = None
+  var staticType: Option[AbstractType] = None
 
   override def strFields: String = {
     s"$name"

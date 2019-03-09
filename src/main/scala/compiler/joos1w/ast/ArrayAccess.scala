@@ -9,6 +9,10 @@ class ArrayAccess extends AST {
     }
   }
 
+  def primary: AST = {
+    children.head
+  }
+
   override def strFields: String = {
     children.head match {
       case child: Name => child.name

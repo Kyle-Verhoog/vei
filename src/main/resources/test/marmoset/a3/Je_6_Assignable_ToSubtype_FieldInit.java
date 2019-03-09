@@ -13,6 +13,13 @@ public class Je_6_Assignable_ToSubtype_FieldInit {
     public Je_6_Assignable_ToSubtype_FieldInit () {}
 
     public static int test() {
+        int x = 0;
+        int y = x;
+        x = s.length();
+        if (x == s.length()) {
+            y = s.length();
+        }
+
         return 123;
     }
 

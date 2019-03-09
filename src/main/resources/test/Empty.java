@@ -30,6 +30,19 @@ public class Empty {
             int m = alpha;
         }
 
+
+
+        Kevin kevin = new Kevin();
+        Object a = new Object();
+        a.t = kevin;
+
+        int l = a.t.f;
+
+        kevin.name = l;
+
+        int l = a.t.f;
+
+
         // TODO uncommment
         //char a = (String) 'a';
         char a2 = '\r';

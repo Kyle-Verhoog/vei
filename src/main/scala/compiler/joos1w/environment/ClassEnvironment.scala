@@ -243,6 +243,20 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
+  def findMethodWithSignature(sig: Signature): Option[MethodEnvironment] = {
+    containSet.values.foreach(entry => {
+      entry match {
+        case method: MethodEnvironment => {
+          if (method.signature == sig) {
+            return Some(method)
+          }
+        }
+        case _ =>
+      }
+    })
+    None
+  }
+
   // returns set of packages and thing to be imported
   // eg. (a.b, c), (j.k, *)
   def getImportSets: List[(String, String)] = {
@@ -296,6 +310,23 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     })
 
     imported.get(klass)
+  }
+
+  // takes in a qualified or simple instance name and resolves it
+  def resolveInstanceNames(name: String): VariableEnvironment = {
+    val splitName = name.split('.')
+    val env = containSet.get(splitName.head, None)
+
+    if (env.isEmpty) {
+      throw EnvironmentError(
+        "attempting to resolve unknown instance name: " + name + " within env " + this)
+    }
+
+    if (splitName.length == 1) return env.get.asInstanceOf[VariableEnvironment]
+    env.get
+      .asInstanceOf[VariableEnvironment]
+      .findEnclosingClass()
+      .resolveInstanceNames(splitName.drop(1).mkString("."))
   }
 
   def verifyImportedPackagsExist(): Unit = {

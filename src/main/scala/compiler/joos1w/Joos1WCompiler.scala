@@ -33,7 +33,7 @@ object Joos1WCompiler {
     Joos1WEnvironment.buildEnvironment(weededAsts)
     println("Other tree...")
     val root = new Root().populateNamespace(weededAsts)
-    println(root.toStrTree)
+    //println(root.toStrTree)
     println("done")
   }
 }

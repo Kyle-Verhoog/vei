@@ -3,7 +3,7 @@ package compiler.joos1w.ast
 class Assignment extends AST {
 
   def getLHS: AST = {
-    leftChild.get
+    children.head
   }
 
   // TODO not needed probably
@@ -12,6 +12,6 @@ class Assignment extends AST {
   }
 
   def getRHS: AST = {
-    getLHS.leftChild.get
+    children(1)
   }
 }

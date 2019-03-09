@@ -1,3 +1,11 @@
 package compiler.joos1w.ast
 
-class ArrayCreationExpression(arrayType: String) extends AST {}
+class ArrayCreationExpression() extends AST {
+  def primary: AST = {
+    children.head
+  }
+
+  def expr: AST = {
+    children(1)
+  }
+}

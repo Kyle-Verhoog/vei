@@ -1,6 +1,14 @@
 package compiler.joos1w.ast
 
-class GeneralExpression(operation: Option[String]) extends AST {
+class GeneralExpression(val operation: Option[String]) extends AST {
+
+  def firstExpr: AST = {
+    children.head
+  }
+
+  def secondExpr: AST = {
+    children(1)
+  }
 
   override def strFields: String = {
     operation match {

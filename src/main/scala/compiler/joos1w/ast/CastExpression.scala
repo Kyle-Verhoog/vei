@@ -35,4 +35,22 @@ object CastExpression {
   }
 }
 
-class CastExpression extends AST {}
+class CastExpression extends AST {
+  def simpleType: Option[String] = {
+    children.head match {
+      case child: PrimitiveType => {
+        if (children.length == 2) {
+          return Some(child.typeName)
+        }
+        Some(child.typeName + "[]")
+      }
+      case child: Name => {
+        if (children.length == 2) {
+          return Some(child.name)
+        }
+        Some(child.name + "[]")
+      }
+      case _ => None
+    }
+  }
+}
