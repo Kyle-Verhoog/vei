@@ -94,9 +94,9 @@ class MarmosetTestRunner extends FunSuite {
         .head
     }
 
-    var i = 0
+    var i = 43
     var failedTests = ListBuffer[Throwable]()
-    for (files <- listOfFiles.drop(0)) {
+    for (files <- listOfFiles.drop(43)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
@@ -122,7 +122,7 @@ class MarmosetTestRunner extends FunSuite {
           failedTests += e
           println(e)
           println("✗ TEST FAILED")
-          //throw e
+          throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")

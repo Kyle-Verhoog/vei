@@ -64,7 +64,7 @@ Je_6_Assignable_ReturnInElse fail
 Je_6_Assignable_Return_ToSubType fail
 Je_6_Assignable_Return_Void fail
 Je_6_Assignable_Return_VoidInVoidMethod fail
-Je_6_Assignable_ToSubtype fail
+Je_6_Assignable_ToSubtype pass
 Je_6_Assignable_ToSubtype_DeclInit fail
 Je_6_Assignable_ToSubtype_FieldInit fail
 Je_6_Assignable_ValueReturn_InConstructor fail

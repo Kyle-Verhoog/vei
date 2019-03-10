@@ -9,6 +9,10 @@ class ArrayAccess extends AST {
     }
   }
 
+  def expression: AST = {
+    children.last
+  }
+
   def primary: AST = {
     children.head
   }

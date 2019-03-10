@@ -89,7 +89,6 @@ package object environment {
         parentEnvironment.get.insertClass(
           ast.identifier,
           environment.asInstanceOf[ClassEnvironment])
-      //print(ast.toStrTree)
       case ast: InterfaceDeclaration =>
         environment = new ClassEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertClass(
@@ -106,6 +105,7 @@ package object environment {
         parentEnvironment.get.insertMethod(
           ast.signature,
           environment.asInstanceOf[MethodEnvironment])
+        print(ast.toStrTree)
       case ast: ConstructorDeclaration =>
         environment = new MethodEnvironment(ast, parentEnvironment)
         parentEnvironment.get.insertMethod(
@@ -116,6 +116,8 @@ package object environment {
         environment = new BlockEnvironment(ast, parentEnvironment)
       case ast: WhileStatement =>
         environment = new BlockEnvironment(ast, parentEnvironment)
+      case ast: IfStatement =>
+        environment = new BlockEnvironment(ast, parentEnvironment)
       case ast: ASTList => {
         // TODO is this how we do blocks?
         if (ast.getFieldName == "block_statements") {
@@ -125,6 +127,7 @@ package object environment {
       case _ =>
     }
 
+    ast.env = environment
     if (environment != null && parentEnvironment.isDefined) {
       parentEnvironment.get.insertChild(environment)
     }
@@ -343,10 +346,31 @@ package object environment {
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
         return
-      case ast: CompilationUnit           => return
-      case ast: PackageDeclaration        => return
-      case ast: FieldDeclaration          => return
-      case ast: LocalVariableDeclaration  => return
+      case ast: CompilationUnit    => return
+      case ast: PackageDeclaration => return
+      case ast: FieldDeclaration => {
+        // verify initilization assignment
+        if (ast.variableDeclarator.hasExpression) {
+          verifyAssignment(
+            determineType(ast, env),
+            determineType(ast.variableDeclarator.expression, env),
+            env
+          )
+        }
+        return
+      }
+      case ast: LocalVariableDeclaration => {
+        if (ast.variableDeclarator.hasExpression) {
+          println("verifying local variable assignment")
+          println(ast.toStrTree)
+          verifyAssignment(
+            determineType(ast, env),
+            determineType(ast.variableDeclarator.expression, env),
+            env
+          )
+        }
+        return
+      }
       case ast: FormalParameter           => return
       case ast: InterfaceDeclaration      => return
       case ast: AbstractMethodDeclaration => return
@@ -361,6 +385,12 @@ package object environment {
       // Name disamibuation
       case ast: Name => {
         determineNameType(ast, env)
+      }
+      case ast: ASTList => {
+        ast.children.foreach(child => verifyAST(env, child))
+        if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
+        return
+
       }
       case _ =>
     }
@@ -385,8 +415,15 @@ package object environment {
       case ast: NullLiteral             => ast.ttype
       case ast: StringLiteral           => ast.ttype
       case ast: ArrayCreationExpression => determineType(ast.primary, env)
-      case ast: ClassInstanceCreation   => determineNameType(ast.primary, env)
+      case ast: ClassInstanceCreation   => {
+        println("DETERMINING CLASS INSTANCE CREATION TYPE")
+        determineNameType(ast.primary, env)
+      }
       case ast: PrimitiveType           => ast.ttype
+      case ast: ThisCall =>
+        new CustomType(env.findEnclosingClass().qualifiedName)
+      case ast: LocalVariableDeclaration => buildTypeFromString(ast.ttype)
+      case ast: FieldDeclaration         => buildTypeFromString(ast.fieldType)
       case _ =>
         throw new RuntimeException("Unknown how to get type for ast: " + ast)
     }
@@ -414,6 +451,10 @@ package object environment {
 
   def determineArrayAccessType(access: ArrayAccess,
                                env: GenericEnvironment): AbstractType = {
+    if (!determineType(access.expression, env).isNumeric) {
+      throw EnvironmentError(
+        "Array Access indexing expression must have numeric type")
+    }
     new ArrayType(determineType(access.primary, env))
   }
 
@@ -460,8 +501,6 @@ package object environment {
       val method = klass.findMethodWithSignature(sig)
 
       if (method.isEmpty) {
-        println("env " + env.ast + "\n\n\n")
-        println(ast.toStrTree)
         throw EnvironmentError(
           "Unable to find method for invocation with signature " + sig)
       }
@@ -576,7 +615,9 @@ package object environment {
         types.buildTypeFromString(
           env.serarchForVariable(splitName.head).get.ttype))
 
-      ast.instanceField = Some(splitName.head.drop(1).mkString("."))
+      if (splitName.length > 1) {
+        ast.instanceField = Some(splitName.drop(1).mkString("."))
+      }
     } else if (enclosingClass.containSet
                  .contains((splitName.head, None))) {
       ast.objectPart = Some(splitName.head)
@@ -587,7 +628,9 @@ package object environment {
             .asInstanceOf[VariableEnvironment]
             .ttype))
 
-      ast.instanceField = Some(splitName.head.drop(1).mkString("."))
+      if (splitName.length > 1) {
+        ast.instanceField = Some(splitName.drop(1).mkString("."))
+      }
     } else {
       var i = 1
       while (i <= splitName.length) {
@@ -597,12 +640,12 @@ package object environment {
           ast.objectPart = Some(splitName.slice(0, i).mkString("."))
           ast.objectType = Some(types.buildTypeFromString(ast.objectPart.get))
 
-          if (i + 1 < splitName.length) { // do static if still stuff left
-            ast.staticField = Some(splitName(i + 1))
+          if (i < splitName.length) { // do static if still stuff left
+            ast.staticField = Some(splitName(i))
             val staticField = env
               .serarchForClass(ast.objectPart.get)
               .get
-              .containSet(splitName(i + 1), None)
+              .containSet(splitName(i), None)
               .asInstanceOf[VariableEnvironment]
 
             if (!staticField.modifiers.contains("static")) {
@@ -615,13 +658,13 @@ package object environment {
                 env
                   .serarchForClass(ast.objectPart.get)
                   .get
-                  .containSet(splitName(i + 1), None)
+                  .containSet(splitName(i), None)
                   .asInstanceOf[VariableEnvironment]
                   .ttype))
 
-            if (i + 2 < splitName.length) { // do instance fields if still stuff left
+            if (i + 1 < splitName.length) { // do instance fields if still stuff left
               ast.instanceField = Some(
-                splitName.slice(i + 2, splitName.length).mkString("."))
+                splitName.slice(i + 1, splitName.length).mkString("."))
             }
           }
           i = splitName.length + 1 // stop looping
@@ -632,38 +675,123 @@ package object environment {
 
     // TODO verify that parts of name are identified and verify they actually exist
     if (ast.staticType.isDefined) {
-      val instance = env
+      val instanceClass = env
         .serarchForClass(ast.staticType.get.stringType)
-        .get
-        .resolveInstanceNames(ast.instanceField.get)
-      ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
-    } else if (ast.instanceType.isDefined) { // do it for non static fields
+      if (instanceClass.isDefined) {
+        val instance =
+          instanceClass.get
+            .resolveInstanceNames(ast.instanceField.get, enclosingClass)
+        ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
+      }
+    } else if (ast.objectType.isDefined && ast.instanceField.isDefined) { // do it for non static fields
       val instance = env
         .serarchForClass(ast.objectType.get.stringType)
         .get
-        .resolveInstanceNames(ast.instanceField.get)
+        .resolveInstanceNames(ast.instanceField.get, enclosingClass)
       ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
     }
 
+    // --- verify permissions ---
+    if (ast.staticType.isDefined) {
+      val klass = env.serarchForClass(ast.objectType.get.stringType).get // get class of object
+      val staticField = klass
+        .containSet(ast.staticField.get, None)
+        .asInstanceOf[VariableEnvironment]
+      verifyUsagePermission(staticField, env)
+    }
+
+    // --- return actual type ---
     if (ast.instanceType.isDefined) {
       ast.instanceType.get
     } else if (ast.staticType.isDefined) {
       ast.staticType.get
     } else {
+      println(ast.name)
+      println(env
+        .serarchForVariable(splitName.head)
+        .isDefined)
+      println(ast.objectPart)
+      println(ast.objectType)
       ast.objectType.get
+    }
+  }
+
+  def verifyUsagePermission(method: MethodEnvironment,
+                            env: GenericEnvironment): Unit = {
+    val enclosing = env.findEnclosingClass()
+    val methodEnclosing = method.findEnclosingClass()
+
+    if (method.modifiers.contains("public")) {}
+    if (method.modifiers.contains("protected") && !enclosing.isSubClassOf(
+          methodEnclosing)) {
+      throw EnvironmentError(
+        "Attempting to use protected method in non-sub class!")
+    }
+    if (method.modifiers.contains("private") && enclosing != methodEnclosing) {
+      throw EnvironmentError("Attempting to use private method!")
+    }
+  }
+
+  def verifyUsagePermission(field: VariableEnvironment,
+                            env: GenericEnvironment): Unit = {
+    val enclosing = env.findEnclosingClass()
+    val fieldEnclosing = field.findEnclosingClass()
+
+    if (field.modifiers.contains("public")) { return }
+    if (field.modifiers.contains("protected") && !enclosing.isSubClassOf(
+          fieldEnclosing)) {
+      throw EnvironmentError(
+        "Attempting to use protected field in non-sub class!")
+    }
+    if (field.modifiers.contains("private") && enclosing != fieldEnclosing) {
+      throw EnvironmentError("Attempting to use private field!")
     }
   }
 
   def verifyAssignment(assignment: Assignment,
                        env: GenericEnvironment): Unit = {
     verifyAssignment(determineType(assignment.getLHS, env),
-                     determineType(assignment.getRHS, env))
+                     determineType(assignment.getRHS, env),
+                     env)
   }
 
-  def verifyAssignment(ttype1: AbstractType, ttype2: AbstractType): Unit = {
+  def verifyAssignment(ttype1: AbstractType,
+                       ttype2: AbstractType,
+                       env: GenericEnvironment): Unit = {
+    println("comparing " + ttype1 + " with " + ttype2 + " in env " + env)
+
+    // verify array assignability
+    ttype1 match {
+      case ttype1: ArrayType => {
+        ttype2 match {
+          case ttype2: ArrayType => {
+            if (ttype1.rootType == ttype2.rootType) return
+            val klass1 = env.serarchForClass(ttype1.stringType)
+            val klass2 = env.serarchForClass(ttype2.stringType)
+            if (klass1.isDefined && klass2.isDefined && klass2.get.isSubClassOf(
+                  klass1.get)) return // sub class for arrays
+          }
+          case _ => verifyAssignment(ttype1.rootType, ttype2, env)
+        }
+        return
+      }
+      case _ =>
+    }
+
     if (ttype1.equals(ttype2)) return
     if (ttype1.isInstanceOf[ShortType] && ttype2.isInstanceOf[BytesType]) return
-    if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[CharType]) return // TODO other types of assignments
-    // throw new RuntimeException("TODO: Implement " + ttype1 + " " + ttype2)
+    if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[CharType]) return
+    if ((ttype1.isInstanceOf[CustomType] || ttype1
+          .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]) return
+
+    val klass1 = env.serarchForClass(ttype1.stringType)
+    val klass2 = env.serarchForClass(ttype2.stringType)
+    println(
+      "checking if " + klass1 + " can be assigned value of " + klass2 + " is sub class " + klass2.get
+        .isSubClassOf(klass1.get))
+    if (klass1.isDefined && klass2.isDefined && klass2.get.isSubClassOf(
+          klass1.get)) return // sub class
+    throw new RuntimeException(
+      "TODO: Implement or genuinely bad assignment?" + ttype1 + " " + ttype2)
   }
 }

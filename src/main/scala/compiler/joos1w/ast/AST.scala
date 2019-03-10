@@ -1,6 +1,7 @@
 package compiler.joos1w.ast
 
 import compiler.joos1w.ast.literals._
+import compiler.joos1w.environment.GenericEnvironment
 import compiler.parser.Parser.ParseTreeNode
 import compiler.scanner.Token
 
@@ -729,7 +730,7 @@ object AST {
               "field_access" :: Nil | "array_access" :: Nil |
               "class_instance_creation_expression" :: Nil =>
             fromParseTree(children.head, parent)
-          case "THIS" :: Nil => new Empty
+          case "THIS" :: Nil => new ThisCall()
           case "(" :: "expression" :: ")" :: Nil =>
             fromParseTree(children(1), parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
@@ -1209,6 +1210,7 @@ class AST(
     var leftChild: Option[AST] = None,
     var rightSibling: Option[AST] = None
 ) {
+  var env: GenericEnvironment = null
 
   // adds sibling to end of sibling list and sets siblings parent accordingly
   def addSiblingToEnd(sib: AST): Unit = {

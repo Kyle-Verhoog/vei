@@ -34,4 +34,10 @@ class FieldDeclaration(val modifiers: List[String]) extends AST {
   def name: String = {
     getChild(1).get.asInstanceOf[VariableDeclarator].name
   }
+
+  def variableDeclarator: VariableDeclarator = {
+    children.last match {
+      case child: VariableDeclarator => child
+    }
+  }
 }

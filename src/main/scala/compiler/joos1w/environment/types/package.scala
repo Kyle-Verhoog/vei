@@ -21,6 +21,7 @@ package object types {
       case "String"  => new StringType
       case "boolean" => new BooleanType
       case "void"    => new VoidType
+      case "null"    => new NullType
       case _         => new CustomType(ttype)
     }
   }

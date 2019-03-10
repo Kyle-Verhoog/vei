@@ -32,7 +32,6 @@ class GenericEnvironment(val ast: AST,
 
   def insertLocalVariable(name: String, env: VariableEnvironment): Unit = {
     if (variableTable.contains(name)) {
-      println("the keys" + variableTable.keySet)
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }

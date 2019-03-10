@@ -15,6 +15,12 @@ class LocalVariableDeclaration() extends AST {
     }
   }
 
+  def variableDeclarator: VariableDeclarator = {
+    children.last match {
+      case child: VariableDeclarator => child
+    }
+  }
+
   override def strFields: String = {
     s"$ttype $name"
   }

@@ -79,6 +79,13 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
   }
 
+  def isSubClassOf(superClass: ClassEnvironment): Boolean = {
+    if (superSetClasses.contains(superClass)) return true
+    superSetClasses
+      .map(klass => klass.isSubClassOf(superClass))
+      .exists(ans => ans)
+  }
+
   def superSetClasses: List[ClassEnvironment] = {
     superSet.map(superClass => {
       serarchForClass(superClass).get
@@ -310,6 +317,37 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     })
 
     imported.get(klass)
+  }
+
+  // takes in a qualified or simple instance name and resolves it
+  // also checks if it is accessible from the given env, and if not
+  // throws env error
+  def resolveInstanceNames(
+      name: String,
+      callingEnv: ClassEnvironment): VariableEnvironment = {
+    val splitName = name.split('.')
+    val env = containSet.get(splitName.head, None)
+
+    if (env.isEmpty) {
+      throw EnvironmentError(
+        "attempting to resolve unknown instance name: " + name + " within env " + this)
+    }
+
+    if (splitName.length == 1) {
+      val modifiers = env.get.asInstanceOf[VariableEnvironment].modifiers
+      if (modifiers.contains("protected") && !callingEnv.isSubClassOf(this)) {
+        throw EnvironmentError(
+          "Attempting to resolve protected instance name in non-super class!")
+      } else if (modifiers.contains("private") && callingEnv != this) {
+        throw EnvironmentError(
+          "Attempting to resolve private instance name in non-super class!")
+      }
+      return env.get.asInstanceOf[VariableEnvironment]
+    }
+    env.get
+      .asInstanceOf[VariableEnvironment]
+      .findEnclosingClass()
+      .resolveInstanceNames(splitName.drop(1).mkString("."))
   }
 
   // takes in a qualified or simple instance name and resolves it

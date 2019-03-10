@@ -1,7 +1,7 @@
 package compiler.joos1w.environment.types
 import scala.Boolean
 
-class ArrayType(rootType: AbstractType) extends AbstractType {
+class ArrayType(val rootType: AbstractType) extends AbstractType {
   override def stringType: String = {
     rootType.stringType + "[]"
   }
