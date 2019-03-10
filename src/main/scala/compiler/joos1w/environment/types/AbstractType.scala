@@ -9,7 +9,12 @@ abstract class AbstractType {
 
   def stringType: String
 
-  def equals(obj: AbstractType): Boolean = {
-    this.getClass == obj.getClass
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case obj: AbstractType => {
+        println("comparing " + this + " with " + obj)
+        this.stringType == obj.stringType
+      }
+    }
   }
 }

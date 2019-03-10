@@ -62,6 +62,7 @@ class GenericEnvironment(val ast: AST,
 
   protected def searchForSimpleVariable(
       name: String): Option[VariableEnvironment] = {
+    println(variableTable.keys)
     if (variableTable.contains(name)) return variableTable.get(name)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleVariable(name)

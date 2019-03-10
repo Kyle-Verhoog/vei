@@ -17,7 +17,10 @@ class MethodInvocation(val id: Option[String]) extends AST {
   }
 
   def argumentList: ASTList = {
-    children.head.asInstanceOf[ASTList]
+    children.head match {
+      case child: ASTList => child
+      case _ => throw new RuntimeException("malformed AST")
+    }
   }
 
   def primary: Option[AST] = {

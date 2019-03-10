@@ -1252,8 +1252,8 @@ class AST(
   def removeLastSibling(): Unit = {
     rightSibling match {
       case Some(node) => {
-        if (node.rightSibling.get.rightSibling.isEmpty) { // end case
-          node.rightSibling = None
+        if (node.rightSibling.isEmpty) { // end case
+          rightSibling = None
           return
         }
         node.removeLastSibling

@@ -9,4 +9,8 @@ class ArrayType(val rootType: AbstractType) extends AbstractType {
   override def isNumeric: Boolean = {
     rootType.isNumeric
   }
+
+  override def toString: String = {
+    "ArrayType(" + stringType +")"
+  }
 }

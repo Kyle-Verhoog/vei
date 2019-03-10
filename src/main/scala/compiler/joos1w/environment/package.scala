@@ -128,6 +128,14 @@ package object environment {
     }
 
     ast.env = environment
+    if (environment == null && parentEnvironment.isDefined) {
+      ast.env = parentEnvironment.get
+    }
+
+    if (ast.env == null) {
+      println("huhhhhh???? " + ast)
+    }
+
     if (environment != null && parentEnvironment.isDefined) {
       parentEnvironment.get.insertChild(environment)
     }
@@ -178,6 +186,7 @@ package object environment {
             if (!verifyType(ast.returnType, env)) {
               throw EnvironmentError("Unknown return type: " + ast.returnType)
             }
+            println("verifying method env body " + env.ast.toStrTree)
             verifyAST(env, ast.body)
           }
           // just verify return type, no body to check
@@ -218,8 +227,12 @@ package object environment {
         if (!verifyType(ttype, env)) {
           throw EnvironmentError("Unknown variable type: " + ttype)
         }
+        verifyAST(env, env.ast)
       }
-      case _ => verifyAST(env, env.ast)
+      case _ => {
+        println("verifying env " + env)
+        verifyAST(env, env.ast)
+      }
     }
 
     // do checks on the environments themselves
@@ -228,29 +241,6 @@ package object environment {
         println("verifying class env " + env.qualifiedName)
         // verify no cycle
         env.verifyNoCyclesInExtends()
-        /* println("INHERITS----")
-        env.inheritSet
-          .filter(ele => ele._2.isInstanceOf[MethodEnvironment])
-          .foreach(
-            ele =>
-              println(
-                "sig " + ele._1 + " mods " + ele._2
-                  .asInstanceOf[MethodEnvironment]
-                  .modifiers + " returns " + ele._2
-                  .asInstanceOf[MethodEnvironment]
-                  .returnType))
-        println("CONTAINS     ----")
-        env.containSet
-          .filter(ele => ele._2.isInstanceOf[MethodEnvironment])
-          .foreach(
-            ele =>
-              println(
-                "sig " + ele._1 + " mods " + ele._2
-                  .asInstanceOf[MethodEnvironment]
-                  .modifiers + " returns " + ele._2
-                  .asInstanceOf[MethodEnvironment]
-                  .returnType))
-         */
 
         // verify all imported packages exist
         env.verifyImportedPackagsExist()
@@ -287,11 +277,6 @@ package object environment {
         for (replaceSet <- env.replaceSet) {
           val m1Env = replaceSet._1
           val m2Env = replaceSet._2
-          //println("comparing ")
-          //println(m1Env.signature)
-          //println(m1Env.modifiers)
-          //println(m2Env.signature)
-          //println(m2Env.modifiers)
 
           if ((m1Env.modifiers.contains("static") && !m2Env.modifiers.contains(
                 "static")) || (!m1Env.modifiers.contains("static") && m2Env.modifiers
@@ -329,22 +314,45 @@ package object environment {
   def verifyAST(env: GenericEnvironment, ast: AST): Unit = {
     ast match {
       case ast: Assignment => {
-        verifyAssignment(ast, env)
+        verifyAssignment(ast, ast.env)
       }
-      // TODO fill in checks
-      case ast: Name =>
-      /*if (env.serarchForVariable(ast.name).isEmpty) {
-          println("error name in env " + env.ast.toStrTree)
-          throw EnvironmentError(
-            "Attempting to use undefined name: " + ast.name)
-        }*/
-      // TODO
-      case ast: FieldAccess => // TODO
+      // Name disamibuation
+      case ast: Name => {
+        determineNameType(ast, env)
+      }
+      case ast: FieldAccess => {
+        // TODO verify this is what we want
+        determineType(ast, env)
+      }
       // check methods are defined
       case ast: ClassInstanceCreation =>
         if (env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
+
+        // check that argument types match a constructor params
+        println(
+          "looking for arg types of instance creation: " + ast.name + " in env ")
+        val argTypes =
+          ast.parameters.map(param => determineType(param, ast.env))
+        val klassEnv = env.serarchForClass(ast.name).get
+        val klass = klassEnv.ast.asInstanceOf[ClassDeclaration]
+
+        println("looking for arg types " + argTypes)
+        val consturctorExists = klass.constructors.exists(constructor => {
+          val constructorParamTypes = constructor.rawParameters.map(param =>
+            determineType(param, klassEnv))
+          println(
+            "examining consturctor " + constructor.signature + " with params " + constructorParamTypes + " to " + argTypes)
+          println(constructorParamTypes == argTypes)
+          constructorParamTypes == argTypes
+        })
+
+        if (!consturctorExists) {
+          throw EnvironmentError(
+            "No constructor exists for " + ast.name + " with param types " + argTypes)
+        }
+
         return
       case ast: CompilationUnit    => return
       case ast: PackageDeclaration => return
@@ -369,6 +377,7 @@ package object environment {
             env
           )
         }
+        if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
         return
       }
       case ast: FormalParameter           => return
@@ -376,23 +385,17 @@ package object environment {
       case ast: AbstractMethodDeclaration => return
       case ast: MethodDeclaration         => return
       case ast: MethodInvocation => {
+        println("LOOKING AT METHOD INVOK " + ast)
         determineMethodInvocationType(ast, env)
+        println("DONE METHOD INVOK")
+        return
       }
       case ast: ClassDeclaration       => return
       case ast: ConstructorDeclaration => return
       case ast: ForStatement           => return
       case ast: WhileStatement         => return
-      // Name disamibuation
-      case ast: Name => {
-        determineNameType(ast, env)
-      }
-      case ast: ASTList => {
-        ast.children.foreach(child => verifyAST(env, child))
-        if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
-        return
-
-      }
-      case _ =>
+      case ast: IfStatement            => return
+      case _                           =>
     }
 
     if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
@@ -401,29 +404,30 @@ package object environment {
 
   def determineType(ast: AST, env: GenericEnvironment): AbstractType = {
     ast match {
-      case ast: GeneralExpression       => determineExpressionType(ast, env)
-      case ast: CastExpression          => determineExpressionType(ast, env)
-      case ast: ConditionalExpression   => determineExpressionType(ast, env)
-      case ast: UnaryExpression         => determineExpressionType(ast, env)
-      case ast: Name                    => determineNameType(ast, env)
-      case ast: MethodInvocation        => determineMethodInvocationType(ast, env)
-      case ast: FieldAccess             => determineFieldAccessType(ast, env)
-      case ast: ArrayAccess             => determineArrayAccessType(ast, env)
+      case ast: GeneralExpression       => determineExpressionType(ast, ast.env)
+      case ast: CastExpression          => determineExpressionType(ast, ast.env)
+      case ast: ConditionalExpression   => determineExpressionType(ast, ast.env)
+      case ast: UnaryExpression         => determineExpressionType(ast, ast.env)
+      case ast: Name                    => determineNameType(ast, ast.env)
+      case ast: MethodInvocation        => determineMethodInvocationType(ast, ast.env)
+      case ast: FieldAccess             => determineFieldAccessType(ast, ast.env)
+      case ast: ArrayAccess             => determineArrayAccessType(ast, ast.env)
       case ast: BooleanLiteral          => ast.ttype
       case ast: CharacterLiteral        => ast.ttype
       case ast: IntegerLiteral          => ast.ttype
       case ast: NullLiteral             => ast.ttype
       case ast: StringLiteral           => ast.ttype
-      case ast: ArrayCreationExpression => determineType(ast.primary, env)
-      case ast: ClassInstanceCreation   => {
+      case ast: ArrayCreationExpression => determineType(ast.primary, ast.env)
+      case ast: ClassInstanceCreation => {
         println("DETERMINING CLASS INSTANCE CREATION TYPE")
-        determineNameType(ast.primary, env)
+        determineNameType(ast.primary, ast.env)
       }
-      case ast: PrimitiveType           => ast.ttype
+      case ast: PrimitiveType => ast.ttype
       case ast: ThisCall =>
-        new CustomType(env.findEnclosingClass().qualifiedName)
+        new CustomType(ast.env.findEnclosingClass().qualifiedName)
       case ast: LocalVariableDeclaration => buildTypeFromString(ast.ttype)
       case ast: FieldDeclaration         => buildTypeFromString(ast.fieldType)
+      case ast: FormalParameter          => buildTypeFromString(ast.ttype)
       case _ =>
         throw new RuntimeException("Unknown how to get type for ast: " + ast)
     }
@@ -455,6 +459,7 @@ package object environment {
       throw EnvironmentError(
         "Array Access indexing expression must have numeric type")
     }
+    println("array access primary " + access.primary.toStrTree)
     new ArrayType(determineType(access.primary, env))
   }
 
@@ -493,7 +498,7 @@ package object environment {
         }
         case _ => {
           val primaryType =
-            determineType(new Name(methodName.dropRight(1).mkString(".")), env)
+            determineNameType(new Name(methodName.dropRight(1).mkString(".")), env)
           env.serarchForClass(primaryType.stringType).get
         }
       }
@@ -606,6 +611,9 @@ package object environment {
 
   def determineNameType(ast: Name, env: GenericEnvironment): AbstractType = {
     val splitName = ast.name.split('.')
+    println("looking at name  " + splitName.head)
+    println("parent " + ast.parent)
+    println("env " + env)
     val enclosingClass = env.findEnclosingClass()
     if (env
           .serarchForVariable(splitName.head)
@@ -642,6 +650,16 @@ package object environment {
 
           if (i < splitName.length) { // do static if still stuff left
             ast.staticField = Some(splitName(i))
+            println("looking at STATIC FIELD")
+            println(ast.staticField)
+            println(ast.objectPart)
+            println(ast.objectType)
+            println(
+              env
+                .serarchForClass(ast.objectPart.get)
+                .get
+                .containSet
+                .keys)
             val staticField = env
               .serarchForClass(ast.objectPart.get)
               .get
@@ -684,11 +702,16 @@ package object environment {
         ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
       }
     } else if (ast.objectType.isDefined && ast.instanceField.isDefined) { // do it for non static fields
-      val instance = env
-        .serarchForClass(ast.objectType.get.stringType)
-        .get
-        .resolveInstanceNames(ast.instanceField.get, enclosingClass)
-      ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
+      if (ast.objectType.get
+            .isInstanceOf[ArrayType] && ast.instanceField.get == "length") { // special case for array length
+        ast.instanceType = Some(new IntType())
+      } else {
+        val instance = env
+          .serarchForClass(ast.objectType.get.stringType)
+          .get
+          .resolveInstanceNames(ast.instanceField.get, enclosingClass)
+        ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
+      }
     }
 
     // --- verify permissions ---
@@ -707,9 +730,10 @@ package object environment {
       ast.staticType.get
     } else {
       println(ast.name)
-      println(env
-        .serarchForVariable(splitName.head)
-        .isDefined)
+      println(
+        env
+          .serarchForVariable(splitName.head)
+          .isDefined)
       println(ast.objectPart)
       println(ast.objectType)
       ast.objectType.get
@@ -750,9 +774,13 @@ package object environment {
 
   def verifyAssignment(assignment: Assignment,
                        env: GenericEnvironment): Unit = {
+    println("doing normal assignment")
+    //println(env.ast.toStrTree)
+    //println(assignment.env.ast.toStrTree)
     verifyAssignment(determineType(assignment.getLHS, env),
                      determineType(assignment.getRHS, env),
                      env)
+    println("done")
   }
 
   def verifyAssignment(ttype1: AbstractType,
