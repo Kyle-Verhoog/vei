@@ -80,6 +80,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   def isSubClassOf(superClass: ClassEnvironment): Boolean = {
+    if (superClass == this) return true
     if (superSetClasses.contains(superClass)) return true
     superSetClasses
       .map(klass => klass.isSubClassOf(superClass))
@@ -325,6 +326,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   def resolveInstanceNames(
       name: String,
       callingEnv: ClassEnvironment): VariableEnvironment = {
+    println("checking in class " + ast)
     val splitName = name.split('.')
     val env = containSet.get(splitName.head, None)
 
@@ -333,21 +335,22 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
         "attempting to resolve unknown instance name: " + name + " within env " + this)
     }
 
+    val varEnv = env.get.asInstanceOf[VariableEnvironment]
+
     if (splitName.length == 1) {
-      val modifiers = env.get.asInstanceOf[VariableEnvironment].modifiers
+      val modifiers = varEnv.modifiers
       if (modifiers.contains("protected") && !callingEnv.isSubClassOf(this)) {
         throw EnvironmentError(
-          "Attempting to resolve protected instance name in non-super class!")
+          "Attempting to resolve protected instance name in non-super class! Name: " + name + " env: " + callingEnv.ast)
       } else if (modifiers.contains("private") && callingEnv != this) {
         throw EnvironmentError(
           "Attempting to resolve private instance name in non-super class!")
       }
-      return env.get.asInstanceOf[VariableEnvironment]
+      return varEnv
     }
-    env.get
-      .asInstanceOf[VariableEnvironment]
+    varEnv
       .findEnclosingClass()
-      .resolveInstanceNames(splitName.drop(1).mkString("."))
+      .resolveInstanceNames(splitName.drop(1).mkString("."), varEnv.findEnclosingClass())
   }
 
   // takes in a qualified or simple instance name and resolves it
@@ -357,7 +360,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
 
     if (env.isEmpty) {
       throw EnvironmentError(
-        "attempting to resolve unknown instance name: " + name + " within env " + this)
+        "attempting to resolve unknown instance name: " + name + " within env " + this.ast)
     }
 
     if (splitName.length == 1) return env.get.asInstanceOf[VariableEnvironment]

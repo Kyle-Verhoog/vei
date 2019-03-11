@@ -10,7 +10,13 @@ object Joos1WEnvironment {
 
     asts.foreach(ast =>
       environment.environment.buildEnvironment(ast, Option(rootEnvironment)))
+    println("verifying env...")
     environment.environment.verifyEnvironment(rootEnvironment)
+    println("verifying ast...")
+    asts.foreach(ast => {
+      println(ast.toStrTree)
+      environment.environment.verifyAST(ast)
+    })
     rootEnvironment
   }
 }

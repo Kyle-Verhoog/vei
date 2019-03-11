@@ -187,7 +187,6 @@ package object environment {
               throw EnvironmentError("Unknown return type: " + ast.returnType)
             }
             println("verifying method env body " + env.ast.toStrTree)
-            verifyAST(env, ast.body)
           }
           // just verify return type, no body to check
           case ast: AbstractMethodDeclaration => {
@@ -212,7 +211,6 @@ package object environment {
                   }
                 })
             }
-            verifyAST(env, ast.body)
           }
         }
       }
@@ -227,12 +225,8 @@ package object environment {
         if (!verifyType(ttype, env)) {
           throw EnvironmentError("Unknown variable type: " + ttype)
         }
-        verifyAST(env, env.ast)
       }
-      case _ => {
-        println("verifying env " + env)
-        verifyAST(env, env.ast)
-      }
+      case _ => {}
     }
 
     // do checks on the environments themselves
@@ -303,30 +297,29 @@ package object environment {
         }
       case _ =>
     }
-
-    //if (env.ast.rightSibling.isDefined) verifyAST(env, env.ast.rightSibling.get)
-    //if (env.ast.leftChild.isDefined) verifyAST(env, env.ast.leftChild.get)
     env.childrenEnvironments.foreach(child => verifyEnvironment(child))
   }
 
   // traverses an AST as part of verifying an environment,
   // only go as deep as an environments scope (eg. dont go into methods, classes, etc...)
-  def verifyAST(env: GenericEnvironment, ast: AST): Unit = {
+  def verifyAST(ast: AST): Unit = {
+    println("verifying ast " + ast)
     ast match {
       case ast: Assignment => {
         verifyAssignment(ast, ast.env)
       }
       // Name disamibuation
       case ast: Name => {
-        determineNameType(ast, env)
+
+        determineNameType(ast, ast.env)
       }
       case ast: FieldAccess => {
         // TODO verify this is what we want
-        determineType(ast, env)
+        determineType(ast, ast.env)
       }
       // check methods are defined
       case ast: ClassInstanceCreation =>
-        if (env.serarchForClass(ast.name).isEmpty)
+        if (ast.env.serarchForClass(ast.name).isEmpty)
           throw EnvironmentError(
             "Attempting to create instance of not found class: " + ast.name)
 
@@ -335,7 +328,7 @@ package object environment {
           "looking for arg types of instance creation: " + ast.name + " in env ")
         val argTypes =
           ast.parameters.map(param => determineType(param, ast.env))
-        val klassEnv = env.serarchForClass(ast.name).get
+        val klassEnv = ast.env.serarchForClass(ast.name).get
         val klass = klassEnv.ast.asInstanceOf[ClassDeclaration]
 
         println("looking for arg types " + argTypes)
@@ -353,18 +346,25 @@ package object environment {
             "No constructor exists for " + ast.name + " with param types " + argTypes)
         }
 
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
         return
-      case ast: CompilationUnit    => return
-      case ast: PackageDeclaration => return
+      //case ast: CompilationUnit    => return
+      case ast: PackageDeclaration =>
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
+        return
+      case ast: ImportDeclarationsList =>
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
+        return
       case ast: FieldDeclaration => {
         // verify initilization assignment
         if (ast.variableDeclarator.hasExpression) {
           verifyAssignment(
-            determineType(ast, env),
-            determineType(ast.variableDeclarator.expression, env),
-            env
+            determineType(ast, ast.env),
+            determineType(ast.variableDeclarator.expression, ast.env),
+            ast.env
           )
         }
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
         return
       }
       case ast: LocalVariableDeclaration => {
@@ -372,34 +372,35 @@ package object environment {
           println("verifying local variable assignment")
           println(ast.toStrTree)
           verifyAssignment(
-            determineType(ast, env),
-            determineType(ast.variableDeclarator.expression, env),
-            env
+            determineType(ast, ast.env),
+            determineType(ast.variableDeclarator.expression, ast.env),
+            ast.env
           )
         }
-        if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
         return
       }
-      case ast: FormalParameter           => return
-      case ast: InterfaceDeclaration      => return
-      case ast: AbstractMethodDeclaration => return
-      case ast: MethodDeclaration         => return
+      //case ast: FormalParameter           => return
+      //case ast: InterfaceDeclaration      => return
+      //case ast: AbstractMethodDeclaration => return
+      //case ast: MethodDeclaration         => return
       case ast: MethodInvocation => {
         println("LOOKING AT METHOD INVOK " + ast)
-        determineMethodInvocationType(ast, env)
+        determineMethodInvocationType(ast, ast.env)
+        if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
         println("DONE METHOD INVOK")
         return
       }
-      case ast: ClassDeclaration       => return
-      case ast: ConstructorDeclaration => return
-      case ast: ForStatement           => return
-      case ast: WhileStatement         => return
-      case ast: IfStatement            => return
-      case _                           =>
+      //case ast: ClassDeclaration       => return
+      //case ast: ConstructorDeclaration => return
+      //case ast: ForStatement           => return
+      //case ast: WhileStatement         => return
+      //case ast: IfStatement            => return
+      case _ =>
     }
 
-    if (ast.rightSibling.isDefined) verifyAST(env, ast.rightSibling.get)
-    if (ast.leftChild.isDefined) verifyAST(env, ast.leftChild.get)
+    if (ast.rightSibling.isDefined) verifyAST(ast.rightSibling.get)
+    if (ast.leftChild.isDefined) verifyAST(ast.leftChild.get)
   }
 
   def determineType(ast: AST, env: GenericEnvironment): AbstractType = {
@@ -488,7 +489,7 @@ package object environment {
 
       types.buildTypeFromString(method.get.returnType)
     } else { // just look up the name
-      //println("looking up method " + ast.name)
+      println("looking up method " + ast.name)
       val methodName = ast.name.split('.')
       val sig: Signature = (methodName.last, Some(paramsSig))
 
@@ -498,7 +499,8 @@ package object environment {
         }
         case _ => {
           val primaryType =
-            determineNameType(new Name(methodName.dropRight(1).mkString(".")), env)
+            determineNameType(new Name(methodName.dropRight(1).mkString(".")),
+                              env)
           env.serarchForClass(primaryType.stringType).get
         }
       }
@@ -626,6 +628,7 @@ package object environment {
       if (splitName.length > 1) {
         ast.instanceField = Some(splitName.drop(1).mkString("."))
       }
+      println("found var, instance is " + ast.instanceField)
     } else if (enclosingClass.containSet
                  .contains((splitName.head, None))) {
       ast.objectPart = Some(splitName.head)
@@ -706,10 +709,14 @@ package object environment {
             .isInstanceOf[ArrayType] && ast.instanceField.get == "length") { // special case for array length
         ast.instanceType = Some(new IntType())
       } else {
-        val instance = env
+        val objectClass = env
           .serarchForClass(ast.objectType.get.stringType)
           .get
-          .resolveInstanceNames(ast.instanceField.get, enclosingClass)
+
+        println("about to resolv")
+        println("object " + ast.objectPart + " type " + ast.objectType)
+        println("object " + ast.staticField + " type " + ast.staticType)
+        val instance = objectClass.resolveInstanceNames(ast.instanceField.get, objectClass)
         ast.instanceType = Some(types.buildTypeFromString(instance.ttype))
       }
     }
