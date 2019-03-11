@@ -62,7 +62,7 @@ class GenericEnvironment(val ast: AST,
 
   protected def searchForSimpleVariable(
       name: String): Option[VariableEnvironment] = {
-    println(variableTable.keys)
+    println("looking at var table " + variableTable.keys)
     if (variableTable.contains(name)) return variableTable.get(name)
     if (parentEnvironment.isDefined)
       return parentEnvironment.get.searchForSimpleVariable(name)
@@ -121,6 +121,7 @@ class GenericEnvironment(val ast: AST,
   }
 
   def serarchForClass(name: String): Option[ClassEnvironment] = {
+    println("searching for class " + name)
     if (name.contains('.')) {
       if (serarchForClass(name.split('.').dropRight(1).mkString(".")).isDefined) {
         throw EnvironmentError("prefix of a type cannot itself be a type!")
@@ -152,5 +153,15 @@ class GenericEnvironment(val ast: AST,
 
   def findEnclosingClass(): ClassEnvironment = {
     parentEnvironment.get.findEnclosingClass()
+  }
+
+  // does the same thing as serarchClass but without checking for prefix
+  // since this is to be used for typechecking
+  def lookupClass(name: String): Option[ClassEnvironment] = {
+    println("searching for class " + name)
+    if (name.contains('.')) {
+      return searchForQualifiedClass(name)
+    }
+    searchForSimpleClass(name)
   }
 }

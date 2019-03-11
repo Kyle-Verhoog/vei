@@ -9,6 +9,8 @@ abstract class AbstractType {
 
   def stringType: String
 
+  def isSubClassOf(ttype: AbstractType) = false
+
   override def equals(obj: Any): Boolean = {
     obj match {
       case obj: AbstractType => {

@@ -5,6 +5,6 @@ import compiler.joos1w.environment.types.{AbstractType, BooleanType}
 
 class PrimitiveType(val typeName: String) extends AST {
   def ttype: AbstractType = {
-    types.buildTypeFromString(typeName)
+    types.buildTypeFromString(typeName, this.env)
   }
 }

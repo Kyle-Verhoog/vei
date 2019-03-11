@@ -1,6 +1,7 @@
 package compiler.joos1w.environment
 
 import compiler.joos1w.ast._
+import compiler.joos1w.environment.types.AbstractType
 
 class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
@@ -20,6 +21,10 @@ class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       case ast: FormalParameter          => ast.ttype
       case _                             => throw new RuntimeException("Unknown ast type for variable env")
     }
+  }
+
+  def abstractType: AbstractType = {
+    types.buildTypeFromString(ttype, this)
   }
 
   def modifiers: List[String] = {

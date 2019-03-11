@@ -2,6 +2,7 @@ package compiler.joos1w.environment
 
 import compiler.joos1w.ast._
 import compiler.joos1w.environment.environment.Signature
+import compiler.joos1w.environment.types.AbstractType
 import exceptions.EnvironmentError
 
 class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
@@ -37,6 +38,10 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       case ast: AbstractMethodDeclaration => ast.returnType
       case _ => throw new RuntimeException("Unknown ast type for method env" + ast)
     }
+  }
+
+  def abstractReturnType: AbstractType = {
+    types.buildTypeFromString(returnType, this)
   }
 
   override def verifyVariable(name: String): Unit = {

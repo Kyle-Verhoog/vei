@@ -80,6 +80,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   def isSubClassOf(superClass: ClassEnvironment): Boolean = {
+    if (superClass.qualifiedName == "java.lang.Object") return true
     if (superClass == this) return true
     if (superSetClasses.contains(superClass)) return true
     superSetClasses
@@ -251,11 +252,26 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     map.toMap
   }
 
+  def normalizeSignature(sig: Signature): Signature = {
+    val params = sig._2.get.asInstanceOf[List[String]]
+    val newParams =
+      params.map(param => {
+        val paramClass = serarchForClass(param)
+        if (paramClass.isDefined) {
+          paramClass.get.qualifiedName
+        } else { // primitive case
+          param
+        }
+      })
+    (sig._1, Option(newParams))
+  }
+
   def findMethodWithSignature(sig: Signature): Option[MethodEnvironment] = {
     containSet.values.foreach(entry => {
       entry match {
         case method: MethodEnvironment => {
-          if (method.signature == sig) {
+          println("looking at sig " + method.signature)
+          if (normalizeSignature(method.signature) == sig) {
             return Some(method)
           }
         }
@@ -332,7 +348,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
 
     if (env.isEmpty) {
       throw EnvironmentError(
-        "attempting to resolve unknown instance name: " + name + " within env " + this)
+        "attempting to resolve unknown instance name: " + name + " within env " + qualifiedName)
     }
 
     val varEnv = env.get.asInstanceOf[VariableEnvironment]
@@ -350,7 +366,8 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
     varEnv
       .findEnclosingClass()
-      .resolveInstanceNames(splitName.drop(1).mkString("."), varEnv.findEnclosingClass())
+      .resolveInstanceNames(splitName.drop(1).mkString("."),
+                            varEnv.findEnclosingClass())
   }
 
   // takes in a qualified or simple instance name and resolves it
