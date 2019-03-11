@@ -324,15 +324,22 @@ package object environment {
             "Attempting to create instance of not found class: " + ast.name)
 
         // check that argument types match a constructor params
-        println(
-          "looking for arg types of instance creation: " + ast.name + " in env ")
         val argTypes =
           ast.parameters.map(param => determineType(param, ast.env))
         val klassEnv = ast.env.lookupClass(ast.name).get
         val klass = klassEnv.ast.asInstanceOf[ClassDeclaration]
 
-        println("looking for arg types " + argTypes)
+        println("class instance creation " + ast.toStrTree)
+        println(
+          "looking for constructor of arg types " + argTypes + " within class " + ast.env
+            .findEnclosingClass()
+            .ast)
         val consturctorExists = klass.constructors.exists(constructor => {
+          // verify that we can access this constructor in the current env
+          verifyConstructorUsagePermission(
+            constructor.env.asInstanceOf[MethodEnvironment],
+            ast.env)
+
           val constructorParamTypes = constructor.rawParameters.map(param =>
             determineType(param, klassEnv))
           println(
@@ -345,7 +352,6 @@ package object environment {
           throw EnvironmentError(
             "No constructor exists for " + ast.name + " with param types " + argTypes)
         }
-
         return
       //case ast: CompilationUnit    => return
       case ast: PackageDeclaration =>
@@ -365,6 +371,8 @@ package object environment {
       }
       case ast: LocalVariableDeclaration => {
         if (ast.variableDeclarator.hasExpression) {
+          verifyAST(ast.variableDeclarator.expression) // verify this
+
           println("verifying local variable assignment")
           println(ast.toStrTree)
           verifyAssignment(
@@ -878,8 +886,24 @@ package object environment {
     }
   }
    */
+
+  def verifyConstructorUsagePermission(method: MethodEnvironment,
+                                       env: GenericEnvironment): Unit = {
+    val enclosing = env.findEnclosingClass()
+    val methodEnclosing = method.findEnclosingClass()
+
+    if (method.modifiers.contains("public")) {}
+    if (method.modifiers.contains("protected") && enclosing != methodEnclosing) {
+      throw EnvironmentError(
+        "Attempting to use protected constructor when not in the class!")
+    }
+    if (method.modifiers.contains("private") && enclosing != methodEnclosing) {
+      throw EnvironmentError("Attempting to use private method!")
+    }
+  }
+
   def verifyUsagePermission(method: MethodEnvironment,
-                               env: GenericEnvironment): Unit = {
+                            env: GenericEnvironment): Unit = {
     val enclosing = env.findEnclosingClass()
     val methodEnclosing = method.findEnclosingClass()
 
