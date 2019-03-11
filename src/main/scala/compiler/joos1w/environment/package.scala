@@ -653,12 +653,20 @@ package object environment {
           val fieldEnv =
             ttype.env.containSet(field, None).asInstanceOf[VariableEnvironment]
           val fieldType = fieldEnv.abstractType
+
+          // confirm we can access this field
+          verifyUsagePermission(fieldEnv, ttype.env)
+
           callingType = fieldType
         }
         case ttype: StringType => {
           val fieldEnv =
             ttype.env.containSet(field, None).asInstanceOf[VariableEnvironment]
           val fieldType = fieldEnv.abstractType
+
+          // confirm we can access this field
+          verifyUsagePermission(fieldEnv, ttype.env)
+
           callingType = fieldType
         }
         case _ =>
@@ -708,6 +716,9 @@ package object environment {
             if (objType.containSet.get(staticField, None).isDefined) {
               val staticEnv = objType.containSet(staticField, None)
               val staticTypeField = staticEnv.asInstanceOf[VariableEnvironment]
+
+              // confirm we can access this field
+              verifyUsagePermission(staticTypeField, env)
 
               if (i + 1 < splitName.length) {
                 val instanceFields =
@@ -868,7 +879,7 @@ package object environment {
   }
    */
   def verifyUsagePermission(method: MethodEnvironment,
-                            env: GenericEnvironment): Unit = {
+                               env: GenericEnvironment): Unit = {
     val enclosing = env.findEnclosingClass()
     val methodEnclosing = method.findEnclosingClass()
 
@@ -886,6 +897,7 @@ package object environment {
   def verifyUsagePermission(field: VariableEnvironment,
                             env: GenericEnvironment): Unit = {
     val enclosing = env.findEnclosingClass()
+    println("verifying usage of " + field.ast.toStrTree + " in env " + env.ast)
     val fieldEnclosing = field.findEnclosingClass()
 
     if (field.modifiers.contains("public")) { return }
