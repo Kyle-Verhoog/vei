@@ -1,6 +1,5 @@
 package compiler.joos1w.environment
 
-import com.sun.jdi.BooleanType
 import compiler.joos1w.ast.literals._
 import compiler.joos1w.ast.{CompilationUnit, _}
 import compiler.joos1w.environment.types.numeric._
@@ -399,6 +398,9 @@ package object environment {
       //case ast: ForStatement           => return
       //case ast: WhileStatement         => return
       //case ast: IfStatement            => return
+      case ast: Return =>
+        // TODO verify that it matches method type
+        determineType(ast, ast.env)
       case _ =>
     }
 
@@ -426,7 +428,7 @@ package object environment {
       case ast: ArrayCreationExpression => determineType(ast.primary, ast.env)
       case ast: ClassInstanceCreation => {
         println("DETERMINING CLASS INSTANCE CREATION TYPE")
-        determineNameTtype(ast.primary, ast.env)
+        determineType(ast.primary, ast.env)
       }
       case ast: PrimitiveType => ast.ttype
       case ast: ThisCall =>
@@ -435,6 +437,8 @@ package object environment {
         buildTypeFromString(ast.ttype, ast.env)
       case ast: FieldDeclaration => buildTypeFromString(ast.fieldType, ast.env)
       case ast: FormalParameter  => buildTypeFromString(ast.ttype, ast.env)
+      case ast: Return           => determineType(ast.expr, ast.env)
+      case ast: Empty            => new VoidType()
       case _ =>
         throw new RuntimeException("Unknown how to get type for ast: " + ast)
     }
@@ -633,7 +637,7 @@ package object environment {
         throw EnvironmentError("TODO: implement") //TODO
       }
       case "INSTANCEOF" => {
-        throw EnvironmentError("TODO: implement") //TODO
+        ttype2 // TODO
       }
       case _ => throw new RuntimeException("Unexpected binary operation: " + op)
     }
@@ -654,7 +658,7 @@ package object environment {
     println(
       "examining instance string with parenttype: " + parentType.stringType)
     if (callingEnv.isDefined) {
-      println( " with calling env " + callingEnv.get.ast.toStrTree)
+      println(" with calling env " + callingEnv.get.ast.toStrTree)
       println(callingEnv.get.findEnclosingClass().qualifiedName)
     }
 
@@ -942,6 +946,8 @@ package object environment {
       throw EnvironmentError("Attempting to use private method!")
     }
   }
+
+  def checkPermissions()
 
   def verifyCanCallFrom(callingEnv: GenericEnvironment,
                         calledEnv: GenericEnvironment): Unit = {
