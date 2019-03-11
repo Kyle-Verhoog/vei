@@ -310,7 +310,6 @@ package object environment {
       }
       // Name disamibuation
       case ast: Name => {
-
         determineType(ast, ast.env)
       }
       case ast: FieldAccess => {
@@ -371,7 +370,8 @@ package object environment {
       }
       case ast: LocalVariableDeclaration => {
         if (ast.variableDeclarator.hasExpression) {
-          verifyAST(ast.variableDeclarator.expression) // verify this
+          println("verifying local variable declarator sub expression")
+          verifyAST(ast.variableDeclarator) // verify this
 
           println("verifying local variable assignment")
           println(ast.toStrTree)
@@ -443,20 +443,24 @@ package object environment {
   def determineFieldAccessType(access: FieldAccess,
                                env: GenericEnvironment): AbstractType = {
     if (access.primary.isInstanceOf[Empty]) {
-      val ttype = env
+      val field = env
         .findEnclosingClass()
         .containSet((access.identifier, None))
         .asInstanceOf[VariableEnvironment]
-        .ttype
+      val ttype = field.ttype
+
+      verifyUsagePermission(field, env) // verify we can access this field here
       return types.buildTypeFromString(ttype, env)
     }
 
     val primaryType = determineType(access.primary, env)
     val klass = env.lookupClass(primaryType.stringType).get
-    val ttype = klass
+    val field = klass
       .containSet((access.identifier, None))
       .asInstanceOf[VariableEnvironment]
-      .ttype
+    val ttype = field.ttype
+
+    verifyUsagePermission(field, env) // verify we can access this field here
     types.buildTypeFromString(ttype, env)
   }
 
@@ -639,10 +643,20 @@ package object environment {
     buildTypeFromString(env.qualifiedName, env)
   }
 
-  def determineInstanceStringType(name: String,
-                                  parentType: AbstractType): AbstractType = {
+  // takes an optional calling env to check that this instance
+  // is accessible from that env
+  def determineInstanceStringType(
+      name: String,
+      parentType: AbstractType,
+      callingEnv: Option[GenericEnvironment] = None): AbstractType = {
     val instanceFields = name.split('.')
     var callingType = parentType
+    println(
+      "examining instance string with parenttype: " + parentType.stringType)
+    if (callingEnv.isDefined) {
+      println( " with calling env " + callingEnv.get.ast.toStrTree)
+      println(callingEnv.get.findEnclosingClass().qualifiedName)
+    }
 
     instanceFields.foreach(field => {
       println("looking at field " + field)
@@ -664,6 +678,10 @@ package object environment {
 
           // confirm we can access this field
           verifyUsagePermission(fieldEnv, ttype.env)
+          // verify we can call it from calling env
+          if (callingEnv.isDefined) {
+            verifyCanCallFrom(ttype.env, callingEnv.get)
+          }
 
           callingType = fieldType
         }
@@ -674,6 +692,10 @@ package object environment {
 
           // confirm we can access this field
           verifyUsagePermission(fieldEnv, ttype.env)
+          // verify we can call it from calling env
+          if (callingEnv.isDefined) {
+            verifyCanCallFrom(ttype.env, callingEnv.get)
+          }
 
           callingType = fieldType
         }
@@ -687,7 +709,8 @@ package object environment {
   }
 
   def determineNameTtype(ast: Name, env: GenericEnvironment): AbstractType = {
-    println("DEtermining name type " + ast.name + " in env " + env)
+    println(
+      "DEtermining name type " + ast.name + " in env " + env.ast.toStrTree)
     val splitName = ast.name.split('.').toList
 
     //val enclosingClass = env.findEnclosingClass()
@@ -702,7 +725,9 @@ package object environment {
 
       val instanceFields =
         splitName.slice(1, splitName.length + 1).mkString(".")
-      return determineInstanceStringType(instanceFields, localVarType)
+      return determineInstanceStringType(instanceFields,
+                                         localVarType,
+                                         Some(ast.env))
     } else if (env.lookupClass(head).isDefined) { // found object
       val obj = env.lookupClass(head).get
       if (splitName.length == 1) return convertClassEnvToType(obj)
@@ -918,11 +943,26 @@ package object environment {
     }
   }
 
+  def verifyCanCallFrom(callingEnv: GenericEnvironment,
+                        calledEnv: GenericEnvironment): Unit = {
+    val callingClass = callingEnv.findEnclosingClass()
+    val calledClass = calledEnv.findEnclosingClass()
+
+    println(
+      "Check if can call something in " + calledClass.qualifiedName + " from " + callingClass.qualifiedName)
+    if (!callingClass.isSubClassOf(calledClass)) {
+      throw EnvironmentError(
+        "Attempting to call something in " + calledClass.qualifiedName + " from " + callingClass.qualifiedName + ", but they arent subclasses of eachother")
+    }
+  }
+
   def verifyUsagePermission(field: VariableEnvironment,
                             env: GenericEnvironment): Unit = {
     val enclosing = env.findEnclosingClass()
     println("verifying usage of " + field.ast.toStrTree + " in env " + env.ast)
     val fieldEnclosing = field.findEnclosingClass()
+    println(
+      "field enclsoing " + fieldEnclosing.qualifiedName + " called enclsoing " + enclosing.qualifiedName)
 
     if (field.modifiers.contains("public")) { return }
     if (field.modifiers.contains("protected") && !enclosing.isSubClassOf(
