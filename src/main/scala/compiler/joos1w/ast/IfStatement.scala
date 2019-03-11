@@ -23,6 +23,10 @@ class IfStatement() extends AST {
     topLevelStatements
   }
 
+  def expr: AST = {
+    children.head
+  }
+
   override def fromParseTree(parseTree: ParseTreeNode[Token]): AST = {
     new AST()
   }

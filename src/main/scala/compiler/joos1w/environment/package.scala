@@ -307,6 +307,13 @@ package object environment {
       case ast: Assignment => {
         verifyAssignment(ast, ast.env)
       }
+      case ast: ArrayCreationExpression => {
+        // arrray cretion expression type must be numeric
+        if (!determineType(ast.expr, ast.expr.env).isNumeric) {
+          throw EnvironmentError(
+            "Array Creation Expressions must be a numeric type")
+        }
+      }
       // Name disamibuation
       case ast: Name => {
         determineType(ast, ast.env)
@@ -396,8 +403,17 @@ package object environment {
       //case ast: ClassDeclaration       => return
       //case ast: ConstructorDeclaration => return
       //case ast: ForStatement           => return
-      //case ast: WhileStatement         => return
-      //case ast: IfStatement            => return
+      case ast: WhileStatement => {
+        if (!determineType(ast.expr, ast.expr.env).isInstanceOf[BooleanType]) {
+          throw EnvironmentError("While statement condition must be a boolean!")
+        }
+      }
+      case ast: IfStatement => {
+        // verify that condition evaluates to a bool
+        if (!determineType(ast.expr, ast.expr.env).isInstanceOf[BooleanType]) {
+          throw EnvironmentError("If statement condition must be a boolean!")
+        }
+      }
       case ast: Return =>
         // TODO verify that it matches method type
         determineType(ast, ast.env)
@@ -411,21 +427,22 @@ package object environment {
 
   def determineType(ast: AST, env: GenericEnvironment): AbstractType = {
     ast match {
-      case ast: Assignment              => determineType(ast.getLHS, ast.env)
-      case ast: GeneralExpression       => determineExpressionType(ast, ast.env)
-      case ast: CastExpression          => determineExpressionType(ast, ast.env)
-      case ast: ConditionalExpression   => determineExpressionType(ast, ast.env)
-      case ast: UnaryExpression         => determineExpressionType(ast, ast.env)
-      case ast: Name                    => determineNameTtype(ast, ast.env)
-      case ast: MethodInvocation        => determineMethodInvocationType(ast, ast.env)
-      case ast: FieldAccess             => determineFieldAccessType(ast, ast.env)
-      case ast: ArrayAccess             => determineArrayAccessType(ast, ast.env)
-      case ast: BooleanLiteral          => ast.ttype
-      case ast: CharacterLiteral        => ast.ttype
-      case ast: IntegerLiteral          => ast.ttype
-      case ast: NullLiteral             => ast.ttype
-      case ast: StringLiteral           => ast.ttype
-      case ast: ArrayCreationExpression => determineType(ast.primary, ast.env)
+      case ast: Assignment            => determineType(ast.getLHS, ast.env)
+      case ast: GeneralExpression     => determineExpressionType(ast, ast.env)
+      case ast: CastExpression        => determineExpressionType(ast, ast.env)
+      case ast: ConditionalExpression => determineExpressionType(ast, ast.env)
+      case ast: UnaryExpression       => determineExpressionType(ast, ast.env)
+      case ast: Name                  => determineNameTtype(ast, ast.env)
+      case ast: MethodInvocation      => determineMethodInvocationType(ast, ast.env)
+      case ast: FieldAccess           => determineFieldAccessType(ast, ast.env)
+      case ast: ArrayAccess           => determineArrayAccessType(ast, ast.env)
+      case ast: BooleanLiteral        => ast.ttype
+      case ast: CharacterLiteral      => ast.ttype
+      case ast: IntegerLiteral        => ast.ttype
+      case ast: NullLiteral           => ast.ttype
+      case ast: StringLiteral         => ast.ttype
+      case ast: ArrayCreationExpression =>
+        new ArrayType(determineType(ast.primary, ast.env))
       case ast: ClassInstanceCreation => {
         println("DETERMINING CLASS INSTANCE CREATION TYPE")
         determineType(ast.primary, ast.env)
@@ -1005,7 +1022,8 @@ package object environment {
             if (ttype1.rootType == ttype2.rootType) return
             if (ttype2.rootType.isSubClassOf(ttype1.rootType)) return // sub class
           }
-          case _ => verifyAssignment(ttype1.rootType, ttype2, env)
+          case _ =>
+            throw EnvironmentError("Cant assign non array type to an array!")
         }
         return
       }
