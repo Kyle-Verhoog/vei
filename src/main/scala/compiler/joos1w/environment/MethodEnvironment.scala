@@ -60,4 +60,8 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     verifyVariable(name)
     variableTable += name -> env
   }
+
+  override def findEnclosingMethod(): MethodEnvironment = {
+    this
+  }
 }

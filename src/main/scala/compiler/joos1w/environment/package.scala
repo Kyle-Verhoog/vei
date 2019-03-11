@@ -415,8 +415,18 @@ package object environment {
         }
       }
       case ast: Return =>
-        // TODO verify that it matches method type
-        determineType(ast, ast.env)
+        val returnType = determineType(ast, ast.env)
+        val methodtype = buildTypeFromString(
+          ast.env.findEnclosingMethod().returnType,
+          ast.env.findEnclosingMethod())
+
+        if (!((returnType == methodtype) || (returnType
+              .isInstanceOf[NullType] && (methodtype
+              .isInstanceOf[CustomType] || methodtype
+              .isInstanceOf[StringType])))) {
+          throw EnvironmentError(
+            s"Return type should match method return value type. Return Type: $returnType     Method Type: $methodtype")
+        }
       case _ =>
     }
 
@@ -643,7 +653,16 @@ package object environment {
         throw EnvironmentError(
           "Cannot operate on non-numeric types type1: " + ttype1 + " type2: " + ttype2)
       }
-      case ">=" | ">" | "<=" | "<" | "!=" | "==" => {
+      case "!=" | "==" => {
+        if (!(ttype1.equals(ttype2) || ((ttype1
+              .isInstanceOf[CustomType] || ttype1
+              .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]))) {
+          throw EnvironmentError(
+            "Cannot compare two types that are not the same! type1: " + ttype1 + " type2: " + ttype2)
+        }
+        new types.BooleanType()
+      }
+      case ">=" | ">" | "<=" | "<" | "&&" | "||" => {
         if (!ttype1.equals(ttype2)) {
           throw EnvironmentError(
             "Cannot compare two types that are not the same! type1: " + ttype1 + " type2: " + ttype2)
@@ -653,8 +672,8 @@ package object environment {
       case "|" | "&" => {
         throw EnvironmentError("TODO: implement") //TODO
       }
-      case "INSTANCEOF" => {
-        ttype2 // TODO
+      case "instanceof" => {
+        new BooleanType
       }
       case _ => throw new RuntimeException("Unexpected binary operation: " + op)
     }
@@ -963,8 +982,6 @@ package object environment {
       throw EnvironmentError("Attempting to use private method!")
     }
   }
-
-  def checkPermissions()
 
   def verifyCanCallFrom(callingEnv: GenericEnvironment,
                         calledEnv: GenericEnvironment): Unit = {

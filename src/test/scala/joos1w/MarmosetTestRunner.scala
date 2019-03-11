@@ -61,14 +61,14 @@ class MarmosetTestRunner extends FunSuite {
       val libFiles =
         getMarmosetLibFiles("2").map(f => "src/main/resources/" + f)
 
-        expectedResult(1) match {
-          case "fail" =>
-            assertThrows[Exception](
-              Joos1WCompiler.compileFiles(filePaths ++ libFiles))
-          case "pass" =>
-            Joos1WCompiler.compileFiles(filePaths ++ libFiles)
-        }
-        println("✓ TEST PASSED")
+      expectedResult(1) match {
+        case "fail" =>
+          assertThrows[Exception](
+            Joos1WCompiler.compileFiles(filePaths ++ libFiles))
+        case "pass" =>
+          Joos1WCompiler.compileFiles(filePaths ++ libFiles)
+      }
+      println("✓ TEST PASSED")
 
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")
@@ -122,7 +122,6 @@ class MarmosetTestRunner extends FunSuite {
           failedTests += e
           println(e)
           println("✗ TEST FAILED")
-          throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")
