@@ -57,4 +57,6 @@ class RootEnvironment(val myAst: AST, val parent: Option[GenericEnvironment])
       findPackageEnv(name).get.classTable.toMap
     }
   }
+
+  override def isInMethod(): Boolean = false
 }

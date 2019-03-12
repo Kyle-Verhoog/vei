@@ -5,6 +5,8 @@ import compiler.joos1w.environment.environment.Signature
 import compiler.joos1w.environment.types.AbstractType
 import exceptions.EnvironmentError
 
+import scala.Boolean
+
 class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   def signature: Signature = {
@@ -64,4 +66,6 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   override def findEnclosingMethod(): MethodEnvironment = {
     this
   }
+
+  override def isInMethod(): Boolean = true
 }

@@ -159,6 +159,10 @@ class GenericEnvironment(val ast: AST,
     parentEnvironment.get.findEnclosingMethod()
   }
 
+  def isInMethod(): Boolean = {
+    parentEnvironment.get.isInMethod()
+  }
+
   // does the same thing as serarchClass but without checking for prefix
   // since this is to be used for typechecking
   def lookupClass(name: String): Option[ClassEnvironment] = {

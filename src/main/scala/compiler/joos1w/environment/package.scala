@@ -397,12 +397,25 @@ package object environment {
         println("LOOKING AT METHOD INVOK " + ast.toStrTree)
         println("env " + ast.env)
         determineType(ast, ast.env)
+        if (ast.id.isDefined) {
+          verifyAST(ast.primary.get)
+        }
         println("DONE METHOD INVOK")
         return
       }
       //case ast: ClassDeclaration       => return
-      //case ast: ConstructorDeclaration => return
-      //case ast: ForStatement           => return
+      case ast: ConstructorDeclaration => {
+        if (ast.identifier != ast.env.findEnclosingClass().qualifiedName.split('.').last) {
+          throw EnvironmentError("Constructor name must match class name!")
+        }
+      }
+      case ast: ForStatement => {
+        if (!determineType(ast.termination, ast.termination.env)
+              .isInstanceOf[BooleanType]) {
+          throw EnvironmentError(
+            "For statement termination condition must be a boolean!")
+        }
+      }
       case ast: WhileStatement => {
         if (!determineType(ast.expr, ast.expr.env).isInstanceOf[BooleanType]) {
           throw EnvironmentError("While statement condition must be a boolean!")
@@ -428,6 +441,14 @@ package object environment {
               s"Return type should match method return value type. Return Type: $returnType     Method Type: $methodtype")
           }
         }
+      case ast: ThisCall => {
+        if (ast.env.findEnclosingMethod().modifiers.contains("static")) {
+          throw EnvironmentError(
+            "Attempting to use this in a static method: " + ast.env
+              .findEnclosingMethod()
+              .signature)
+        }
+      }
       case _ =>
     }
 
@@ -539,6 +560,7 @@ package object environment {
           "Unable to find method for invocation with signature " + sig)
       }
 
+      verifyUsagePermission(method.get, klass)
       types.buildTypeFromString(method.get.returnType, method.get)
     } else { // just look up the name
       println("looking up method " + ast.name)
@@ -570,6 +592,12 @@ package object environment {
       if (method.isEmpty) {
         throw EnvironmentError(
           "Unable to find method for invocation with signature " + sig)
+      }
+
+      if (methodName.length == 1) {
+        verifyUsagePermission(method.get, env)
+      } else {
+        verifyUsagePermission(method.get, klass)
       }
 
       types.buildTypeFromString(method.get.returnType, method.get)
@@ -762,6 +790,19 @@ package object environment {
       val localVar = env.serarchForVariable(head).get
       val localVarType = localVar.abstractType
 
+      // check if trying to access non-static variable from static context
+      if (!localVar.modifiers.contains("static") && env.isInMethod()) {
+        val method = env.findEnclosingMethod()
+        if (method.modifiers.contains("static")) {
+          val classVar = method.findEnclosingClass().serarchForVariable(head)
+
+          if (classVar.isDefined && classVar.get == localVar) {
+            throw EnvironmentError(
+              "Attempting to access non-static class var from static context")
+          }
+        }
+      }
+
       if (splitName.length == 1) return localVarType
 
       val instanceFields =
@@ -793,6 +834,11 @@ package object environment {
 
               // confirm we can access this field
               verifyUsagePermission(staticTypeField, env)
+
+              if (!staticTypeField.modifiers.contains("static")) {
+                throw EnvironmentError(
+                  "Attempting to access non static field in a static context!")
+              }
 
               if (i + 1 < splitName.length) {
                 val instanceFields =
@@ -970,6 +1016,19 @@ package object environment {
 
   def verifyUsagePermission(method: MethodEnvironment,
                             env: GenericEnvironment): Unit = {
+    // check if we are invoking non-static method in a static context
+    if (env.isInMethod() && env
+          .findEnclosingMethod()
+          .modifiers
+          .contains("static")) {
+      if (!method.modifiers.contains("static")) {
+        throw EnvironmentError(
+          "Attempting to invoke non-static method" + method.signature + "in static context " + env
+            .findEnclosingMethod()
+            .signature)
+      }
+    }
+
     val enclosing = env.findEnclosingClass()
     val methodEnclosing = method.findEnclosingClass()
 

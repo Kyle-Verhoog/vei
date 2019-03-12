@@ -484,7 +484,6 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     inheritSet.get((name, None)).asInstanceOf[Option[VariableEnvironment]]
   }
 
-
   override def findEnclosingMethod(): MethodEnvironment = {
     throw new RuntimeException("Cannot find enclosing method on a class env!")
   }
@@ -492,4 +491,6 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   override def findEnclosingClass(): ClassEnvironment = {
     this
   }
+
+  override def isInMethod(): Boolean = false
 }

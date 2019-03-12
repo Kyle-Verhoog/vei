@@ -31,6 +31,7 @@ class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     var implicitModifiers = List[String]()
     // if parent is an interface, implicitly add public abstract
     if (parentEnvironment.get
+          .isInstanceOf[ClassEnvironment] && parentEnvironment.get
           .asInstanceOf[ClassEnvironment]
           .ast
           .isInstanceOf[InterfaceDeclaration]) {
@@ -38,9 +39,12 @@ class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     }
 
     myAst match {
-      case ast: FieldDeclaration => ast.modifiers ++ implicitModifiers
-      case _ =>
-        throw new RuntimeException("variable type does not have modifiers")
+      case ast: FieldDeclaration         => ast.modifiers ++ implicitModifiers
+      case ast: FormalParameter          => List()
+      case ast: LocalVariableDeclaration => List()
+      case ast =>
+        throw new RuntimeException(
+          "variable type does not have modifiers " + ast)
     }
   }
 }
