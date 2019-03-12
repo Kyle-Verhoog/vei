@@ -122,6 +122,7 @@ class MarmosetTestRunner extends FunSuite {
           failedTests += e
           println(e)
           println("✗ TEST FAILED")
+          throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")

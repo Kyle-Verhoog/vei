@@ -420,12 +420,13 @@ package object environment {
           ast.env.findEnclosingMethod().returnType,
           ast.env.findEnclosingMethod())
 
-        if (!((returnType == methodtype) || (returnType
-              .isInstanceOf[NullType] && (methodtype
-              .isInstanceOf[CustomType] || methodtype
-              .isInstanceOf[StringType])))) {
-          throw EnvironmentError(
-            s"Return type should match method return value type. Return Type: $returnType     Method Type: $methodtype")
+        try {
+          verifyAssignment(methodtype, returnType, ast.env)
+        } catch {
+          case e: Exception => {
+            throw EnvironmentError(
+              s"Return type should match method return value type. Return Type: $returnType     Method Type: $methodtype")
+          }
         }
       case _ =>
     }
@@ -1039,6 +1040,7 @@ package object environment {
             if (ttype1.rootType == ttype2.rootType) return
             if (ttype2.rootType.isSubClassOf(ttype1.rootType)) return // sub class
           }
+          case ttype2: NullType => return
           case _ =>
             throw EnvironmentError("Cant assign non array type to an array!")
         }
