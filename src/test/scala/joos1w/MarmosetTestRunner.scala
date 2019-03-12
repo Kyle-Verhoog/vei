@@ -94,7 +94,7 @@ class MarmosetTestRunner extends FunSuite {
         .head
     }
 
-    var i = 53
+    var i = 69
     var failedTests = ListBuffer[Throwable]()
     for (files <- listOfFiles.drop(i)) {
       i += 1
@@ -122,6 +122,7 @@ class MarmosetTestRunner extends FunSuite {
           failedTests += e
           println(e)
           println("✗ TEST FAILED")
+          throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")
       println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")

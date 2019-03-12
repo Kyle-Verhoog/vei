@@ -405,7 +405,11 @@ package object environment {
       }
       //case ast: ClassDeclaration       => return
       case ast: ConstructorDeclaration => {
-        if (ast.identifier != ast.env.findEnclosingClass().qualifiedName.split('.').last) {
+        if (ast.identifier != ast.env
+              .findEnclosingClass()
+              .qualifiedName
+              .split('.')
+              .last) {
           throw EnvironmentError("Constructor name must match class name!")
         }
       }
@@ -477,7 +481,12 @@ package object environment {
         new ArrayType(determineType(ast.primary, ast.env))
       case ast: ClassInstanceCreation => {
         println("DETERMINING CLASS INSTANCE CREATION TYPE")
-        determineType(ast.primary, ast.env)
+        val klassName = ast.primary.name.split('.')
+        if (klassName.length == 1) {
+          new CustomType(env.serarchForClass(klassName.head).get)
+        } else {
+          determineType(ast.primary, ast.env)
+        }
       }
       case ast: PrimitiveType => ast.ttype
       case ast: ThisCall =>
@@ -667,7 +676,11 @@ package object environment {
             "Cannot add void with non void type type1: " + ttype1 + " type2: " + ttype2)
         }
 
-        if (ttype1.isString || ttype2.isString) {
+        if (ttype1.isString) {
+          return new StringType(ttype1.asInstanceOf[StringType].env)
+        }
+
+        if (ttype2.isString) {
           return new StringType(ttype2.asInstanceOf[StringType].env)
         }
 
@@ -683,7 +696,8 @@ package object environment {
           "Cannot operate on non-numeric types type1: " + ttype1 + " type2: " + ttype2)
       }
       case "!=" | "==" => {
-        if (!(ttype1.equals(ttype2) || ((ttype1
+        if (!(ttype1.equals(ttype2) || (ttype1.isSubClassOf(ttype2) || ttype2
+              .isSubClassOf(ttype1)) || ((ttype1
               .isInstanceOf[CustomType] || ttype1
               .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]))) {
           throw EnvironmentError(
@@ -798,7 +812,7 @@ package object environment {
 
           if (classVar.isDefined && classVar.get == localVar) {
             throw EnvironmentError(
-              "Attempting to access non-static class var from static context")
+              "Attempting to access non-static class var from static context. Method: " + method.signature + " var: " + localVar.ast.toStrTree)
           }
         }
       }
@@ -1091,6 +1105,20 @@ package object environment {
                        env: GenericEnvironment): Unit = {
     println("comparing " + ttype1 + " with " + ttype2 + " in env " + env)
 
+    // check for special java built ins
+    ttype1 match {
+      case ttype1: CustomType => {
+        ttype1.env.qualifiedName match {
+          case "java.lang.Object" | "java.lang.Cloneable" |
+              "java.io.Serializable" => {
+            if (ttype2.isInstanceOf[ArrayType]) return
+          }
+          case _ =>
+        }
+      }
+      case _ =>
+    }
+
     // verify array assignability
     ttype1 match {
       case ttype1: ArrayType => {
@@ -1109,8 +1137,10 @@ package object environment {
     }
 
     if (ttype1.equals(ttype2)) return
-    if (ttype1.isInstanceOf[ShortType] && ttype2.isInstanceOf[BytesType]) return
     if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[CharType]) return
+    if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[ShortType]) return
+    if (ttype1.isInstanceOf[ShortType] && ttype2.isInstanceOf[BytesType]) return
+    if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[BytesType]) return // by transitivity
     if ((ttype1.isInstanceOf[CustomType] || ttype1
           .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]) return
 
