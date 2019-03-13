@@ -334,6 +334,10 @@ package object environment {
         val klassEnv = ast.env.lookupClass(ast.name).get
         val klass = klassEnv.ast.asInstanceOf[ClassDeclaration]
 
+        if (klass.modifiers.contains("abstract")) {
+          throw EnvironmentError("Cannot instantiate abstract class!")
+        }
+
         println("class instance creation " + ast.toStrTree)
         println(
           "looking for constructor of arg types " + argTypes + " within class " + ast.env
@@ -437,6 +441,12 @@ package object environment {
           ast.env.findEnclosingMethod().returnType,
           ast.env.findEnclosingMethod())
 
+        if (methodtype
+              .isInstanceOf[VoidType] && !ast.expr().isInstanceOf[Empty]) {
+          throw EnvironmentError(
+            "Cannot have any expression after return in a void method")
+        }
+
         try {
           verifyAssignment(methodtype, returnType, ast.env)
         } catch {
@@ -516,6 +526,21 @@ package object environment {
     }
 
     val primaryType = determineType(access.primary, env)
+
+    primaryType match {
+      case primaryType: ArrayType =>
+        if (access.identifier == "length") {
+          return new IntType
+        } else {
+          throw EnvironmentError(
+            "Attempting to invoke non .length field access on an array")
+        }
+      case primaryType: CustomType =>
+      case primaryType: StringType =>
+      case _ =>
+        throw EnvironmentError("Attempting to invoke field on primitive type")
+    }
+
     val klass = env.lookupClass(primaryType.stringType).get
     val field = klass
       .containSet((access.identifier, None))
@@ -622,11 +647,30 @@ package object environment {
                                      determineType(ast.secondExpr, env))
       }
       case ast: CastExpression => {
-        if (ast.simpleType.isDefined) {
+        val typeCastTo = if (ast.simpleType.isDefined) {
           types.buildTypeFromString(ast.simpleType.get, ast.env)
         } else { // it has an expression as its type
           determineType(ast.children.head, env)
         }
+
+        val typeBeingCast = determineType(ast.beingCast, ast.env)
+
+        println("verifying cast Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
+        try {
+          verifyAssignment(typeCastTo, typeBeingCast, ast.env)
+        } catch {
+          case e: Exception => {
+            try {
+              verifyAssignment(typeBeingCast, typeCastTo, ast.env)
+            } catch {
+              case e: Exception =>
+                throw EnvironmentError(
+                  "Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
+            }
+          }
+        }
+
+        typeCastTo
       }
       case ast: ConditionalExpression => {
         determineBinaryOperationType(ast.operator,
@@ -703,6 +747,11 @@ package object environment {
           throw EnvironmentError(
             "Cannot compare two types that are not the same! type1: " + ttype1 + " type2: " + ttype2)
         }
+
+        if (ttype1.isInstanceOf[VoidType] || ttype2.isInstanceOf[VoidType]) {
+          throw EnvironmentError("Cannot have void type in equality check!")
+        }
+
         new types.BooleanType()
       }
       case ">=" | ">" | "<=" | "<" | "&&" | "||" => {
@@ -716,6 +765,18 @@ package object environment {
         throw EnvironmentError("TODO: implement") //TODO
       }
       case "instanceof" => {
+        if (!(ttype1.isString || ttype1.isInstanceOf[CustomType] || ttype1
+              .isInstanceOf[ArrayType])) {
+          throw EnvironmentError(
+            "Cannot call instanceof on simple type " + ttype1)
+        }
+
+        if (!(ttype2.isString || ttype2.isInstanceOf[CustomType] || ttype1
+              .isInstanceOf[ArrayType])) {
+          throw EnvironmentError(
+            "Cannot check that osmething is a simple type: " + ttype2)
+        }
+
         new BooleanType
       }
       case _ => throw new RuntimeException("Unexpected binary operation: " + op)
@@ -1124,8 +1185,10 @@ package object environment {
       case ttype1: ArrayType => {
         ttype2 match {
           case ttype2: ArrayType => {
+            println(s"comparing two array type $ttype1 $ttype2")
             if (ttype1.rootType == ttype2.rootType) return
             if (ttype2.rootType.isSubClassOf(ttype1.rootType)) return // sub class
+            throw EnvironmentError(s"Cant assign $ttype2 to $ttype1")
           }
           case ttype2: NullType => return
           case _ =>

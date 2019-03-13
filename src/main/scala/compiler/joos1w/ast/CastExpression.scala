@@ -53,4 +53,8 @@ class CastExpression extends AST {
       case _ => None
     }
   }
+
+  def beingCast: AST = {
+    children.last
+  }
 }

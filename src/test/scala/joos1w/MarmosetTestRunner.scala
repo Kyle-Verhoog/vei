@@ -94,9 +94,9 @@ class MarmosetTestRunner extends FunSuite {
         .head
     }
 
-    var i = 69
+    var i = 0
     var failedTests = ListBuffer[Throwable]()
-    for (files <- listOfFiles.drop(i)) {
+    for (files <- listOfFiles.drop(0)) {
       i += 1
       val expectedResult = getExpectedResult(files.mkString(" "))
       println(
