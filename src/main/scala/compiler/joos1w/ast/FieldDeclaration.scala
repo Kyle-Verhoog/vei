@@ -40,4 +40,8 @@ class FieldDeclaration(val modifiers: List[String]) extends AST {
       case child: VariableDeclarator => child
     }
   }
+
+  override def strFields: String = {
+    s"$fieldType $name"
+  }
 }

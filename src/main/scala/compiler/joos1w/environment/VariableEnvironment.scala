@@ -3,7 +3,11 @@ package compiler.joos1w.environment
 import compiler.joos1w.ast._
 import compiler.joos1w.environment.types.AbstractType
 
-class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
+// order is the order in whcih this variable was inserted into its parent environment
+// mainly used to know which fields come first since we dont keep the hierarchy for fields
+class VariableEnvironment(val myAst: AST,
+                          parent: Option[GenericEnvironment],
+                          var order: Int = 0)
     extends GenericEnvironment(myAst, parent) {
   def name: String = {
     myAst match {
@@ -13,6 +17,8 @@ class VariableEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       case _                             => throw new RuntimeException("Unknown ast type for variable env")
     }
   }
+
+  def isSimpleName: Boolean = name.split('.').length > 1
 
   def ttype: String = {
     myAst match {

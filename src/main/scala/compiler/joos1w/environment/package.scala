@@ -375,6 +375,9 @@ package object environment {
             determineType(ast.variableDeclarator.expression, ast.env),
             ast.env
           )
+
+          verifyFieldDeclarator(ast.env.asInstanceOf[VariableEnvironment],
+                                ast.variableDeclarator.expression)
         }
         return
       }
@@ -654,8 +657,15 @@ package object environment {
         }
 
         val typeBeingCast = determineType(ast.beingCast, ast.env)
+        println(
+          "verifying cast Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
 
-        println("verifying cast Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
+        if (typeCastTo.isNumeric && !typeCastTo
+              .isInstanceOf[ArrayType] && typeBeingCast.isNumeric && !typeBeingCast
+              .isInstanceOf[ArrayType]) {
+          return typeCastTo
+        }
+
         try {
           verifyAssignment(typeCastTo, typeBeingCast, ast.env)
         } catch {
@@ -766,12 +776,13 @@ package object environment {
       }
       case "instanceof" => {
         if (!(ttype1.isString || ttype1.isInstanceOf[CustomType] || ttype1
-              .isInstanceOf[ArrayType])) {
+              .isInstanceOf[ArrayType] || ttype1
+              .isInstanceOf[NullType])) {
           throw EnvironmentError(
             "Cannot call instanceof on simple type " + ttype1)
         }
 
-        if (!(ttype2.isString || ttype2.isInstanceOf[CustomType] || ttype1
+        if (!(ttype2.isString || ttype2.isInstanceOf[CustomType] || ttype2
               .isInstanceOf[ArrayType])) {
           throw EnvironmentError(
             "Cannot check that osmething is a simple type: " + ttype2)
@@ -824,7 +835,7 @@ package object environment {
           verifyUsagePermission(fieldEnv, ttype.env)
           // verify we can call it from calling env
           if (callingEnv.isDefined) {
-            verifyCanCallFrom(ttype.env, callingEnv.get)
+            verifyCanCallFrom(callingEnv.get, ttype.env)
           }
 
           callingType = fieldType
@@ -838,7 +849,7 @@ package object environment {
           verifyUsagePermission(fieldEnv, ttype.env)
           // verify we can call it from calling env
           if (callingEnv.isDefined) {
-            verifyCanCallFrom(ttype.env, callingEnv.get)
+            verifyCanCallFrom(callingEnv.get, ttype.env)
           }
 
           callingType = fieldType
@@ -1214,5 +1225,89 @@ package object environment {
 
     throw new RuntimeException(
       "TODO: Implement or genuinely bad assignment?" + ttype1 + " " + ttype2)
+  }
+
+  def verifyFieldDeclarator(declarationEnv: VariableEnvironment,
+                            ast: AST): Unit = {
+    ast match {
+      case ast: Name => {
+        var otherField =
+          declarationEnv.findEnclosingClass().findLocalVariable(ast.name)
+
+        if (otherField.isEmpty) {
+          otherField = declarationEnv
+            .findEnclosingClass()
+            .findLocalVariable(ast.partsOfName.head)
+        }
+
+        // two sets of rules depending on if declaration is static or not
+        if (declarationEnv.modifiers.contains("static")) {
+          println("checking name " + ast)
+          if (ast.name == declarationEnv.name) {
+            throw EnvironmentError(
+              "Illegal forward reference of self on static field initilization: " + declarationEnv.ast)
+          }
+
+          println("checking forward reference of " + declarationEnv.ast)
+          println("other: " + ast.name)
+          if (otherField.isDefined) {
+            println("order of decl " + declarationEnv.order)
+            println("order of other " + otherField.get.order)
+          }
+
+          if (otherField.isDefined && !otherField.get.modifiers.contains(
+                "static")) {
+            throw EnvironmentError(
+              "Static field declaration cannot refer to non static fields.")
+          }
+
+          if (otherField.isDefined && otherField.get.order > declarationEnv.order) {
+            throw EnvironmentError(
+              "Attempting to perform forward access in static declaration of " + declarationEnv.ast + " to access " + otherField.get.ast)
+          }
+        } else { // non static case
+          println("checking name " + ast)
+          if (ast.name == declarationEnv.name) {
+            throw EnvironmentError(
+              "Illegal forward reference of self on static field initilization: " + declarationEnv.ast)
+          }
+
+          println("checking forward reference of " + declarationEnv.ast)
+          println("other: " + ast.name)
+          if (otherField.isDefined) {
+            println("order of decl " + declarationEnv.order)
+            println("order of other " + otherField.get.order)
+          }
+
+          if (otherField.isDefined && !otherField.get.modifiers.contains(
+                "static") && otherField.get.order > declarationEnv.order) {
+            throw EnvironmentError(
+              "Attempting to perform forward access in declaration of " + declarationEnv.ast + " to access " + otherField.get.ast)
+          }
+        }
+        return
+      }
+      case ast: Assignment => {
+        // for assignments we only care about RHS when the LHS is a simple name
+        if (ast.getLHS.isInstanceOf[Name] && ast.getLHS
+              .asInstanceOf[Name]
+              .isSimpleName) {
+          verifyFieldDeclarator(declarationEnv, ast.getRHS)
+          return
+        }
+      }
+      case ast: ThisCall => {
+        if (declarationEnv.modifiers.contains("static")) {
+          throw EnvironmentError(
+            "keyword THIS cannot occur within the declaration of a static field")
+        }
+
+        return
+      }
+      case ast: ClassInstanceCreation => return
+      case _                          =>
+    }
+
+    ast.children.foreach(child => verifyFieldDeclarator(declarationEnv, child))
   }
 }

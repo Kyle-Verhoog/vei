@@ -52,6 +52,10 @@ class Name(val name: String) extends AST {
   var staticField: Option[String] = None
   var staticType: Option[AbstractType] = None
 
+  def isSimpleName: Boolean = {
+    partsOfName.length > 1
+  }
+
   override def strFields: String = {
     s"$name"
   }

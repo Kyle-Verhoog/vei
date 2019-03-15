@@ -881,8 +881,9 @@ object AST {
         }
       case "array_type" =>
         childrenTypes match {
-          case "primitive_type" :: "[" :: "]" :: Nil |
-              "name" :: "[" :: "]" :: Nil =>
+          case "primitive_type" :: "[" :: "]" :: Nil =>
+            new PrimitiveType(getValue(children.head) + "[]")
+          case "name" :: "[" :: "]" :: Nil =>
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }

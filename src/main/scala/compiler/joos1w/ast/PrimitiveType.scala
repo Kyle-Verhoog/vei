@@ -7,4 +7,7 @@ class PrimitiveType(val typeName: String) extends AST {
   def ttype: AbstractType = {
     types.buildTypeFromString(typeName, this.env)
   }
+  override def strFields: String = {
+    s"$typeName"
+  }
 }

@@ -493,4 +493,16 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   override def isInMethod(): Boolean = false
+
+  // overide to add ordering information to fields
+  override def insertLocalVariable(name: String, env: VariableEnvironment): Unit = {
+    if (variableTable.contains(name)) {
+      throw EnvironmentError(
+        "Local variable: " + name + " already declared in current scope")
+    }
+
+    env.order = variableTable.keys.size
+    variableTable += name -> env
+    if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
+  }
 }
