@@ -1,5 +1,7 @@
 package joos1w
 
+import compiler.joos1w.Joos1WReachability
+import compiler.joos1w.ReachableException
 import org.scalatest.FunSuite
 
 /**
@@ -71,4 +73,43 @@ class ReachabilityTest extends FunSuite {
       | iff the if–then–else statement is reachable. The else-statement is reachable iff the 
       | if–then–else statement is reachable.
     """.stripMargin) {}
+
+  test("""
+      | Unreachable after return
+    """.stripMargin) {
+    val ast = TestUtils.ASTForSrc(s"""
+                                      | public class C {
+                                      |   public int y() {
+                                      |     int x = 2;
+                                      |     return x;
+                                      |     // unreachable!
+                                      |     int y = 3;
+                                      |   }
+                                      | }
+       """.stripMargin)
+    assertThrows[ReachableException](Joos1WReachability.checkReachability(ast))
+  }
+
+  test("""
+         | Evaluate constant expression
+       """.stripMargin) {
+    val ast1 = TestUtils.ASTForSrc(s"""
+                                     | public class C extends B {
+                                     |   static int y = 50;
+                                     |   public int y() {
+                                     |     int z = 10;
+                                     |     while (x*4 + z != y) {
+                                     |       // unreachable since x*4 + z == 50 == y
+                                     |       boolean b = false;
+                                     |     }
+                                     |   }
+                                     | }
+       """.stripMargin)
+    val ast2 = TestUtils.ASTForSrc(s"""
+                                     | public class B {
+                                     |   static int x = 10;
+                                     | }
+       """.stripMargin)
+    // assertThrows[ReachableException](Joos1WReachability.checkReachability(ast))
+  }
 }
