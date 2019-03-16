@@ -18,7 +18,7 @@ class VariableEnvironment(val myAst: AST,
     }
   }
 
-  def isSimpleName: Boolean = name.split('.').length > 1
+  def isSimpleName: Boolean = name.split('.').length == 1
 
   def ttype: String = {
     myAst match {

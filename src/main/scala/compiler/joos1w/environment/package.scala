@@ -550,6 +550,8 @@ package object environment {
       .asInstanceOf[VariableEnvironment]
     val ttype = field.ttype
 
+    verifyCalling(env, klass, field)
+
     verifyUsagePermission(field, env) // verify we can access this field here
     types.buildTypeFromString(ttype, env)
   }
@@ -597,6 +599,7 @@ package object environment {
           "Unable to find method for invocation with signature " + sig)
       }
 
+      verifyCalling(env, klass, method.get)
       verifyUsagePermission(method.get, klass)
       types.buildTypeFromString(method.get.returnType, method.get)
     } else { // just look up the name
@@ -634,10 +637,63 @@ package object environment {
       if (methodName.length == 1) {
         verifyUsagePermission(method.get, env)
       } else {
+        println("passing in name " + methodName.head)
+        verifyCalling(env, klass, method.get, Some(methodName.head))
         verifyUsagePermission(method.get, klass)
       }
 
       types.buildTypeFromString(method.get.returnType, method.get)
+    }
+  }
+
+  // calling: S  called: Q, fieldOrMethod.enclosing: C
+  def verifyCalling(calling: GenericEnvironment,
+                    called: GenericEnvironment,
+                    fieldOrMethod: GenericEnvironment,
+                    possibleVar: Option[String] = None): Unit = {
+    // return if not protected since it doesn't matter
+    fieldOrMethod match {
+      case field: VariableEnvironment =>
+        println("checkign field " + field.ast)
+        println(field.modifiers)
+        if (!field.modifiers.contains("protected")) return
+      case method: MethodEnvironment =>
+        println("checkign method " + method.ast)
+        println(method.modifiers)
+        if (!method.modifiers.contains("protected")) return
+      case _ =>
+        throw new RuntimeException(
+          "Expecting one of field/method got " + fieldOrMethod)
+    }
+
+    val callingClass = calling.findEnclosingClass()
+    val calledClass = called.findEnclosingClass()
+    val declClass = fieldOrMethod.findEnclosingClass()
+
+    println(
+      "checking if we can access " + fieldOrMethod.ast + " from " + callingClass.ast + " when its in " + calledClass.ast)
+    println("declared class " + declClass.ast)
+
+    // if given a var, check if it exists, if it does make sure we are allowed to access it
+    if (possibleVar.isDefined) {
+      println("trying to find " + possibleVar)
+      val variable = calling.serarchForVariable(possibleVar.get)
+      if (variable.isDefined) {
+        val varType = buildTypeFromString(variable.get.ttype, calling)
+        println("checking if " + varType + " subs " + callingClass.ast)
+        if (!varType.isSubClassOf(
+              buildTypeFromString(callingClass.qualifiedName, callingClass))) {
+          throw EnvironmentError(
+            "YOU CANT DO THAT SEE Je_6_ProtectedAccess_InstanceMethod_SuperVar")
+        }
+      }
+    }
+
+    if (!(callingClass.packageName == calledClass.packageName || callingClass
+          .isSubClassOf(declClass) || (calledClass
+          .isSubClassOf(callingClass) && callingClass.isSubClassOf(declClass)))) {
+      throw EnvironmentError(
+        "Cannot access method/field of klass: " + calledClass.ast + " from " + callingClass.ast)
     }
   }
 
@@ -813,6 +869,10 @@ package object environment {
       println(callingEnv.get.findEnclosingClass().qualifiedName)
     }
 
+    if (callingEnv.isDefined) {
+      verifyInstanceIsCallable(name, parentType, callingEnv.get)
+    }
+
     instanceFields.foreach(field => {
       println("looking at field " + field)
       callingType match {
@@ -835,7 +895,7 @@ package object environment {
           verifyUsagePermission(fieldEnv, ttype.env)
           // verify we can call it from calling env
           if (callingEnv.isDefined) {
-            verifyCanCallFrom(callingEnv.get, ttype.env)
+            verifyCanCallFrom(ttype.env, callingEnv.get)
           }
 
           callingType = fieldType
@@ -849,7 +909,7 @@ package object environment {
           verifyUsagePermission(fieldEnv, ttype.env)
           // verify we can call it from calling env
           if (callingEnv.isDefined) {
-            verifyCanCallFrom(callingEnv.get, ttype.env)
+            verifyCanCallFrom(ttype.env, callingEnv.get)
           }
 
           callingType = fieldType
@@ -861,6 +921,38 @@ package object environment {
     })
 
     callingType
+  }
+
+  // verifies that the head of the instance fields is callable in the calling environment
+  def verifyInstanceIsCallable(name: String,
+                               parentType: AbstractType,
+                               callingEnv: GenericEnvironment): Unit = {
+    val head = name.split('.').head
+    var callingType = parentType
+    callingType match {
+      case ttype: ArrayType => {
+        if (head == "length") {
+          return
+        }
+        callingType = ttype.rootType
+      }
+      case _ =>
+    }
+
+    callingType match {
+      case ttype: CustomType => {
+        val fieldEnv =
+          ttype.env.containSet(head, None).asInstanceOf[VariableEnvironment]
+        verifyCanCallFrom(callingEnv, fieldEnv)
+      }
+      case ttype: StringType => {
+        val fieldEnv =
+          ttype.env.containSet(head, None).asInstanceOf[VariableEnvironment]
+        verifyCanCallFrom(callingEnv, fieldEnv)
+      }
+      case _ =>
+        throw EnvironmentError("Looking up instance fields on primitive type!")
+    }
   }
 
   def determineNameTtype(ast: Name, env: GenericEnvironment): AbstractType = {
@@ -1289,19 +1381,23 @@ package object environment {
       }
       case ast: Assignment => {
         // for assignments we only care about RHS when the LHS is a simple name
+        println("analyzing the assignment")
         if (ast.getLHS.isInstanceOf[Name] && ast.getLHS
               .asInstanceOf[Name]
               .isSimpleName) {
+          println("only doing right")
           verifyFieldDeclarator(declarationEnv, ast.getRHS)
           return
         }
+      }
+      case ast: FieldAccess => {
+        if (ast.primary.isInstanceOf[ThisCall]) return
       }
       case ast: ThisCall => {
         if (declarationEnv.modifiers.contains("static")) {
           throw EnvironmentError(
             "keyword THIS cannot occur within the declaration of a static field")
         }
-
         return
       }
       case ast: ClassInstanceCreation => return
