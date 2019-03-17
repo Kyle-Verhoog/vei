@@ -2,7 +2,6 @@
 import java.util.Random;
 
 public class Main {
-	/*
     public Random random = new Random();
 
     public Main () {}
@@ -31,28 +30,4 @@ public class Main {
 	j.m1();
         return 123;
     }
-    */
-
-	public static int asdf() {
-    	boolean one;
-		boolean two;
-		boolean three;
-		boolean four;
-		boolean five;
-		if (one) {
-			if (three) {
-
-			}
-		}
-		else if (two) {
-			if (four) {
-
-			}
-
-		} else {
-			if (five) {
-
-			}
-		}
-	}
 }

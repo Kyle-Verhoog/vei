@@ -168,23 +168,33 @@ object Joos1WReachability {
             statementReachableCheck(Some(ast.body), reachable)
             reachable
         }
+      case Some(ast: IfStatement) =>
+        statementReachableCheck(ast.getChild(1), reachable)
       case Some(ast: TopLevelIf) =>
-        // val exprVal = evalBooleanExpression(ast.expr)
         val s =
           ast.children.map(childIf =>
             statementReachableCheck(Some(childIf), reachable))
-        val out = s.foldLeft[Reachable](Maybe()) {
-          case (acc: Maybe, reachable: Maybe) => Maybe()
-          case (acc: No, reachable: Maybe)    => Maybe()
-          case (acc: Maybe, reachable: No)    => Maybe()
-          case (acc: No, reachable: No)       => No()
+        val out = s.foldLeft[Reachable](No()) {
+          case (_: Maybe, _: Maybe) => Maybe()
+          case (_: No, _: Maybe)    => Maybe()
+          case (_: Maybe, _: No)    => Maybe()
+          case (_: No, _: No)       => No()
           case (acc, reachable) =>
             throw new RuntimeException(s"acc: $acc reachable: $reachable")
         }
         out
-      case Some(ast: Return) =>
-        No()
-      case Some(ast: AST) => reachable
+      case Some(ast: ASTList) =>
+        ast.fieldName match {
+          case "block_statements" =>
+            ast.children.foldLeft[Reachable](reachable) {
+              case (out, next) => statementReachableCheck(Some(next), out)
+            }
+        }
+      // case Some(ast: MethodInvocation)         => reachable
+      // case Some(ast: LocalVariableDeclaration) => reachable
+      // case Some(ast: Assignment)               => reachable
+      case Some(ast: Return) => No()
+      case Some(ast: AST)    => reachable
     }
   }
 
@@ -192,6 +202,8 @@ object Joos1WReachability {
     println(s"AST: $ast REACHABLE: $reachable")
     ast match {
       case Some(ast: CompilationUnit) =>
+        println("\n\n\n")
+        println(ast.fileName)
         reachableCheck(ast.typeDeclaration, reachable)
       case Some(ast: TypeDeclaration) =>
         reachableCheck(ast.leftChild, reachable)
@@ -208,7 +220,9 @@ object Joos1WReachability {
             // ast.children.foreach(ast => out = reachableCheck(Some(ast), out))
             // out
             ast.children.foldLeft[Reachable](reachable) {
-              case (out, next) => statementReachableCheck(Some(next), out)
+              case (out, next) =>
+                println(s"PREV $out $next")
+                statementReachableCheck(Some(next), out)
             }
         }
       case Some(ast: InterfaceDeclaration) => Maybe()
