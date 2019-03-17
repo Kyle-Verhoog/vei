@@ -1037,7 +1037,8 @@ object AST {
             )
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
         }
-      case "dims" => new Empty
+      case "dims"            => new Empty
+      case "empty_statement" => new Empty
       case _ =>
         throw ASTConstructionException(s"Unhandled token type '$tokenType'")
     }

@@ -6,8 +6,8 @@ class CustomType(val env: ClassEnvironment) extends AbstractType {
   override def stringType: String = env.qualifiedName
 
   override def isSubClassOf(ttype: AbstractType): Boolean = {
-    println("checking sub class")
-    println("my super " + env.superSet)
+    // println("checking sub class")
+    // println("my super " + env.superSet)
     ttype match {
       case ttype: CustomType => env.isSubClassOf(ttype.env)
       case ttype: StringType => env.isSubClassOf(ttype.env)

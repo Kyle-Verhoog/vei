@@ -14,7 +14,7 @@ abstract class AbstractType {
   override def equals(obj: Any): Boolean = {
     obj match {
       case obj: AbstractType => {
-        println("comparing " + this + " with " + obj)
+        // println("comparing " + this + " with " + obj)
         this.stringType == obj.stringType
       }
     }

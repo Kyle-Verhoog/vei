@@ -1,7 +1,10 @@
 package joos1w
 
-import compiler.joos1w.Joos1WReachability
-import compiler.joos1w.ReachableException
+import compiler.joos1w.{
+  Joos1WEnvironment,
+  Joos1WReachability,
+  ReachableException
+}
 import org.scalatest.FunSuite
 
 /**
@@ -26,14 +29,6 @@ class ReachabilityTest extends FunSuite {
   test("""
       | An empty statement can complete normally iff it is reachable.
     """.stripMargin) {}
-
-  test("""
-         | An empty statement can complete normally iff it is reachable.
-       """.stripMargin) {}
-
-  test("""
-         | An empty statement can complete normally iff it is reachable.
-       """.stripMargin) {}
 
   test(
     """
@@ -87,6 +82,7 @@ class ReachabilityTest extends FunSuite {
                                       |   }
                                       | }
        """.stripMargin)
+    Joos1WEnvironment.buildEnvironment(List(ast))
     assertThrows[ReachableException](Joos1WReachability.checkReachability(ast))
   }
 

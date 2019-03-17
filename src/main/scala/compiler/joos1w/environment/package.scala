@@ -132,7 +132,7 @@ package object environment {
     }
 
     if (ast.env == null) {
-      println("huhhhhh???? " + ast)
+      //println("huhhhhh???? " + ast)
     }
 
     if (environment != null && parentEnvironment.isDefined) {
@@ -185,7 +185,7 @@ package object environment {
             if (!verifyType(ast.returnType, env)) {
               throw EnvironmentError("Unknown return type: " + ast.returnType)
             }
-            println("verifying method env body " + env.ast.toStrTree)
+            // //println("verifying method env body " + env.ast.toStrTree)
           }
           // just verify return type, no body to check
           case ast: AbstractMethodDeclaration => {
@@ -231,7 +231,7 @@ package object environment {
     // do checks on the environments themselves
     env match {
       case env: ClassEnvironment =>
-        println("verifying class env " + env.qualifiedName)
+        // println("verifying class env " + env.qualifiedName)
         // verify no cycle
         env.verifyNoCyclesInExtends()
 
@@ -302,7 +302,7 @@ package object environment {
   // traverses an AST as part of verifying an environment,
   // only go as deep as an environments scope (eg. dont go into methods, classes, etc...)
   def verifyAST(ast: AST): Unit = {
-    println("verifying ast " + ast)
+    // println("verifying ast " + ast)
     ast match {
       case ast: Assignment => {
         verifyAssignment(ast, ast.env)
@@ -338,11 +338,11 @@ package object environment {
           throw EnvironmentError("Cannot instantiate abstract class!")
         }
 
-        println("class instance creation " + ast.toStrTree)
-        println(
-          "looking for constructor of arg types " + argTypes + " within class " + ast.env
-            .findEnclosingClass()
-            .ast)
+        //println("class instance creation " + ast.toStrTree)
+        //println(
+        // "looking for constructor of arg types " + argTypes + " within class " + ast.env
+        //.findEnclosingClass()
+        //.ast)
         val consturctorExists = klass.constructors.exists(constructor => {
           // verify that we can access this constructor in the current env
           verifyConstructorUsagePermission(
@@ -351,9 +351,9 @@ package object environment {
 
           val constructorParamTypes = constructor.rawParameters.map(param =>
             determineType(param, klassEnv))
-          println(
-            "examining consturctor " + constructor.signature + " with params " + constructorParamTypes + " to " + argTypes)
-          println(constructorParamTypes == argTypes)
+          //println(
+          // "examining consturctor " + constructor.signature + " with params " + constructorParamTypes + " to " + argTypes)
+          //println(constructorParamTypes == argTypes)
           constructorParamTypes == argTypes
         })
 
@@ -383,11 +383,11 @@ package object environment {
       }
       case ast: LocalVariableDeclaration => {
         if (ast.variableDeclarator.hasExpression) {
-          println("verifying local variable declarator sub expression")
+          //println("verifying local variable declarator sub expression")
           verifyAST(ast.variableDeclarator) // verify this
 
-          println("verifying local variable assignment")
-          println(ast.toStrTree)
+          //println("verifying local variable assignment")
+          //println(ast.toStrTree)
           verifyAssignment(
             determineType(ast, ast.env),
             determineType(ast.variableDeclarator.expression, ast.env),
@@ -401,13 +401,13 @@ package object environment {
       //case ast: AbstractMethodDeclaration => return
       //case ast: MethodDeclaration         => return
       case ast: MethodInvocation => {
-        println("LOOKING AT METHOD INVOK " + ast.toStrTree)
-        println("env " + ast.env)
+        // println("LOOKING AT METHOD INVOK " + ast.toStrTree)
+        // println("env " + ast.env)
         determineType(ast, ast.env)
         if (ast.id.isDefined) {
           verifyAST(ast.primary.get)
         }
-        println("DONE METHOD INVOK")
+        // println("DONE METHOD INVOK")
         return
       }
       //case ast: ClassDeclaration       => return
@@ -493,7 +493,7 @@ package object environment {
       case ast: ArrayCreationExpression =>
         new ArrayType(determineType(ast.primary, ast.env))
       case ast: ClassInstanceCreation => {
-        println("DETERMINING CLASS INSTANCE CREATION TYPE")
+        // println("DETERMINING CLASS INSTANCE CREATION TYPE")
         val klassName = ast.primary.name.split('.')
         if (klassName.length == 1) {
           new CustomType(env.serarchForClass(klassName.head).get)
@@ -562,7 +562,7 @@ package object environment {
       throw EnvironmentError(
         "Array Access indexing expression must have numeric type")
     }
-    println("array access primary " + access.primary.toStrTree)
+    // println("array access primary " + access.primary.toStrTree)
     val primaryType = determineType(access.primary, env)
     primaryType match {
       case primaryType: ArrayType => primaryType.rootType
@@ -603,17 +603,17 @@ package object environment {
       verifyUsagePermission(method.get, klass)
       types.buildTypeFromString(method.get.returnType, method.get)
     } else { // just look up the name
-      println("looking up method " + ast.name)
+      // println("looking up method " + ast.name)
       val methodName = ast.name.split('.')
       val sig: Signature = (methodName.last, Some(paramsSig))
 
       val klass = methodName.length match {
         case 1 => {
-          println("finding enclosing class " + env.findEnclosingClass().ast)
+          // println("finding enclosing class " + env.findEnclosingClass().ast)
           env.findEnclosingClass()
         }
         case _ => {
-          println("about to find primary name with env " + env)
+          // println("about to find primary name with env " + env)
           val dummyName = new Name(methodName.dropRight(1).mkString("."))
           dummyName.env = env
 
@@ -637,7 +637,7 @@ package object environment {
       if (methodName.length == 1) {
         verifyUsagePermission(method.get, env)
       } else {
-        println("passing in name " + methodName.head)
+        // println("passing in name " + methodName.head)
         verifyCalling(env, klass, method.get, Some(methodName.head))
         verifyUsagePermission(method.get, klass)
       }
@@ -654,12 +654,12 @@ package object environment {
     // return if not protected since it doesn't matter
     fieldOrMethod match {
       case field: VariableEnvironment =>
-        println("checkign field " + field.ast)
-        println(field.modifiers)
+        // println("checkign field " + field.ast)
+        // println(field.modifiers)
         if (!field.modifiers.contains("protected")) return
       case method: MethodEnvironment =>
-        println("checkign method " + method.ast)
-        println(method.modifiers)
+        // println("checkign method " + method.ast)
+        // println(method.modifiers)
         if (!method.modifiers.contains("protected")) return
       case _ =>
         throw new RuntimeException(
@@ -670,17 +670,17 @@ package object environment {
     val calledClass = called.findEnclosingClass()
     val declClass = fieldOrMethod.findEnclosingClass()
 
-    println(
-      "checking if we can access " + fieldOrMethod.ast + " from " + callingClass.ast + " when its in " + calledClass.ast)
-    println("declared class " + declClass.ast)
+    //println(
+    //"checking if we can access " + fieldOrMethod.ast + " from " + callingClass.ast + " when its in " + calledClass.ast)
+    //println("declared class " + declClass.ast)
 
     // if given a var, check if it exists, if it does make sure we are allowed to access it
     if (possibleVar.isDefined) {
-      println("trying to find " + possibleVar)
+      // println("trying to find " + possibleVar)
       val variable = calling.serarchForVariable(possibleVar.get)
       if (variable.isDefined) {
         val varType = buildTypeFromString(variable.get.ttype, calling)
-        println("checking if " + varType + " subs " + callingClass.ast)
+        // println("checking if " + varType + " subs " + callingClass.ast)
         if (!varType.isSubClassOf(
               buildTypeFromString(callingClass.qualifiedName, callingClass))) {
           throw EnvironmentError(
@@ -713,8 +713,8 @@ package object environment {
         }
 
         val typeBeingCast = determineType(ast.beingCast, ast.env)
-        println(
-          "verifying cast Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
+        // println(
+        //   "verifying cast Cannot cast type: " + typeBeingCast + " to type " + typeCastTo)
 
         if (typeCastTo.isNumeric && !typeCastTo
               .isInstanceOf[ArrayType] && typeBeingCast.isNumeric && !typeBeingCast
@@ -862,11 +862,11 @@ package object environment {
       callingEnv: Option[GenericEnvironment] = None): AbstractType = {
     val instanceFields = name.split('.')
     var callingType = parentType
-    println(
-      "examining instance string with parenttype: " + parentType.stringType)
+    // println(
+    //   "examining instance string with parenttype: " + parentType.stringType)
     if (callingEnv.isDefined) {
-      println(" with calling env " + callingEnv.get.ast.toStrTree)
-      println(callingEnv.get.findEnclosingClass().qualifiedName)
+      // println(" with calling env " + callingEnv.get.ast.toStrTree)
+      // println(callingEnv.get.findEnclosingClass().qualifiedName)
     }
 
     if (callingEnv.isDefined) {
@@ -874,7 +874,7 @@ package object environment {
     }
 
     instanceFields.foreach(field => {
-      println("looking at field " + field)
+      // println("looking at field " + field)
       callingType match {
         case ttype: ArrayType => {
           if (field == "length") {
@@ -956,8 +956,8 @@ package object environment {
   }
 
   def determineNameTtype(ast: Name, env: GenericEnvironment): AbstractType = {
-    println(
-      "DEtermining name type " + ast.name + " in env " + env.ast.toStrTree)
+    // println(
+    //   "DEtermining name type " + ast.name + " in env " + env.ast.toStrTree)
     val splitName = ast.name.split('.').toList
 
     //val enclosingClass = env.findEnclosingClass()
@@ -1226,8 +1226,8 @@ package object environment {
     val callingClass = callingEnv.findEnclosingClass()
     val calledClass = calledEnv.findEnclosingClass()
 
-    println(
-      "Check if can call something in " + calledClass.qualifiedName + " from " + callingClass.qualifiedName)
+    //println(
+    //  "Check if can call something in " + calledClass.qualifiedName + " from " + callingClass.qualifiedName)
     if (!callingClass.isSubClassOf(calledClass)) {
       throw EnvironmentError(
         "Attempting to call something in " + calledClass.qualifiedName + " from " + callingClass.qualifiedName + ", but they arent subclasses of eachother")
@@ -1237,10 +1237,10 @@ package object environment {
   def verifyUsagePermission(field: VariableEnvironment,
                             env: GenericEnvironment): Unit = {
     val enclosing = env.findEnclosingClass()
-    println("verifying usage of " + field.ast.toStrTree + " in env " + env.ast)
+    // println("verifying usage of " + field.ast.toStrTree + " in env " + env.ast)
     val fieldEnclosing = field.findEnclosingClass()
-    println(
-      "field enclsoing " + fieldEnclosing.qualifiedName + " called enclsoing " + enclosing.qualifiedName)
+    //println(
+    //  "field enclsoing " + fieldEnclosing.qualifiedName + " called enclsoing " + enclosing.qualifiedName)
 
     if (field.modifiers.contains("public")) { return }
     if (field.modifiers.contains("protected") && !enclosing.isSubClassOf(
@@ -1255,19 +1255,19 @@ package object environment {
 
   def verifyAssignment(assignment: Assignment,
                        env: GenericEnvironment): Unit = {
-    println("doing normal assignment")
+    // println("doing normal assignment")
     //println(env.ast.toStrTree)
     //println(assignment.env.ast.toStrTree)
     verifyAssignment(determineType(assignment.getLHS, env),
                      determineType(assignment.getRHS, env),
                      env)
-    println("done")
+    // println("done")
   }
 
   def verifyAssignment(ttype1: AbstractType,
                        ttype2: AbstractType,
                        env: GenericEnvironment): Unit = {
-    println("comparing " + ttype1 + " with " + ttype2 + " in env " + env)
+    // println("comparing " + ttype1 + " with " + ttype2 + " in env " + env)
 
     // check for special java built ins
     ttype1 match {
@@ -1288,7 +1288,7 @@ package object environment {
       case ttype1: ArrayType => {
         ttype2 match {
           case ttype2: ArrayType => {
-            println(s"comparing two array type $ttype1 $ttype2")
+            // println(s"comparing two array type $ttype1 $ttype2")
             if (ttype1.rootType == ttype2.rootType) return
             if (ttype2.rootType.isSubClassOf(ttype1.rootType)) return // sub class
             throw EnvironmentError(s"Cant assign $ttype2 to $ttype1")
@@ -1310,9 +1310,9 @@ package object environment {
     if ((ttype1.isInstanceOf[CustomType] || ttype1
           .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]) return
 
-    println(
-      "checking if " + ttype1 + " can be assigned value of " + ttype1 + " is sub class " + ttype2
-        .isSubClassOf(ttype1))
+    // println(
+    //   "checking if " + ttype1 + " can be assigned value of " + ttype1 + " is sub class " + ttype2
+    //     .isSubClassOf(ttype1))
     if (ttype2.isSubClassOf(ttype1)) return // sub class
 
     throw new RuntimeException(
@@ -1334,17 +1334,17 @@ package object environment {
 
         // two sets of rules depending on if declaration is static or not
         if (declarationEnv.modifiers.contains("static")) {
-          println("checking name " + ast)
+          // println("checking name " + ast)
           if (ast.name == declarationEnv.name) {
             throw EnvironmentError(
               "Illegal forward reference of self on static field initilization: " + declarationEnv.ast)
           }
 
-          println("checking forward reference of " + declarationEnv.ast)
-          println("other: " + ast.name)
+          //println("checking forward reference of " + declarationEnv.ast)
+          // println("other: " + ast.name)
           if (otherField.isDefined) {
-            println("order of decl " + declarationEnv.order)
-            println("order of other " + otherField.get.order)
+            // println("order of decl " + declarationEnv.order)
+            // println("order of other " + otherField.get.order)
           }
 
           if (otherField.isDefined && !otherField.get.modifiers.contains(
@@ -1358,17 +1358,17 @@ package object environment {
               "Attempting to perform forward access in static declaration of " + declarationEnv.ast + " to access " + otherField.get.ast)
           }
         } else { // non static case
-          println("checking name " + ast)
+          // println("checking name " + ast)
           if (ast.name == declarationEnv.name) {
             throw EnvironmentError(
               "Illegal forward reference of self on static field initilization: " + declarationEnv.ast)
           }
 
-          println("checking forward reference of " + declarationEnv.ast)
-          println("other: " + ast.name)
+          // println("checking forward reference of " + declarationEnv.ast)
+          // println("other: " + ast.name)
           if (otherField.isDefined) {
-            println("order of decl " + declarationEnv.order)
-            println("order of other " + otherField.get.order)
+            //println("order of decl " + declarationEnv.order)
+            // println("order of other " + otherField.get.order)
           }
 
           if (otherField.isDefined && !otherField.get.modifiers.contains(
@@ -1381,11 +1381,11 @@ package object environment {
       }
       case ast: Assignment => {
         // for assignments we only care about RHS when the LHS is a simple name
-        println("analyzing the assignment")
+        // println("analyzing the assignment")
         if (ast.getLHS.isInstanceOf[Name] && ast.getLHS
               .asInstanceOf[Name]
               .isSimpleName) {
-          println("only doing right")
+          //println("only doing right")
           verifyFieldDeclarator(declarationEnv, ast.getRHS)
           return
         }

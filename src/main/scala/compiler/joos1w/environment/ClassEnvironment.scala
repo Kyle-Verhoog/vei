@@ -270,7 +270,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     containSet.values.foreach(entry => {
       entry match {
         case method: MethodEnvironment => {
-          println("looking at sig " + method.signature)
+          // println("looking at sig " + method.signature)
           if (normalizeSignature(method.signature) == sig) {
             return Some(method)
           }
@@ -495,7 +495,8 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   override def isInMethod(): Boolean = false
 
   // overide to add ordering information to fields
-  override def insertLocalVariable(name: String, env: VariableEnvironment): Unit = {
+  override def insertLocalVariable(name: String,
+                                   env: VariableEnvironment): Unit = {
     if (variableTable.contains(name)) {
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")

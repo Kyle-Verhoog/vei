@@ -35,6 +35,7 @@ object Joos1WCompiler {
     //println("Other tree...")
     //val root = new Root().populateNamespace(weededAsts)
     //println(root.toStrTree)
+    Joos1WReachability.checkReachability(weededAsts)
     println("done")
   }
 }
