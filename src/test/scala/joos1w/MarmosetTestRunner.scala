@@ -175,7 +175,7 @@ class MarmosetTestRunner extends FunSuite {
         case e: Throwable =>
           failedTests += e
           println(e)
-          println("✗ TEST FAILED")
+          println(s"✗ TEST FAILED (${expectedResult(0)})")
           throw e
       }
       println(s"$i/${listOfFiles.length} TESTS RUN")

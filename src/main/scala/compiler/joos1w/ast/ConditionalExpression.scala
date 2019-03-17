@@ -8,4 +8,8 @@ class ConditionalExpression(val operator: String) extends AST {
   def secondExpr: AST = {
     children(1)
   }
+
+  override def strFields: String = {
+    s"$operator"
+  }
 }

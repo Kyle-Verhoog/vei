@@ -1,5 +1,6 @@
 package compiler.joos1w
 import compiler.joos1w.ast._
+import compiler.joos1w.environment.types._
 
 final case class ReachableException(
     private val message: String = "Code not reachable",
@@ -23,32 +24,116 @@ object Joos1WReachability {
     }
   }
 
-  def in(ast: AST): Reachable = {
-    ast match {
-      case ast: IfStatement =>
-        println(ast.toStrTree)
-        Maybe()
-      case _ => Maybe()
+  def evalNumericExpression(expr: AST): Option[Int] = {
+    expr match {
+      case expr: ConditionalExpression => None
+      case expr: MethodInvocation      => None
+      case expr: Name                  => None
     }
   }
 
-  def evalBooleanExpression(expr: AST): Boolean = {
-    false
+  def evalGeneralExpression(expr: AST): Any = {
+    expr match {
+      case expr: ConditionalExpression   => None
+      case expr: MethodInvocation        => None
+      case expr: Name                    => None
+      case expr: literals.IntegerLiteral => Some(expr.integerValue)
+      case expr: literals.BooleanLiteral => Some(expr.value)
+    }
+  }
+
+  def evalConstantExpression(expr: AST): Option[Boolean] = {
+    println(s"EVALUATING EXPR ${expr.toStrTree}")
+    expr match {
+      case expr: ConditionalExpression =>
+        val l = evalGeneralExpression(expr.firstExpr)
+        val r = evalGeneralExpression(expr.secondExpr)
+        (l, expr.operator, r) match {
+          case (Some(i: Int), "==", Some(j: Int))         => Some(i == j)
+          case (Some(_: Int), "==", None)                 => None
+          case (None, "==", Some(_: Int))                 => None
+          case (Some(i: Boolean), "||", Some(j: Boolean)) => Some(i || j)
+          case (Some(_: Boolean), "||", None)             => None
+          case (None, "||", Some(_: Boolean))             => None
+          case (None, "&&", None)                         => None
+        }
+      case expr: Name => None
+      /*
+        expr.operator match {
+          case "&&" =>
+            val l = evalConstantExpression(expr.firstExpr)
+            val r = evalConstantExpression(expr.secondExpr)
+            (l, r) match {
+              case (Some(i), Some(j)) => Some(i && j)
+              case _                  => None
+            }
+          case "||" =>
+            val l = evalConstantExpression(expr.firstExpr)
+            val r = evalConstantExpression(expr.secondExpr)
+            (l, r) match {
+              case (Some(i), Some(j)) => Some(i || j)
+              case _                  => None
+            }
+          // case "||" =>
+          case "<" =>
+            val l = evalNumericExpression(expr.firstExpr)
+            val r = evalNumericExpression(expr.secondExpr)
+            (l, r) match {
+              case (Some(i), Some(j)) => Some(i < j)
+              case _                  => None
+            }
+          // case ">" =>
+          // case ">=" =>
+          // case "<=" =>
+          case "==" =>
+            val l = evalGeneralExpression(expr.firstExpr)
+            val r = evalGeneralExpression(expr.secondExpr)
+            (l, r) match {
+              // case (Some(i: Int), Some(j: Int)) =>
+              case (Some(i: Int), Some(j: Int)) => Some(i == j)
+            }
+        }
+       */
+      case _ => throw new RuntimeException(s"$expr")
+    }
   }
 
   def statementReachableCheck(ast: Option[AST],
                               reachable: Reachable): Reachable = {
     println(s"STATEMENT: AST: $ast REACHABLE: $reachable")
+    if (reachable == No()) {
+      throw ReachableException(s"Statement $ast not reachable")
+    }
+
     ast match {
       case Some(ast: ForStatement) =>
-        val exprVal = evalBooleanExpression(ast.termination)
-        No()
-      case Some(ast: WhileStatement) =>
-        val exprVal = evalBooleanExpression(ast.expr)
-        if (!exprVal) {
-          throw ReachableException("While loop expression evaluated to false")
-        }
+        // evalBooleanExpression(ast.termination) match {
+        //   case Some(result) =>
+        //   case None =>
+        // }
         Maybe()
+      case Some(ast: WhileStatement) =>
+        // L: while(E) S
+        evalConstantExpression(ast.expr) match {
+          // E = true: Infinite loop
+          // in[S] = in[L]
+          // out[L] = no
+          case Some(true) =>
+            statementReachableCheck(Some(ast.body), reachable)
+            No()
+          // E = false
+          // in[S] = no
+          // out[L] = in[L]
+          case Some(false) =>
+            statementReachableCheck(Some(ast.body), No())
+            reachable
+          // E
+          // in[S] = in[L]
+          // out[L] = in[L]
+          case None =>
+            statementReachableCheck(Some(ast.body), reachable)
+            reachable
+        }
       case Some(ast: TopLevelIf) =>
         // val exprVal = evalBooleanExpression(ast.expr)
         val s =
@@ -62,7 +147,7 @@ object Joos1WReachability {
           case (acc, reachable) =>
             throw new RuntimeException(s"acc: $acc reachable: $reachable")
         }
-        reachableCheck(ast.rightSibling, out)
+        out
       case Some(ast: Return) =>
         No()
       case Some(ast: AST) => reachable
