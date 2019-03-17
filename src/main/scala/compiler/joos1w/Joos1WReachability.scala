@@ -136,15 +136,12 @@ object Joos1WReachability {
                               reachable: Reachable): Reachable = {
     println(s"STATEMENT: AST: $ast REACHABLE: $reachable")
     if (reachable == No()) {
-      throw ReachableException(s"Statement $ast not reachable")
+      throw ReachableException(
+        s"Statement $ast not reachable ${ast.get.toStrTree}")
     }
 
     ast match {
       case Some(ast: ForStatement) =>
-        // evalBooleanExpression(ast.termination) match {
-        //   case Some(result) =>
-        //   case None =>
-        // }
         Maybe()
       case Some(ast: WhileStatement) =>
         // L: while(E) S
@@ -171,9 +168,17 @@ object Joos1WReachability {
       case Some(ast: IfStatement) =>
         statementReachableCheck(ast.getChild(1), reachable)
       case Some(ast: TopLevelIf) =>
-        val s =
-          ast.children.map(childIf =>
-            statementReachableCheck(Some(childIf), reachable))
+        var s =
+          ast.children
+            .map(childIf => statementReachableCheck(Some(childIf), reachable))
+            .toList
+        // If the last child is not an "else" case then append a maybe
+        if (ast.children.last.isInstanceOf[IfStatement]) {
+          s = Maybe() :: s
+        }
+        println(s"IF CHILDREN REACHABLE: $s")
+        // If there is an "else" case, then
+        // out[L] = out[s1] or out[s2] or out[s3]...
         val out = s.foldLeft[Reachable](No()) {
           case (_: Maybe, _: Maybe) => Maybe()
           case (_: No, _: Maybe)    => Maybe()
@@ -182,6 +187,7 @@ object Joos1WReachability {
           case (acc, reachable) =>
             throw new RuntimeException(s"acc: $acc reachable: $reachable")
         }
+        println(s"OUT $out")
         out
       case Some(ast: ASTList) =>
         ast.fieldName match {
@@ -192,7 +198,7 @@ object Joos1WReachability {
         }
       // case Some(ast: MethodInvocation)         => reachable
       // case Some(ast: LocalVariableDeclaration) => reachable
-      // case Some(ast: Assignment)               => reachable
+      // case Some(ast: Asstign) => reachable
       case Some(ast: Return) => No()
       case Some(ast: AST)    => reachable
     }
@@ -227,7 +233,11 @@ object Joos1WReachability {
         }
       case Some(ast: InterfaceDeclaration) => Maybe()
       case Some(ast: MethodDeclaration) =>
-        reachableCheck(Some(ast.body), Maybe())
+        val out = reachableCheck(Some(ast.body), Maybe())
+        if (ast.returnType != "void" && out != No()) {
+          throw ReachableException("Non-void method has no return")
+        }
+        out
       case Some(ast: ConstructorDeclaration) =>
         reachableCheck(Some(ast.children(1)), Maybe())
       case Some(ast: MethodBody) =>
