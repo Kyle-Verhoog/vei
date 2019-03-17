@@ -39,6 +39,13 @@ object Joos1WReachability {
       case expr: Name                    => None
       case expr: literals.IntegerLiteral => Some(expr.integerValue)
       case expr: literals.BooleanLiteral => Some(expr.value)
+      case expr: UnaryExpression =>
+        expr.operator match {
+          case "!" =>
+            evalGeneralExpression(expr.subExpression) match {
+              case Some(b: Boolean) => !b
+            }
+        }
     }
   }
 
@@ -49,13 +56,36 @@ object Joos1WReachability {
         val l = evalGeneralExpression(expr.firstExpr)
         val r = evalGeneralExpression(expr.secondExpr)
         (l, expr.operator, r) match {
+          // == operator
           case (Some(i: Int), "==", Some(j: Int))         => Some(i == j)
-          case (Some(_: Int), "==", None)                 => None
-          case (None, "==", Some(_: Int))                 => None
+          case (Some(i: String), "==", Some(j: String))   => Some(i == j)
+          case (Some(i: Boolean), "==", Some(j: Boolean)) => Some(i == j)
+          case (Some(i: Char), "==", Some(j: Char))       => Some(i == j)
+
+          // != operator
+          case (Some(i: Int), "!=", Some(j: Int))         => Some(i != j)
+          case (Some(i: String), "!=", Some(j: String))   => Some(i != j)
+          case (Some(i: Boolean), "!=", Some(j: Boolean)) => Some(i != j)
+          case (Some(i: Char), "!=", Some(j: Char))       => Some(i != j)
+
+          // || operator
           case (Some(i: Boolean), "||", Some(j: Boolean)) => Some(i || j)
-          case (Some(_: Boolean), "||", None)             => None
-          case (None, "||", Some(_: Boolean))             => None
-          case (None, "&&", None)                         => None
+
+          // && operator
+          case (Some(i: Boolean), "&&", Some(j: Boolean)) => Some(i && j)
+
+          // > operator
+          case (Some(i: Int), ">", Some(j: Int))   => Some(i > j)
+          case (Some(i: Char), ">", Some(j: Char)) => Some(i > j)
+
+          // < operator
+          case (Some(i: Int), "<", Some(j: Int))   => Some(i < j)
+          case (Some(i: Char), "<", Some(j: Char)) => Some(i < j)
+
+          // Any None value should be None
+          case (_, _, None)    => None
+          case (None, _, _)    => None
+          case (None, _, None) => None
         }
       case expr: Name => None
       /*
@@ -94,7 +124,11 @@ object Joos1WReachability {
             }
         }
        */
-      case _ => throw new RuntimeException(s"$expr")
+      case _ =>
+        evalGeneralExpression(expr) match {
+          case Some(b: Boolean) => Some(b)
+          case None             => throw new RuntimeException(s"$expr")
+        }
     }
   }
 
