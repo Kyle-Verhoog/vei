@@ -143,6 +143,17 @@ object Joos1WReachability {
     ast match {
       case Some(ast: ForStatement) =>
         Maybe()
+        evalConstantExpression(ast.termination) match {
+          case Some(true) =>
+            statementReachableCheck(Some(ast.body), reachable)
+            No()
+          case Some(false) =>
+            statementReachableCheck(Some(ast.body), No())
+            reachable
+          case None =>
+            statementReachableCheck(Some(ast.body), reachable)
+            reachable
+        }
       case Some(ast: WhileStatement) =>
         // L: while(E) S
         evalConstantExpression(ast.expr) match {
@@ -234,7 +245,7 @@ object Joos1WReachability {
       case Some(ast: InterfaceDeclaration) => Maybe()
       case Some(ast: MethodDeclaration) =>
         val out = reachableCheck(Some(ast.body), Maybe())
-        if (ast.returnType != "void" && out != No()) {
+        if (ast.returnType != "void" && out != No() && ast.body.hasBody) {
           throw ReachableException("Non-void method has no return")
         }
         out
