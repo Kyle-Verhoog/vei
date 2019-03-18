@@ -1,9 +1,15 @@
 package compiler.joos1w
+import com.sun.source.tree.MethodInvocationTree
 import compiler.joos1w.ast._
 import compiler.joos1w.environment.types._
 
 final case class ReachableException(
     private val message: String = "Code not reachable",
+    private val cause: Throwable = None.orNull
+) extends Exception(message, cause)
+
+final case class DefinitionException(
+    private val message: String = "Variable not defined.",
     private val cause: Throwable = None.orNull
 ) extends Exception(message, cause)
 
@@ -49,6 +55,38 @@ object Joos1WReachability {
     }
   }
 
+  def checkDefinition(variableName: String, expr: Option[AST]): Unit = {
+    expr match {
+      case Some(ast: VariableDeclarator) =>
+        if (!ast.hasExpression) {
+          throw DefinitionException(s"Variable not defined $variableName")
+        }
+        checkDefinition(variableName, Some(ast.expression))
+      case Some(ast: ClassInstanceCreation) =>
+        ast.parameters.foreach(paramAST =>
+          checkDefinition(variableName, Some(paramAST)))
+      case Some(_: literals.IntegerLiteral) =>
+      case Some(_: literals.BooleanLiteral) =>
+      case Some(_: literals.StringLiteral)  =>
+      case Some(ast: ArrayCreationExpression) =>
+        checkDefinition(variableName, Some(ast.expr))
+      case Some(ast: GeneralExpression) =>
+        checkDefinition(variableName, Some(ast.firstExpr))
+        checkDefinition(variableName, Some(ast.secondExpr))
+      case Some(ast: MethodInvocation) =>
+        ast.parameters.foreach(paramAST =>
+          checkDefinition(variableName, Some(paramAST)))
+      case Some(ast: Name) =>
+        if (ast.name == variableName && ast.env
+              .serarchForVariable(ast.name)
+              .isDefined) {
+          throw DefinitionException(
+            s"Variable $variableName cannot be used in its own initializer.")
+        }
+      case None =>
+    }
+  }
+
   def evalConstantExpression(expr: AST): Option[Boolean] = {
     println(s"EVALUATING EXPR ${expr.toStrTree}")
     expr match {
@@ -87,43 +125,8 @@ object Joos1WReachability {
           case (None, _, _)    => None
           case (None, _, None) => None
         }
-      case expr: Name => None
-      /*
-        expr.operator match {
-          case "&&" =>
-            val l = evalConstantExpression(expr.firstExpr)
-            val r = evalConstantExpression(expr.secondExpr)
-            (l, r) match {
-              case (Some(i), Some(j)) => Some(i && j)
-              case _                  => None
-            }
-          case "||" =>
-            val l = evalConstantExpression(expr.firstExpr)
-            val r = evalConstantExpression(expr.secondExpr)
-            (l, r) match {
-              case (Some(i), Some(j)) => Some(i || j)
-              case _                  => None
-            }
-          // case "||" =>
-          case "<" =>
-            val l = evalNumericExpression(expr.firstExpr)
-            val r = evalNumericExpression(expr.secondExpr)
-            (l, r) match {
-              case (Some(i), Some(j)) => Some(i < j)
-              case _                  => None
-            }
-          // case ">" =>
-          // case ">=" =>
-          // case "<=" =>
-          case "==" =>
-            val l = evalGeneralExpression(expr.firstExpr)
-            val r = evalGeneralExpression(expr.secondExpr)
-            (l, r) match {
-              // case (Some(i: Int), Some(j: Int)) =>
-              case (Some(i: Int), Some(j: Int)) => Some(i == j)
-            }
-        }
-       */
+      case expr: Name          => None
+      case _: MethodInvocation => None
       case _ =>
         evalGeneralExpression(expr) match {
           case Some(b: Boolean) => Some(b)
@@ -208,7 +211,9 @@ object Joos1WReachability {
             }
         }
       // case Some(ast: MethodInvocation)         => reachable
-      // case Some(ast: LocalVariableDeclaration) => reachable
+      case Some(ast: LocalVariableDeclaration) =>
+        checkDefinition(ast.name, Some(ast.variableDeclarator))
+        reachable
       // case Some(ast: Asstign) => reachable
       case Some(ast: Return) => No()
       case Some(ast: AST)    => reachable
