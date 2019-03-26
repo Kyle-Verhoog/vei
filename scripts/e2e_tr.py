@@ -1,3 +1,4 @@
+from datetime import datetime
 import glob
 import logging
 import os
@@ -84,14 +85,34 @@ class TestSuite:
     def stdlib(self):
         return self._stdlib_file_names
 
+    @property
+    def testname(self):
+        return self.name[0:-5]
+
+    def store_output(self, stdout, stderr):
+        t = str(datetime.now())
+        stdout_log_file_name = '/tmp/{}_{}_stdout'.format(self.testname, t)
+        stderr_log_file_name = '/tmp/{}_{}_stderr'.format(self.testname, t)
+        self.log_info('output dumped to {}'.format(stdout_log_file_name))
+        with open(stdout_log_file_name, 'wb') as f:
+            f.write(stdout)
+        self.log_info('output dumped to {}'.format(stderr_log_file_name))
+        with open(stderr_log_file_name, 'wb') as f:
+            f.write(stderr)
+
     def compile(self):
         args = [VEI_EXEC_PATH]
         args += self.file_names
         args += self.stdlib
         self.log_info(' '.join(args))
-        ret = subprocess.call(args)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        ret = p.returncode
         self.log_info('exit status {} (expected {})'.format(ret, self.expected_status))
-        self.log_info('{}'.format('PASS' if self.expected_status == ret else 'FAIL'))
+        passed = self.expected_status == ret
+        self.log_info('{}'.format('PASS' if passed else 'FAIL'))
+        if not passed:
+            self.store_output(stdout, stderr)
 
     def __repr__(self):
         return '<TestSuite name={}, num_tests={}>'.format(self.name, len(self.src_files))
