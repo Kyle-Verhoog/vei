@@ -1,6 +1,8 @@
 package compiler.joos1w
 
 import ast.{AST, Weeder}
+import java.io._
+import java.nio._
 
 object Joos1WCompiler {
   Joos1WScanner.loadSavedScanner()
@@ -16,6 +18,11 @@ object Joos1WCompiler {
     //println("Weeding...")
     Weeder.weed(ast)
     ast
+  }
+
+  def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+    val p = new java.io.PrintWriter(f)
+    try { op(p) } finally { p.close() }
   }
 
   def compileFiles(files: List[String]): Unit = {
@@ -34,7 +41,17 @@ object Joos1WCompiler {
     //val root = new Root().populateNamespace(weededAsts)
     //println(root.toStrTree)
     Joos1WReachability.checkReachability(weededAsts)
-    val code = Joos1WCodeGen.genCode(weededAsts)
+    val asm = Joos1WCodeGen.genCode(weededAsts)
+
+    val outputDir = System.getenv("PWD") ++ "/output"
+    asm.foreach(code => {
+      println(s"OUTPUTTING CODE ${code.fileName}")
+      val fileName = outputDir ++ "/" ++ code.fileName
+      printToFile(new File(fileName)) { p =>
+        p.print(code.src)
+      }
+    })
+
     println("done")
   }
 }

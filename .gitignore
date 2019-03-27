@@ -22,3 +22,7 @@ build/
 #general
 *.class
 .#*
+
+output/*.s
+output/*.o
+output/main

@@ -27,10 +27,14 @@ object Joos1WCodeGen {
   }
 
   def astMainCode(ast: Option[AST]): String = {
-    """
-      |global _start
+    """global _start
       |_start:
-    """.stripMargin ++ astCode(ast)
+      |""".stripMargin ++
+      astCode(ast) ++
+      """mov eax, 1
+        |mov ebx, 7
+        |int 0x80
+        |""".stripMargin
   }
 
   def genCode(asts: List[AST]): List[ASMFile] = {

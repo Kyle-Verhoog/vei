@@ -16,9 +16,10 @@ class Joos1WCodeGenTest extends FunSuite {
     assert(astCode.fileName == "Z.s")
     assert(
       astCode.src.trim ==
-        """
-        |global _start
+        """global _start
         |_start:
+        |mv eax, 1
+        |int 0x80
       """.stripMargin.trim)
   }
 
@@ -36,10 +37,11 @@ class Joos1WCodeGenTest extends FunSuite {
     assert(astCode.fileName == "A_B_C.s")
     assert(
       astCode.src.trim ==
-        """
-          |global _start
+        """global _start
           |_start:
-        """.stripMargin.trim)
+          |mv eax, 1
+          |int 0x80
+          |""".stripMargin.trim)
     astCode = code.tail.head
     assert(astCode.fileName == "A_B_D.s")
     assert(astCode.src.trim == """""".stripMargin.trim)

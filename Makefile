@@ -11,7 +11,8 @@ $(DOCS_DIR)/%.pdf: $(DOCS_DIR)/%.md
 
 
 generate-executable:
-	sbt clean
+	# sbt clean
+	sbt compile
 	sbt package
 
 
