@@ -185,4 +185,58 @@ class MarmosetTestRunner extends FunSuite {
       throw new RuntimeException()
     }
   }
+
+  test("a5") {
+    val listOfFiles = TestUtils.marmosetTestFiles("a5")
+    val expectedResultsFile = s"src/main/resources/test/marmoset/a5_expected"
+    val expectedResults = Source
+      .fromFile(expectedResultsFile)
+      .mkString
+      .split("\n")
+      .map(l => l.split(" ").toList)
+      .toList
+    val getExpectedResult = (files: String) => {
+      expectedResults
+        .filter(r => files contains r(0))
+        .takeWhile(result => true)
+        .head
+    }
+
+    var i = 0
+    var failedTests = ListBuffer[Throwable]()
+    for (files <- listOfFiles.drop(0)) {
+      i += 1
+      val expectedResult = getExpectedResult(files.mkString(" "))
+      println(
+        "on test " + i + " out of " + listOfFiles.length + " using expected results for " + expectedResult(
+          0))
+      println(files.mkString(" "))
+
+      val filePaths = files.map(f => "src/main/resources/" + f)
+
+      val libFiles =
+        getMarmosetLibFiles("5").map(f => "src/main/resources/" + f)
+      try {
+        expectedResult(1) match {
+          case "fail" =>
+            assertThrows[Exception](
+              Joos1WCompiler.compileFiles(filePaths ++ libFiles))
+          case "pass" =>
+            Joos1WCompiler.compileFiles(filePaths ++ libFiles)
+        }
+        println("✓ TEST PASSED")
+      } catch {
+        case e: Throwable =>
+          failedTests += e
+          println(e)
+          println(s"✗ TEST FAILED (${expectedResult(0)})")
+          throw e
+      }
+      println(s"$i/${listOfFiles.length} TESTS RUN")
+      println(s"${failedTests.length}/${listOfFiles.length} TESTS FAILED")
+    }
+    if (failedTests.nonEmpty) {
+      throw new RuntimeException()
+    }
+  }
 }

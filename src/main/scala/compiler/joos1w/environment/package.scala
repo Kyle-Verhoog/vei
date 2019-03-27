@@ -809,7 +809,8 @@ package object environment {
         if (!(ttype1.equals(ttype2) || (ttype1.isSubClassOf(ttype2) || ttype2
               .isSubClassOf(ttype1)) || ((ttype1
               .isInstanceOf[CustomType] || ttype1
-              .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]))) {
+              .isInstanceOf[StringType]) && ttype2.isInstanceOf[NullType]) ||
+              (ttype1.isNumeric && ttype2.isNumeric))) {
           throw EnvironmentError(
             "Cannot compare two types that are not the same! type1: " + ttype1 + " type2: " + ttype2)
         }
@@ -821,14 +822,24 @@ package object environment {
         new types.BooleanType()
       }
       case ">=" | ">" | "<=" | "<" | "&&" | "||" => {
-        if (!ttype1.equals(ttype2)) {
+        if (!(ttype1.equals(ttype2) || (ttype1.isNumeric && ttype2.isNumeric))) {
           throw EnvironmentError(
             "Cannot compare two types that are not the same! type1: " + ttype1 + " type2: " + ttype2)
         }
         new types.BooleanType()
       }
       case "|" | "&" => {
-        throw EnvironmentError("TODO: implement") //TODO
+        if (!((ttype1.isNumeric && ttype2.isNumeric) || (ttype1
+              .isInstanceOf[BooleanType] && ttype2
+              .isInstanceOf[BooleanType]))) {
+          throw EnvironmentError(
+            "| and & operators must be given two numerics, or two boolean types!")
+        }
+
+        if (ttype1.isNumeric) {
+          return ttype1
+        }
+        return new types.BooleanType()
       }
       case "instanceof" => {
         if (!(ttype1.isString || ttype1.isInstanceOf[CustomType] || ttype1

@@ -40,7 +40,7 @@ object Joos1WCompiler {
     //println("Other tree...")
     //val root = new Root().populateNamespace(weededAsts)
     //println(root.toStrTree)
-    Joos1WReachability.checkReachability(weededAsts)
+    //Joos1WReachability.checkReachability(weededAsts)
     val asm = Joos1WCodeGen.genCode(weededAsts)
 
     val outputDir = System.getenv("PWD") ++ "/output"
