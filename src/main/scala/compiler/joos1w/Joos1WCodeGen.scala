@@ -67,59 +67,11 @@ object Joos1WCodeGen {
         ASM(s"""mov eax, $intVal ;; integer literal
                |""".stripMargin)
       case Some(expr: GeneralExpression) =>
-        expr.operation match {
-          case Some(op) =>
-            val expr1Code = astASM(Some(expr.firstExpr)).code
-            val expr2Code = astASM(Some(expr.secondExpr)).code
-            op match {
-              case "+" =>
-                ASM(s""";; ${expr.firstExpr} + ${expr.secondExpr}
-                       |$expr1Code
-                       |push eax
-                       |$expr2Code
-                       |pop ebx
-                       |add eax, ebx
-                       |""".stripMargin)
-              case "-" =>
-                ASM(s""";; ${expr.firstExpr} - ${expr.secondExpr}
-                       |$expr1Code
-                       |push eax
-                       |$expr2Code
-                       |pop ebx
-                       |sub eax, ebx
-                       |""".stripMargin)
-              case "*" =>
-                ASM(s""";; ${expr.firstExpr} * ${expr.secondExpr}
-                       |$expr1Code
-                       |push eax
-                       |$expr2Code
-                       |pop ebx
-                       |imul eax, ebx
-                       |""".stripMargin)
-              case "/" =>
-                ASM(s""";; ${expr.firstExpr} / ${expr.secondExpr}
-                       |$expr1Code
-                       |push eax
-                       |$expr2Code
-                       |mov ebx, eax
-                       |pop eax
-                       |mov edx, 0
-                       |div ebx
-                       |""".stripMargin)
-            }
-          case None => ASM("")
-        }
+        ExpressionASM.generalExpressionASM(expr)
       case Some(expr: UnaryExpression) =>
-        val exprCode = astASM(Some(expr.subExpression)).code
-
-        expr.operator match {
-          case "!" =>
-            ASM(s""";; UNARY ${expr.operator} ${expr.subExpression}
-                   |$exprCode
-                   |not eax
-                   |""".stripMargin)
-          case _ => throw new RuntimeException("TODO IMPLEMENT")
-        }
+        ExpressionASM.unaryExpressionASM(expr)
+      case Some(expr: ConditionalExpression) =>
+        ExpressionASM.conditionalExpressionASM(expr)
       case Some(retAST: Return) =>
         val exprCode = astASM(Some(retAST.expr())).code
         ASM(s""";; return <expr>
