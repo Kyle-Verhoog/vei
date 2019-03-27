@@ -11,39 +11,43 @@ object ExpressionASM {
         val expr2Code = Joos1WCodeGen.astASM(Some(expr.secondExpr)).code
         op match {
           case "+" =>
-            ASM(s""";; ${expr.firstExpr} + ${expr.secondExpr}
-                   |$expr1Code
-                   |push eax
-                   |$expr2Code
-                   |pop ebx
-                   |add eax, ebx
-                   |""".stripMargin)
+            ASM(s"""
+                 |;; ${expr.firstExpr} + ${expr.secondExpr}
+                 |$expr1Code
+                 |push eax
+                 |$expr2Code
+                 |pop ebx
+                 |add eax, ebx
+                 |""".stripMargin)
           case "-" =>
-            ASM(s""";; ${expr.firstExpr} - ${expr.secondExpr}
-                   |$expr1Code
-                   |push eax
-                   |$expr2Code
-                   |pop ebx
-                   |sub eax, ebx
-                   |""".stripMargin)
+            ASM(s"""
+                 |;; ${expr.firstExpr} - ${expr.secondExpr}
+                 |$expr1Code
+                 |push eax
+                 |$expr2Code
+                 |pop ebx
+                 |sub eax, ebx
+                 |""".stripMargin)
           case "*" =>
-            ASM(s""";; ${expr.firstExpr} * ${expr.secondExpr}
-                   |$expr1Code
-                   |push eax
-                   |$expr2Code
-                   |pop ebx
-                   |imul eax, ebx
-                   |""".stripMargin)
+            ASM(s"""
+                 |;; ${expr.firstExpr} * ${expr.secondExpr}
+                 |$expr1Code
+                 |push eax
+                 |$expr2Code
+                 |pop ebx
+                 |imul eax, ebx
+                 |""".stripMargin)
           case "/" =>
-            ASM(s""";; ${expr.firstExpr} / ${expr.secondExpr}
-                   |$expr1Code
-                   |push eax
-                   |$expr2Code
-                   |mov ebx, eax
-                   |pop eax
-                   |mov edx, 0
-                   |div ebx
-                   |""".stripMargin)
+            ASM(s"""
+                 |;; ${expr.firstExpr} / ${expr.secondExpr}
+                 |$expr1Code
+                 |push eax
+                 |$expr2Code
+                 |mov ebx, eax
+                 |pop eax
+                 |mov edx, 0
+                 |div ebx
+                 |""".stripMargin)
         }
       case None => ASM("")
     }
