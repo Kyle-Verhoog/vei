@@ -80,6 +80,14 @@ object Joos1WCodeGen {
                        |pop ebx
                        |add eax, ebx
                        |""".stripMargin)
+              case "-" =>
+                ASM(s""";; ${expr.firstExpr} - ${expr.secondExpr}
+                       |$expr1Code
+                       |push eax
+                       |$expr2Code
+                       |pop ebx
+                       |sub eax, ebx
+                       |""".stripMargin)
               case "*" =>
                 ASM(s""";; ${expr.firstExpr} * ${expr.secondExpr}
                        |$expr1Code
