@@ -4,6 +4,22 @@ import ast.{AST, CompilationUnit}
 
 case class ASMFile(fileName: String, src: String)
 
+object ASM {
+  def apply(rawCode: String): ASM = {
+    new ASM(rawCode)
+  }
+}
+
+class ASM(val rawCode: String) {
+  def code: String = {
+    rawCode
+  }
+
+  def ++(otherCode: ASM): ASM = {
+    new ASM(rawCode ++ otherCode.code)
+  }
+}
+
 object Joos1WCodeGen {
   def javaToASMFileName(name: String): String = {
     name
@@ -22,23 +38,29 @@ object Joos1WCodeGen {
     }
   }
 
-  def astCode(ast: Option[AST]): String = {
-    ""
+  def astASM(ast: Option[AST]): ASM = {
+    ASM("")
   }
 
-  def astMainCode(ast: Option[AST]): String = {
-    """global _start
+  def astStaticIntTestASM(ast: Option[AST]): ASM = {
+    ast match {
+      case _ => ASM("")
+    }
+  }
+
+  def astMainASM(ast: Option[AST]): ASM = {
+    ASM("""global _start
       |_start:
-      |""".stripMargin ++
-      astCode(ast) ++
-      """mov eax, 1
+      |""".stripMargin) ++
+      astStaticIntTestASM(ast) ++
+      ASM("""mov eax, 1
         |mov ebx, 7
         |int 0x80
-        |""".stripMargin
+        |""".stripMargin)
   }
 
   def genCode(asts: List[AST]): List[ASMFile] = {
-    List(ASMFile(fileName(Some(asts.head)), astMainCode(Some(asts.head)))) ++
-      asts.tail.map(ast => ASMFile(fileName(Some(ast)), astCode(Some(ast))))
+    List(ASMFile(fileName(Some(asts.head)), astMainASM(Some(asts.head)).code)) ++
+      asts.tail.map(ast => ASMFile(fileName(Some(ast)), astASM(Some(ast)).code))
   }
 }

@@ -18,7 +18,8 @@ class Joos1WCodeGenTest extends FunSuite {
       astCode.src.trim ==
         """global _start
         |_start:
-        |mv eax, 1
+        |mov eax, 1
+        |mov ebx, 7
         |int 0x80
       """.stripMargin.trim)
   }
@@ -39,7 +40,8 @@ class Joos1WCodeGenTest extends FunSuite {
       astCode.src.trim ==
         """global _start
           |_start:
-          |mv eax, 1
+          |mov eax, 1
+          |mov ebx, 7
           |int 0x80
           |""".stripMargin.trim)
     astCode = code.tail.head
