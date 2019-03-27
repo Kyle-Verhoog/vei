@@ -76,10 +76,10 @@ object TestUtils {
     Parser.readInLr1(Source.fromResource("grammar.lr1").getLines().toArray)
   }
 
-  def parseTokens(
-      tokens: ListBuffer[Token]): ListBuffer[ParseTreeNode[Token]] = {
+  def parseTokens(tokens: ListBuffer[Token],
+                  fileName: String = ""): ListBuffer[ParseTreeNode[Token]] = {
     val cfg = grammar
-    Parser.parse(cfg, tokens, "NO_COMPILATION_NAME", (t: Token) => {})
+    Parser.parse(cfg, tokens, fileName, (t: Token) => {})
   }
 
   def genAST(parseTree: ParseTreeNode[Token]): AST = {
@@ -91,12 +91,13 @@ object TestUtils {
     Joos1WScanner.scan(src)
   }
 
-  def parseSrc(src: String): ListBuffer[ParseTreeNode[Token]] = {
-    parseTokens(scan(src))
+  def parseSrc(src: String,
+               fileName: String = ""): ListBuffer[ParseTreeNode[Token]] = {
+    parseTokens(scan(src), fileName)
   }
 
-  def ASTForSrc(src: String): AST = {
-    val ast = genAST(parseSrc(src)(1))
+  def ASTForSrc(src: String, fileName: String = ""): AST = {
+    val ast = genAST(parseSrc(src, fileName)(1))
     // Weeder.weed(ast)
     ast
   }

@@ -1,8 +1,6 @@
 package compiler.joos1w
 
-import env.Root
 import ast.{AST, Weeder}
-import compiler.joos1w.env.Root
 
 object Joos1WCompiler {
   Joos1WScanner.loadSavedScanner()
@@ -36,6 +34,7 @@ object Joos1WCompiler {
     //val root = new Root().populateNamespace(weededAsts)
     //println(root.toStrTree)
     Joos1WReachability.checkReachability(weededAsts)
+    val code = Joos1WCodeGen.genCode(weededAsts)
     println("done")
   }
 }

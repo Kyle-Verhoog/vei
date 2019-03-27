@@ -6,7 +6,6 @@ import compiler.scanner.Token
 import compiler.parser.Parser
 import compiler.scanner.Token
 
-import scala.collection.immutable.Stream.Empty
 import scala.collection.mutable
 
 object ClassDeclaration extends ASTConstructor {

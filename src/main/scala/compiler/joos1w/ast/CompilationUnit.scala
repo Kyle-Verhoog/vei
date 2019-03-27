@@ -22,22 +22,22 @@ object CompilationUnit extends ASTConstructor {
   }
 }
 
-class CompilationUnit(name: String) extends AST {
+class CompilationUnit(val rawFileName: String) extends AST {
   def fileName: String = {
-    name.split("/").last.split("\\.java$").head.mkString
+    rawFileName.split("/").last.split("\\.java$").head.mkString
   }
 
   def packageDeclaration: Option[PackageDeclaration] = {
     children(0) match {
       case ast: PackageDeclaration => Option(ast)
-      case ast: Empty => None
+      case ast: Empty              => None
     }
   }
 
   def importDeclarations: Option[ImportDeclarationsList] = {
     children(1) match {
       case ast: ImportDeclarationsList => Option(ast)
-      case ast: Empty => None
+      case ast: Empty                  => None
     }
   }
 
