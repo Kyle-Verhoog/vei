@@ -1,7 +1,5 @@
 package compiler.joos1w
-import com.sun.source.tree.MethodInvocationTree
 import compiler.joos1w.ast._
-import compiler.joos1w.environment.types._
 
 final case class ReachableException(
     private val message: String = "Code not reachable",

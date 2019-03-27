@@ -65,13 +65,26 @@ object Joos1WCodeGen {
       case Some(intAST: literals.IntegerLiteral) =>
         val intVal = intAST.integerValue
         ASM(s"""mov eax, $intVal ;; integer literal
-               |
-           """.stripMargin)
+               |""".stripMargin)
+      case Some(expr: GeneralExpression) =>
+        expr.operation match {
+          case Some("+") =>
+            val expr1Code = astASM(Some(expr.firstExpr)).code
+            val expr2Code = astASM(Some(expr.secondExpr)).code
+            ASM(s""";; ${expr.firstExpr} + ${expr.secondExpr}
+                |$expr1Code
+                |mov ebx, eax
+                |$expr2Code
+                |add eax, ebx
+                |""".stripMargin)
+          case None => ASM("")
+        }
       case Some(retAST: Return) =>
         val exprCode = astASM(Some(retAST.expr())).code
-        ASM(s"""$exprCode ;; return <expr>
+        ASM(s""";; return <expr>
+             |$exprCode
              |ret
-           """.stripMargin)
+             |""".stripMargin)
       case Some(astList: ASTList) =>
         astList.fieldName match {
           case "block_statements" | "class_body_declarations" =>
@@ -88,7 +101,7 @@ object Joos1WCodeGen {
       case _ =>
         ASM(s"""
            |call todo_package_Basic_MethodDeclaration_modifiers_public_static_int_test__
-         """.stripMargin)
+           |""".stripMargin)
     }
   }
 
