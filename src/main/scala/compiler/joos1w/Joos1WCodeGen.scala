@@ -68,15 +68,37 @@ object Joos1WCodeGen {
                |""".stripMargin)
       case Some(expr: GeneralExpression) =>
         expr.operation match {
-          case Some("+") =>
+          case Some(op) =>
             val expr1Code = astASM(Some(expr.firstExpr)).code
             val expr2Code = astASM(Some(expr.secondExpr)).code
-            ASM(s""";; ${expr.firstExpr} + ${expr.secondExpr}
-                |$expr1Code
-                |mov ebx, eax
-                |$expr2Code
-                |add eax, ebx
-                |""".stripMargin)
+            op match {
+              case "+" =>
+                ASM(s""";; ${expr.firstExpr} + ${expr.secondExpr}
+                       |$expr1Code
+                       |push eax
+                       |$expr2Code
+                       |pop ebx
+                       |add eax, ebx
+                       |""".stripMargin)
+              case "*" =>
+                ASM(s""";; ${expr.firstExpr} * ${expr.secondExpr}
+                       |$expr1Code
+                       |push eax
+                       |$expr2Code
+                       |pop ebx
+                       |imul eax, ebx
+                       |""".stripMargin)
+              case "/" =>
+                ASM(s""";; ${expr.firstExpr} / ${expr.secondExpr}
+                       |$expr1Code
+                       |push eax
+                       |$expr2Code
+                       |mov ebx, eax
+                       |pop eax
+                       |mov edx, 0
+                       |div ebx
+                       |""".stripMargin)
+            }
           case None => ASM("")
         }
       case Some(retAST: Return) =>
