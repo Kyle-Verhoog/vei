@@ -5,21 +5,28 @@ import compiler.joos1w.ASMFile
 import org.scalatest.FunSuite
 
 class Joos1WCodeGenTest extends FunSuite {
+  test("ASM procedure call") {
+
+  }
+
   test("Single file") {
     val ast = TestUtils.ASTForSrc(s"""
-         |public class Z {}
+         |public class Z {
+         |  public static int test() { return 1; }
+         |}
          |""".stripMargin,
                                   "Z.java")
     val code = Joos1WCodeGen.genCode(List(ast))
     assert(code.nonEmpty)
     val astCode = code.head
-    assert(astCode.fileName == "Z.s")
+    assert(astCode.fileName == "__main.s")
     assert(
       astCode.src.trim ==
         """global _start
         |_start:
+        |
+        |mov ebx, eax
         |mov eax, 1
-        |mov ebx, 7
         |int 0x80
       """.stripMargin.trim)
   }
@@ -35,16 +42,20 @@ class Joos1WCodeGenTest extends FunSuite {
                                    "A/B/D.java")
     val code = Joos1WCodeGen.genCode(List(ast1, ast2))
     var astCode = code.head
-    assert(astCode.fileName == "A_B_C.s")
+    assert(astCode.fileName == "__main.s")
     assert(
       astCode.src.trim ==
         """global _start
           |_start:
+          |
+          |mov ebx, eax
           |mov eax, 1
-          |mov ebx, 7
           |int 0x80
           |""".stripMargin.trim)
     astCode = code.tail.head
+    assert(astCode.fileName == "A_B_C.s")
+    assert(astCode.src.trim == """""".stripMargin.trim)
+    astCode = code.tail.tail.head
     assert(astCode.fileName == "A_B_D.s")
     assert(astCode.src.trim == """""".stripMargin.trim)
   }
