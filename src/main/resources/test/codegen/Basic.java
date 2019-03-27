@@ -1,5 +1,5 @@
 public class Basic {
   public static int test() {
-    return 77777;
+    return 77;
   }
 }

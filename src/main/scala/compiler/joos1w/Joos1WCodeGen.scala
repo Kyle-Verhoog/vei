@@ -101,6 +101,17 @@ object Joos1WCodeGen {
             }
           case None => ASM("")
         }
+      case Some(expr: UnaryExpression) =>
+        val exprCode = astASM(Some(expr.subExpression)).code
+
+        expr.operator match {
+          case "!" =>
+            ASM(s""";; UNARY ${expr.operator} ${expr.subExpression}
+                   |$exprCode
+                   |not eax
+                   |""".stripMargin)
+          case _ => throw new RuntimeException("TODO IMPLEMENT")
+        }
       case Some(retAST: Return) =>
         val exprCode = astASM(Some(retAST.expr())).code
         ASM(s""";; return <expr>
