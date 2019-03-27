@@ -79,10 +79,22 @@ class TestSuite:
     def testname(self):
         return self.name[0:-5]
 
+    @property
+    def output_dir(self):
+        dirname = os.path.join(OUTPUT_DIR, self.testname)
+        # create the process output directory if it doesn't exist
+        if not os.path.exists(dirname):
+            self.log_info('creating output directory {}'.format(dirname))
+            os.makedirs(dirname)
+        return dirname
+
+    def output_file(self, file_name):
+        return os.path.join(self.output_dir, file_name)
+
     def store_output(self, stdout, stderr):
-        t = datetime.now().strftime("%Y%m%d-%H%M%S")
-        stdout_log_file_name = '/tmp/{}_{}_stdout'.format(self.testname, t)
-        stderr_log_file_name = '/tmp/{}_{}_stderr'.format(self.testname, t)
+        t = datetime.now().strftime('%Y%m%d-%H%M%S')
+        stdout_log_file_name = self.output_file('{}_stdout'.format(t))
+        stderr_log_file_name = self.output_file('{}_stderr'.format(t))
         self.log_info('output dumped to {}'.format(stdout_log_file_name))
         with open(stdout_log_file_name, 'wb') as f:
             f.write(stdout)
@@ -105,26 +117,27 @@ class TestSuite:
             self.store_output(stdout, stderr)
             sys.exit(-1)
         else:
+            args = 'mv {}*.s {}/'.format(OUTPUT_DIR, self.output_dir)
+            log.info(args)
+            subprocess.call(args, shell=True)
             self.store_output(stdout, stderr)
 
     def assemble(self):
-        asm_files = glob.glob('{}/**/*.s'.format(OUTPUT_DIR), recursive=True)
+        asm_files = glob.glob('{}/**/*.s'.format(self.output_dir), recursive=True)
         for asm_file in asm_files:
             args = [ASM_EXEC_PATH, '-O1', '-f', 'elf', '-g', '-F', 'dwarf', asm_file]
             log.info('{}'.format(' '.join(args)))
             subprocess.call(args)
 
     def link(self):
-        # out_files = glob.glob('{}/**/*.o'.format(OUTPUT_DIR), recursive=True)
-        out_files = os.path.join(OUTPUT_DIR, '*.o')
-        out_main = os.path.join(OUTPUT_DIR, 'main')
-        args = 'ld -melf_i386 -o {} {}*.o'.format(out_main, OUTPUT_DIR)
-        # log.info('{}'.format(' '.join(args)))
+        out_files = os.path.join(self.output_dir, '*.o')
+        out_main = self.output_file('main')
+        args = 'ld -melf_i386 -o {} {}/*.o'.format(out_main, self.output_dir)
         log.info(args)
-        subprocess.call(args, shell=True, env=os.environ.copy())
+        subprocess.call(args, shell=True)
 
     def run(self):
-        args = [os.path.join(OUTPUT_DIR, 'main')]
+        args = [self.output_file('main')]
         log.info('{}'.format(' '.join(args)))
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
