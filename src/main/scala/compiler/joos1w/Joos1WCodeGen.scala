@@ -46,7 +46,14 @@ object Joos1WCodeGen {
           .asInstanceOf[ClassDeclaration]
           .identifier
         // TODO this should be the signature
-        val methName = meth.toString
+        // val methName = meth.identifier ++ meth.toString.length.toString
+        val methName = meth.toString // ++ meth.toString.hashCode.toString
+          .replaceAllLiterally(".", "_")
+          .replaceAllLiterally("(", "_")
+          .replaceAllLiterally(")", "_")
+          .replaceAllLiterally(" ", "_")
+          .replaceAllLiterally("[", "_")
+          .replaceAllLiterally("]", "_")
         val methId = s"${pkgName}_${clsName}_$methName"
         val methCode = astASM(Some(meth.body)).code
         ASM(s"""global $methId
@@ -63,7 +70,7 @@ object Joos1WCodeGen {
       case Some(retAST: Return) =>
         val exprCode = astASM(Some(retAST.expr())).code
         ASM(s"""$exprCode ;; return <expr>
-             |
+             |ret
            """.stripMargin)
       case Some(astList: ASTList) =>
         astList.fieldName match {
@@ -71,13 +78,17 @@ object Joos1WCodeGen {
             astList.children.foldLeft(ASM(""))((acc, ast) =>
               acc ++ astASM(Some(ast)))
         }
-      case _ => ASM("")
+      case _ => ASM(s"""nop
+           |""".stripMargin)
     }
   }
 
   def astStaticIntTestASM(ast: Option[AST]): ASM = {
     ast match {
-      case _ => ASM("mov eax, 12")
+      case _ =>
+        ASM(s"""
+           |call todo_package_Basic_MethodDeclaration_modifiers_public_static_int_test__
+         """.stripMargin)
     }
   }
 
@@ -87,6 +98,7 @@ object Joos1WCodeGen {
   def astMainASM(ast: Option[AST]): ASM = {
     val staticIntTestCode = astStaticIntTestASM(ast).code
     ASM(s"""global _start
+      |extern todo_package_Basic_MethodDeclaration_modifiers_public_static_int_test__
       |_start:
       |$staticIntTestCode
       |mov ebx, eax

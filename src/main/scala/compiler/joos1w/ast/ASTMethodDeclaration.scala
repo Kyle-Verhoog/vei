@@ -58,6 +58,11 @@ abstract class ASTMethodDeclaration extends AST {
 
   override def strFields: String = {
     val mods = modifiers.mkString(" ")
-    s"$mods $returnType $identifier"
+    val args =
+      if (header.isDefined)
+        header.get.methodDeclarator.parameters.children.fold("")((acc, c) =>
+          acc + c.asInstanceOf[FormalParameter].ttype)
+      else ""
+    s"$mods $returnType $identifier $args"
   }
 }
