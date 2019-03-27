@@ -1,5 +1,5 @@
 # sbt
-bin/
+./bin/
 project/
 target/
 build/
