@@ -197,7 +197,7 @@ object ExpressionASM {
             ASM(s";; ${expr.firstExpr} || ${expr.secondExpr}") ++
               expr1Code ++
               ASM(s"""
-                   |cmp eax, 1
+                   |cmp eax, 0xffffffff
                    |je .end_and${myCounter}""".stripMargin) ++
               expr2Code ++
               ASM(s".end_and${myCounter}:")

@@ -18,8 +18,7 @@ object CommonASM {
         ASM(s"mov eax, $intVal ;; integer literal")
       case Some(boolAST: literals.BooleanLiteral) =>
         if (boolAST.value) ASM("""
-               |mov eax, 0 ;; eax := true
-               |not eax
+               |mov eax, 0xffffffff ;; eax := true
              """.stripMargin)
         else ASM("mov eax, 0 ;; eax := false")
       case Some(nullAST: literals.NullLiteral) =>
