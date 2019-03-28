@@ -73,7 +73,7 @@ class TestSuite:
         return len(self.src_files)
 
     def log_info(self, msg):
-        # self._logs.append('{}({}): {}'.format(self.name, len(self), msg))
+        self._logs.append('{}({}): {}'.format(self.name, len(self), msg))
         log.info('{}({}): {}'.format(self.name, len(self), msg))
 
     @property

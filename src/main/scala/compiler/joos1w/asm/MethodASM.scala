@@ -54,20 +54,26 @@ object MethodASM {
       case Some(thisCall: ThisCall) =>
         ASM(s";; TODO this call")
       case Some(name: Name) =>
-        name.env.findLocalVariable(name.name) match {
-          case Some(v: VariableEnvironment) =>
-            val offset = v.offset.get * 4
-            ASM(s"""mov ebx, ebp - $offset ;; &var ${name.name}
-                 |  mov eax, [ebp - $offset] ;; *var ${name.name}
+        if (name.name.contains(".")) {
+          ASM(
+            s";; TODO field/qualified name lookup - could not find ${name.name}")
+        } else {
+          name.env.serarchForVariable(name.name) match {
+            case Some(v: VariableEnvironment) =>
+              if (v.offset.isDefined) {
+                val offset = v.offset.get * 4
+                ASM(s"""mov ebx, ebp     ;; ebx := &var ${name.name}
+                       |  sub ebx, $offset
+                       |  mov eax, [ebx] ;; eax := *var ${name.name}
                """.stripMargin)
-
-          // check if it's a field
-          case None =>
-            ASM(";; TODO field/qualified name lookup")
-          // name.env.serarchForVariable(name.name) match {
-          //   case Some(v: VariableEnvironment) => ASM(";; TODO field lookup")
-          //   case None                         => ASM(";; ERROR variable not found")
-          // }
+              } else {
+                ASM(s";; TODO: fields")
+              }
+            // check if it's a field
+            case None =>
+              ASM(
+                s";; TODO field/qualified name lookup - could not find ${name.name}")
+          }
         }
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH methodASM on $ast")
