@@ -47,6 +47,7 @@ class TestSuite:
         # init the directories
         self.output_dir
         self._logs = []
+        self._log_file = None
 
     def _load_src_files(self, file_names):
         files = []
@@ -206,6 +207,7 @@ class TestSuite:
     def write_logs(self):
         t = datetime.now().strftime('%Y%m%d-%H%M%S')
         log_file_name = self.output_file('{}_log'.format(t))
+        self._log_file = log_file_name
         with open(log_file_name, 'w') as f:
             s = '\n'.join(self._logs)
             f.write(s)
@@ -219,12 +221,14 @@ def gather_directory_files(dir_path):
     return test_files
 
 
-def gather_tests(test_dir):
+def gather_tests(test_dir, matcher=None):
     files = os.listdir(test_dir)
     stdlib_files = gather_directory_files(STDLIB_DIR_PATH)
     tests = []
     for f in files:
         file_path = os.path.join(test_dir, f)
+        if matcher is not None and matcher not in f:
+            continue
         if os.path.isfile(file_path) and f.endswith('.java'):
             exp_ret_fname = file_path[0:-5] + '.ret'
             exp_out_fname = file_path[0:-5] + '.out'
@@ -278,12 +282,16 @@ def run_tests(tests):
             print('TEST {} PASSED'.format(test.name))
         elif test.state == TestState.FAILED:
             nfailed += 1
-            print('TEST {} PASSED'.format(test.name))
+            print('TEST {} FAILED see {} for details'.format(test.name, test._log_file))
         else:
             nunknown += 1
             print('TEST {} UNKNOWN'.format(test.name))
     print('{} PASSED, {} FAILED, {} INDETERMINATE'.format(npassed, nfailed, nunknown))
 
 if __name__ == '__main__':
-    tests = gather_tests(TEST_DIR_PATH)
+    if len(sys.argv) > 1:
+        matcher = sys.argv[1]
+    else:
+        matcher = None
+    tests = gather_tests(TEST_DIR_PATH, matcher)
     run_tests(tests)

@@ -2,7 +2,11 @@ package compiler.joos1w
 
 import asm._
 import ast._
-import compiler.joos1w.environment.{ClassEnvironment, MethodEnvironment}
+import compiler.joos1w.environment.{
+  ClassEnvironment,
+  MethodEnvironment,
+  VariableEnvironment
+}
 
 case class ASMFile(fileName: String, src: String)
 
@@ -91,6 +95,16 @@ object Joos1WCodeGen {
             astList.children.foldLeft(ASM(""))((acc, ast) =>
               acc ++ astASM(Some(ast)))
         }
+      case Some(v: LocalVariableDeclaration) =>
+        val env = v.env.asInstanceOf[VariableEnvironment]
+        val offset = env.offset.get
+        val declCode = astASM(Some(v.variableDeclarator)).code
+        ASM(s""";; ${v.ttype} ${v.name} = ${v.variableDeclarator}
+             |$declCode
+             |mov [esp + ${offset * 4}], eax
+           """.stripMargin)
+      case Some(vd: VariableDeclarator) =>
+        astASM(Some(vd.expression))
       case _ => ASM(s"""nop
            |""".stripMargin)
     }
