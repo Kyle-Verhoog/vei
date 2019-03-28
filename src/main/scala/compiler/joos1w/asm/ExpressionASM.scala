@@ -91,7 +91,7 @@ object ExpressionASM {
                    |mov ebx, 1
                    |jne end_not_equal${myCounter}
                    |mov ebx, 0
-                   |end_not_equal${myCounter}
+                   |end_not_equal${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case "==" =>
@@ -105,7 +105,7 @@ object ExpressionASM {
                    |mov ebx, 0
                    |jne end_equal_equal${myCounter}
                    |mov ebx, 1
-                   |end_equal_equal${myCounter}
+                   |end_equal_equal${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case ">=" =>
@@ -119,7 +119,7 @@ object ExpressionASM {
                    |mov ebx, 1
                    |jge end_greater_equal${myCounter}
                    |mov ebx, 0
-                   |end_greater_equal${myCounter}
+                   |end_greater_equal${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case ">" =>
@@ -133,7 +133,7 @@ object ExpressionASM {
                    |mov ebx, 1
                    |jg end_greater${myCounter}
                    |mov ebx, 0
-                   |end_greater${myCounter}
+                   |end_greater${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case "<=" =>
@@ -147,7 +147,7 @@ object ExpressionASM {
                    |mov ebx, 1
                    |jle end_less_equal${myCounter}
                    |mov ebx, 0
-                   |end_less_equal${myCounter}
+                   |end_less_equal${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case "<" =>
@@ -161,7 +161,7 @@ object ExpressionASM {
                    |mov ebx, 1
                    |jl end_less${myCounter}
                    |mov ebx, 0
-                   |end_less${myCounter}
+                   |end_less${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
           case "&&" =>
