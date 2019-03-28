@@ -1,9 +1,11 @@
 from datetime import datetime
+from multiprocessing.dummy import Pool as ThreadPool
 import glob
 import logging
 import os
 import subprocess
 import sys
+import threading
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -31,6 +33,7 @@ class TestState:
     RUNNING = 1
     PASSED = 2
     FAILED = 3
+    UNKNOWN = 4
 
 class TestSuite:
     def __init__(self, name, files=[], stdlib=[], expected_out=None, expected_ret=None):
@@ -43,6 +46,7 @@ class TestSuite:
         self.state = TestState.NOT_RUN
         # init the directories
         self.output_dir
+        self._logs = []
 
     def _load_src_files(self, file_names):
         files = []
@@ -68,7 +72,8 @@ class TestSuite:
         return len(self.src_files)
 
     def log_info(self, msg):
-        log.info('{}({}): {}'.format(self.name, len(self), msg))
+        self._logs.append('{}({}): {}'.format(self.name, len(self), msg))
+        # log.info('{}({}): {}'.format(self.name, len(self), msg))
 
     @property
     def expected_status(self):
@@ -186,6 +191,7 @@ class TestSuite:
             self.log_info('TEST PASSED')
         elif passing is None:
             self.log_info('NO CHECK SPECIFIED')
+            self.state = TestState.UNKNOWN
         else:
             self.state = TestState.FAILED
             self.log_info('TEST FAILED')
@@ -196,6 +202,13 @@ class TestSuite:
         self.assemble()
         self.link()
         self.run()
+
+    def write_logs(self):
+        t = datetime.now().strftime('%Y%m%d-%H%M%S')
+        log_file_name = self.output_file('{}_log'.format(t))
+        with open(log_file_name, 'w') as f:
+            s = '\n'.join(self._logs)
+            f.write(s)
 
     def __repr__(self):
         return '<TestSuite name={}, num_tests={} exp_ret={}>'.format(self.name, len(self.src_files), self._exp_ret)
@@ -237,15 +250,39 @@ def gather_tests(test_dir):
 
 
 def run_test(test):
-    pass
-
+    print('RUNNING {}'.format(test.name))
+    test.compile_and_run()
+    test.write_logs()
 
 def run_tests(tests):
     # print('\n'.join([str(test) for test in tests]))
+    # threads = []
+    # for test in tests:
+    #     t = threading.Thread(target=run_test, args=(test,))
+    #     t.start()
+    #     threads.append(t)
+    # for t in threads:
+    #     t.join()
+
+    pool = ThreadPool(4)
+    pool.map(run_test, tests)
+    pool.close()
+    pool.join()
+
+    npassed = 0
+    nfailed = 0
+    nunknown = 0
     for test in tests:
-        print(test)
-        test.compile_and_run()
-    # test = tests[0]
+        if test.state == TestState.PASSED:
+            npassed += 1
+            print('TEST {} PASSED'.format(test.name))
+        elif test.state == TestState.FAILED:
+            nfailed += 1
+            print('TEST {} PASSED'.format(test.name))
+        else:
+            nunknown += 1
+            print('TEST {} UNKNOWN'.format(test.name))
+    print('{} PASSED, {} FAILED, {} INDETERMINATE'.format(npassed, nfailed, nunknown))
 
 if __name__ == '__main__':
     tests = gather_tests(TEST_DIR_PATH)
