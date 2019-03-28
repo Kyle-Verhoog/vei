@@ -56,6 +56,8 @@ object ExpressionASM {
                  |mov edx, 0
                  |div ebx
                  |""".stripMargin)
+          case "%" => ASM(";TODO") // TODO
+          case "instanceof" => ASM(";TODO") // TODO
         }
       case None => ASM("")
     }
@@ -196,15 +198,17 @@ object ExpressionASM {
   }
 
   def ifStatementChildrenASM(children: List[AST]): ASM = {
+    if (children.isEmpty) return ASM("")
+
     children.head match {
       case child: IfStatement =>
         val myCounter = incrementAndReturnCounter
         val conditionCode = Joos1WCodeGen.astASM(Some(child.expr)).code
         val bodyCode = Joos1WCodeGen.astASM(Some(child.body)).code
-        val elseCode = ifStatementChildrenASM(children.tail)
+        val elseCode = ifStatementChildrenASM(children.tail).code
 
         ASM(s"""
-               |;; IF ( $conditionCode )
+               |;; IF ( ${child.expr} )
                |$conditionCode
                |cmp eax, 0
                |je else${myCounter}
@@ -214,6 +218,8 @@ object ExpressionASM {
                |${elseCode}
                |endif${myCounter}:
                |""".stripMargin)
+      case child: TopLevelIf =>
+        topLevelIfStatementASM(child)
       case child =>
         if (children.length > 1)
           throw new RuntimeException(

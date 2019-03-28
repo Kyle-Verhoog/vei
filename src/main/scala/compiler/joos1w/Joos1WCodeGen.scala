@@ -84,6 +84,8 @@ object Joos1WCodeGen {
         ExpressionASM.unaryExpressionASM(expr)
       case Some(expr: ConditionalExpression) =>
         ExpressionASM.conditionalExpressionASM(expr)
+      case Some(stmt: TopLevelIf) =>
+        ExpressionASM.topLevelIfStatementASM(stmt)
       case Some(retAST: Return) =>
         val exprCode = astASM(Some(retAST.expr())).code
         ASM(s""";; return <expr>
@@ -151,6 +153,7 @@ object Joos1WCodeGen {
             astList.children.foldLeft(ASM(""))((acc, ast) =>
               acc ++ astStaticIntTestASM(Some(ast)))
         }
+      case _ => ASM(";; TODO") // TODO
     }
   }
 
