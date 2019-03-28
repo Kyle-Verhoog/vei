@@ -96,7 +96,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} != ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax ; expr 2 result in ebx
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
                    |jne .end_not_equal${myCounter}
@@ -110,7 +112,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} != ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax ; expr 2 result in ebx
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 0
                    |jne .end_equal_equal${myCounter}
@@ -124,7 +128,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} >= ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
                    |jge .end_greater_equal${myCounter}
@@ -138,7 +144,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} > ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
                    |jg .end_greater${myCounter}
@@ -152,7 +160,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} <= ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
                    |jle .end_less_equal${myCounter}
@@ -166,7 +176,9 @@ object ExpressionASM {
                    |;; ${expr.firstExpr} < ${expr.secondExpr}
                    |$expr2Code
                    |mov ebx, eax
+                   |push ebx ;; store expr2 value
                    |$expr1Code
+                   |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
                    |jl .end_less${myCounter}
