@@ -1,6 +1,8 @@
 public class Basic {
   public static int test() {
-    int i = 3;
-    return i;
+    int i = 2;
+    int x = i;
+    x = x + 1;
+    return x;
   }
 }

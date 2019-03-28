@@ -5,6 +5,7 @@ import ast._
 import compiler.joos1w.environment.{
   ClassEnvironment,
   MethodEnvironment,
+  RootEnvironment,
   VariableEnvironment
 }
 
@@ -68,60 +69,32 @@ object Joos1WCodeGen {
           .replaceAllLiterally("[", "_")
           .replaceAllLiterally("]", "_")
         val methId = s"${pkgName}_${clsName}_$methName"
-        val methCode = astASM(Some(meth.body)).code
+        val methCode = MethodASM.methodASM(Some(meth.body)).code
         ASM(s"""global $methId
                |$methId:
+               |push ebp  ;; push stack frame pointer
                |mov ebp, esp
-               |sub esp, ${env.varCount * 4}
+               |sub esp, ${env.varCount * 4} ;; push the stack frame
                |$methCode
+               |.method_end:
+               |add esp, ${env.varCount * 4} ;; pop the frame
+               |pop ebp  ;; pop stack frame pointer
+               |ret
                |""".stripMargin)
-      case Some(methodBody: MethodBody) =>
-        if (methodBody.hasBody) astASM(methodBody.leftChild) else ASM("")
-      case Some(intAST: literals.IntegerLiteral) =>
-        val intVal = intAST.integerValue
-        ASM(s"""mov eax, $intVal ;; integer literal
-               |""".stripMargin)
-      case Some(expr: GeneralExpression) =>
-        ExpressionASM.generalExpressionASM(expr)
-      case Some(expr: UnaryExpression) =>
-        ExpressionASM.unaryExpressionASM(expr)
-      case Some(expr: ConditionalExpression) =>
-        ExpressionASM.conditionalExpressionASM(expr)
-      case Some(stmt: TopLevelIf) =>
-        ExpressionASM.topLevelIfStatementASM(stmt)
-      case Some(retAST: Return) =>
-        val exprCode = astASM(Some(retAST.expr())).code
-        ASM(s""";; return <expr>
-             |$exprCode
-             |ret
-             |""".stripMargin)
       case Some(astList: ASTList) =>
         astList.fieldName match {
-          case "block_statements" | "class_body_declarations" =>
+          case "class_body_declarations" =>
             astList.children.foldLeft(ASM(""))((acc, ast) =>
               acc ++ astASM(Some(ast)))
+          case s =>
+            throw new MatchError(
+              s"astASM match error on ASTList $s ${astList.parent.get.parent.get.toStrTree}")
         }
-      case Some(v: LocalVariableDeclaration) =>
-        val env = v.env.asInstanceOf[VariableEnvironment]
-        val offset = env.offset.get
-        val declCode = astASM(Some(v.variableDeclarator)).code
-        ASM(s""";; ${v.ttype} ${v.name} = ${v.variableDeclarator}
-             |$declCode
-             |mov [ebp + ${offset * 4}], eax
-           """.stripMargin)
-      case Some(vd: VariableDeclarator) =>
-        astASM(Some(vd.expression))
-      case Some(name: Name) =>
-        val offset = name.env
-          .serarchForVariable(name.name)
-          .get
-          .asInstanceOf[VariableEnvironment]
-          .offset
-        ASM(s"""
-             | mov eax, [ebp + $offset]
-           """.stripMargin)
-      case _ => ASM(s"""nop
-           |""".stripMargin)
+      case _ => ASM("nop")
+      case Some(ast: AST) =>
+        println(s"WARNING: FALLING THROUGH astASM on $ast")
+        CommonASM.commonASM(Some(ast), astASM)
+      case _ => throw new MatchError(s"methodAST match error on $ast")
     }
   }
 
