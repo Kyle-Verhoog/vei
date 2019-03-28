@@ -2,6 +2,7 @@ package compiler.joos1w
 
 import asm._
 import ast._
+import compiler.joos1w.environment.{ClassEnvironment, MethodEnvironment}
 
 case class ASMFile(fileName: String, src: String)
 
@@ -30,7 +31,10 @@ object Joos1WCodeGen {
       case Some(ast: TypeDeclaration) =>
         astASM(ast.leftChild)
       case Some(cls: ClassDeclaration) =>
-        val pkgName = "todo.package".replaceAllLiterally(".", "_")
+        val pkgName = cls.env
+          .asInstanceOf[ClassEnvironment]
+          .packageName
+          .replaceAllLiterally(".", "_")
         val clsName = cls.identifier
         val clsId = s"${pkgName}_$clsName"
         val clsCode = astASM(Some(cls.getClassBody)).code
@@ -39,7 +43,10 @@ object Joos1WCodeGen {
           |$clsCode
           |""".stripMargin)
       case Some(meth: MethodDeclaration) =>
-        val pkgName = "todo.package".replaceAllLiterally(".", "_")
+        val pkgName = meth.env
+          .asInstanceOf[MethodEnvironment]
+          .findEnclosingClass()
+          .packageName
         val clsName = meth.env
           .findEnclosingClass()
           .myAst
@@ -91,10 +98,44 @@ object Joos1WCodeGen {
 
   def astStaticIntTestASM(ast: Option[AST]): ASM = {
     ast match {
-      case _ =>
-        ASM(s"""
-           |call todo_package_Basic_MethodDeclaration_modifiers_public_static_int_test__
-           |""".stripMargin)
+      case Some(ast: CompilationUnit) =>
+        astStaticIntTestASM(ast.typeDeclaration)
+      case Some(ast: TypeDeclaration) =>
+        astStaticIntTestASM(ast.leftChild)
+      case Some(cls: ClassDeclaration) =>
+        astStaticIntTestASM(Some(cls.getClassBody))
+      case Some(meth: MethodDeclaration) =>
+        if (meth.identifier == "test") {
+          val pkgName = meth.env
+            .asInstanceOf[MethodEnvironment]
+            .findEnclosingClass()
+            .packageName
+          val clsName = meth.env
+            .findEnclosingClass()
+            .myAst
+            .asInstanceOf[ClassDeclaration]
+            .identifier
+          val methName = meth.toString
+            .replaceAllLiterally(".", "_")
+            .replaceAllLiterally("(", "_")
+            .replaceAllLiterally(")", "_")
+            .replaceAllLiterally(" ", "_")
+            .replaceAllLiterally("[", "_")
+            .replaceAllLiterally("]", "_")
+          val methId = s"${pkgName}_${clsName}_$methName"
+          ASM(s"""
+                 |extern $methId
+                 |call $methId
+                 |""".stripMargin)
+        } else {
+          ASM("")
+        }
+      case Some(astList: ASTList) =>
+        astList.fieldName match {
+          case "class_body_declarations" =>
+            astList.children.foldLeft(ASM(""))((acc, ast) =>
+              acc ++ astStaticIntTestASM(Some(ast)))
+        }
     }
   }
 
@@ -104,7 +145,6 @@ object Joos1WCodeGen {
   def astMainASM(ast: Option[AST]): ASM = {
     val staticIntTestCode = astStaticIntTestASM(ast).code
     ASM(s"""global _start
-      |extern todo_package_Basic_MethodDeclaration_modifiers_public_static_int_test__
       |_start:
       |$staticIntTestCode
       |mov ebx, eax

@@ -43,7 +43,9 @@ object Joos1WCompiler {
     //Joos1WReachability.checkReachability(weededAsts)
     val asm = Joos1WCodeGen.genCode(weededAsts)
 
-    val outputDir = System.getenv("PWD") ++ "/output"
+    val pwd = System.getenv("PWD")
+    println(s"OUTPUTTING TO $pwd")
+    val outputDir = pwd ++ "/output"
     asm.foreach(code => {
       println(s"OUTPUTTING CODE ${code.fileName}")
       val fileName = outputDir ++ "/" ++ code.fileName

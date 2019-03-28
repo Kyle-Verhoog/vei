@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 # TEST_DIR_PATH = './src/main/resources/test/marmoset/a5/'
 TEST_DIR_PATH = 'src/main/resources/test/codegen/'
 STDLIB_DIR_PATH = 'src/main/resources/test/marmoset/lib/5/'
-ASM_EXEC_PATH = 'bin/nasm'
-VEI_EXEC_PATH = './joosc'
+ASM_EXEC_PATH = os.path.abspath('bin/nasm')
+VEI_EXEC_PATH = os.path.abspath('./joosc')
 OUTPUT_DIR = 'output/'
 
 
@@ -41,6 +41,8 @@ class TestSuite:
         self._exp_out = expected_out
         self._exp_ret = expected_ret
         self.state = TestState.NOT_RUN
+        # init the directories
+        self.output_dir
 
     def _load_src_files(self, file_names):
         files = []
@@ -88,8 +90,17 @@ class TestSuite:
         return self.name[0:-5]
 
     @property
-    def output_dir(self):
+    def test_dir(self):
         dirname = os.path.join(OUTPUT_DIR, self.testname)
+        # create the process test directory if it doesn't exist
+        if not os.path.exists(dirname):
+            self.log_info('creating test directory {}'.format(dirname))
+            os.makedirs(dirname)
+        return dirname
+
+    @property
+    def output_dir(self):
+        dirname = os.path.join(self.test_dir, 'output')
         # create the process output directory if it doesn't exist
         if not os.path.exists(dirname):
             self.log_info('creating output directory {}'.format(dirname))
@@ -97,7 +108,7 @@ class TestSuite:
         return dirname
 
     def output_file(self, file_name):
-        return os.path.join(self.output_dir, file_name)
+        return os.path.join(self.test_dir, file_name)
 
     def store_output(self, stdout, stderr):
         t = datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -111,23 +122,25 @@ class TestSuite:
             f.write(stderr)
 
     def compile(self):
-        args = [VEI_EXEC_PATH]
+        args = ['java', '-cp', 'lib/scala-lib.jar:target/scala-2.12/joosc_2.12-0.1.jar', 'compiler.Compiler']
         args += self.file_names
         args += self.stdlib
         self.log_info(' '.join(args))
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        env = os.environ.copy()
+        env['PWD'] = os.path.abspath(self.test_dir)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         stdout, stderr = p.communicate()
         ret = p.returncode
         self.log_info('exit status {} (expected {})'.format(ret, self.expected_status))
         passed = self.expected_status == ret
-        self.log_info('{}'.format('PASS' if passed else 'FAIL'))
         if not passed:
+            self.log_info('COMPILATION FAILED')
             self.store_output(stdout, stderr)
             sys.exit(-1)
         else:
-            args = 'mv {}*.s {}/'.format(OUTPUT_DIR, self.output_dir)
-            log.info(args)
-            subprocess.call(args, shell=True)
+            # args = 'mv {}*.s {}/'.format(OUTPUT_DIR, self.output_dir)
+            # log.info(args)
+            # subprocess.call(args, shell=True)
             self.store_output(stdout, stderr)
 
     def assemble(self):
@@ -146,7 +159,7 @@ class TestSuite:
 
     def run(self):
         args = [self.output_file('main')]
-        log.info('{}'.format(' '.join(args)))
+        self.log_info('{}'.format(' '.join(args)))
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         ret = p.returncode
@@ -157,7 +170,7 @@ class TestSuite:
         elif self._exp_ret is None:
             pass
         else:
-            log.info('TEST {} FAILED RETURN CODE MISMATCH {} != {}'.format(self.name, int(ret), int(self._exp_ret)))
+            self.log_info('TEST {} FAILED RETURN CODE MISMATCH {} != {}'.format(self.name, int(ret), int(self._exp_ret)))
             passing = False
 
         if self._exp_out is not None and str(stdout) == str(self._exp_out):
@@ -223,12 +236,17 @@ def gather_tests(test_dir):
     return tests
 
 
-if __name__ == '__main__':
-    # subprocess.call(['make'])
-    # subprocess.call(['rm'])
-    tests = gather_tests(TEST_DIR_PATH)
+def run_test(test):
+    pass
+
+
+def run_tests(tests):
     # print('\n'.join([str(test) for test in tests]))
-    test = tests[0]
-    print(test)
-    test.compile_and_run()
-    # assemble('filename.s')
+    for test in tests:
+        print(test)
+        test.compile_and_run()
+    # test = tests[0]
+
+if __name__ == '__main__':
+    tests = gather_tests(TEST_DIR_PATH)
+    run_tests(tests)

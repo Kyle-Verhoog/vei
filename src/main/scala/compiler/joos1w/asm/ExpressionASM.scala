@@ -32,7 +32,8 @@ object ExpressionASM {
                  |$expr1Code
                  |push eax
                  |$expr2Code
-                 |pop ebx
+                 |mov ebx, eax
+                 |pop eax
                  |sub eax, ebx
                  |""".stripMargin)
           case "*" =>
