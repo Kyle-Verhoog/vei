@@ -3,6 +3,14 @@ package compiler.joos1w.asm
 import compiler.joos1w.ast._
 
 object CommonASM {
+  var strCount = 0
+
+  def genStrLitLabel: String = {
+    val i = strCount
+    strCount += 1
+    s"str_$i"
+  }
+
   def commonASM(ast: Option[AST], recurseMethod: Option[AST] => ASM): ASM = {
     ast match {
       case Some(intAST: literals.IntegerLiteral) =>
@@ -15,13 +23,13 @@ object CommonASM {
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>
         val str = strAST.value
+        val strLabel = genStrLitLabel
         new ASM(
-          text = "",
+          text = s"mov eax, $strLabel",
           data = s"""
-              | $str: db "$str"
+              | $strLabel: db $str
             """.stripMargin
         )
-        ASM(";; TODO string literal")
       case Some(strAST: literals.CharacterLiteral) =>
         ASM(s";; TODO character literal")
       case Some(vd: VariableDeclarator) =>
