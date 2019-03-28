@@ -14,6 +14,7 @@ public class EqualsExpression {
         if ("arst" == "arst") {
             ret = ret + 1;
         }
+        // ret = 2
 
         if ("arst" == "wqfp") {
             ret = ret + 1;
@@ -34,6 +35,7 @@ public class EqualsExpression {
         if ('a' == 98) {
             ret = ret + 1;
         }
+        //ret = 4
 
         if (true == false) {
             ret = ret + 1;
@@ -42,6 +44,7 @@ public class EqualsExpression {
         if (true == true) {
             ret = ret + 1;
         }
+        // ret = 5
 
         if (false == false) {
             ret = ret + 1;

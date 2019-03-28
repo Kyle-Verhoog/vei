@@ -10,6 +10,7 @@ public class NotEqualsExpression {
         if (1 != 1) {
             ret = ret + 1;
         }
+        // ret = 2
 
         if ("arst" != "arst") {
             ret = ret + 1;
@@ -18,6 +19,7 @@ public class NotEqualsExpression {
         if ("arst" != "wqfp") {
             ret = ret + 1;
         }
+        // ret = 3
 
         if ('a' != 'a') {
             ret = ret + 1;
@@ -26,6 +28,7 @@ public class NotEqualsExpression {
         if ('a' != 'b') {
             ret = ret + 1;
         }
+        // ret = 4
 
         if ('a' != 97) {
             ret = ret + 1;
@@ -34,10 +37,12 @@ public class NotEqualsExpression {
         if ('a' != 98) {
             ret = ret + 1;
         }
+        // ret = 5
 
         if (true != false) {
             ret = ret + 1;
         }
+        // ret = 6
 
         if (true != true) {
             ret = ret + 1;

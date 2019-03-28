@@ -40,9 +40,11 @@ object StatementASM {
            |${initializationCode}
            |.start_for${myCounter}:
            |${bodyCode}
-           |; check condition and jump as appropriate
+           |;; increment
+           |${incrementCode}
+           |;; check condition and jump as appropriate
            |${terminationCode}
-           |; determine if should jump
+           |;; determine if should jump
            |cmp eax, 0
            |je .end_for${myCounter}
            |jmp .start_for${myCounter}
