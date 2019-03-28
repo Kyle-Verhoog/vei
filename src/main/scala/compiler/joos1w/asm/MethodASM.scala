@@ -37,9 +37,9 @@ object MethodASM {
                |$exprCode jmp .method_end
                |""".stripMargin)
       case Some(forStatement: ForStatement) =>
-        ASM(s";; TODO for statement")
+        StatementASM.forStatementASM(forStatement)
       case Some(whileStatement: WhileStatement) =>
-        ASM(s";; TODO while statement")
+        StatementASM.whileStatementASM(whileStatement)
       case Some(assignment: Assignment) =>
         val lhsCode = methodASM(Some(assignment.getLHS)).code
         val rhsCode = methodASM(Some(assignment.getRHS)).code

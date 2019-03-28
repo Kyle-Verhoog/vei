@@ -17,18 +17,37 @@ object StatementASM {
 
     ASM(s"""
            |;; While ( ${stmt.expr} )
+           |.start_while${myCounter}:
            |$conditionCode
            |cmp eax, 0
            |je .end_while${myCounter}
            |${bodyCode}
+           |jmp .start_while${myCounter}
            |.end_while${myCounter}:
            |""".stripMargin)
   }
 
-  def forStatementASM(expr: ForStatement): ASM = {
+  def forStatementASM(stmt: ForStatement): ASM = {
     val myCounter = incrementAndReturnCounter
-    val children = expr.children
-    ifStatementChildrenASM(children)
+
+    val initializationCode = MethodASM.methodASM(Some(stmt.initialization)).code
+    val terminationCode = MethodASM.methodASM(Some(stmt.termination)).code
+    val incrementCode = MethodASM.methodASM(Some(stmt.increment)).code
+    val bodyCode = MethodASM.methodASM(Some(stmt.body)).code
+
+    ASM(s"""
+           |;; FOR ( ${stmt.initialization} ${stmt.termination} ${stmt.increment} )
+           |${initializationCode}
+           |.start_for${myCounter}:
+           |${bodyCode}
+           |; check condition and jump as appropriate
+           |${terminationCode}
+           |; determine if should jump
+           |cmp eax, 0
+           |je .end_for${myCounter}
+           |jmp .start_for${myCounter}
+           |.end_for${myCounter}:
+           |""".stripMargin)
   }
 
   def topLevelIfStatementASM(expr: TopLevelIf): ASM = {
