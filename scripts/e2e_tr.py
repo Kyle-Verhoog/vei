@@ -26,13 +26,21 @@ class SrcFile:
     def __repr__(self):
         return '<SrcFile name={}>'.format(self.name)
 
+class TestState:
+    NOT_RUN = 0
+    RUNNING = 1
+    PASSED = 2
+    FAILED = 3
 
 class TestSuite:
-    def __init__(self, name, files=[], stdlib=[]):
+    def __init__(self, name, files=[], stdlib=[], expected_out=None, expected_ret=None):
         self.name = name
         self._file_names = files
         self.src_files = self._load_src_files(self._file_names)
         self._stdlib_file_names = stdlib
+        self._exp_out = expected_out
+        self._exp_ret = expected_ret
+        self.state = TestState.NOT_RUN
 
     def _load_src_files(self, file_names):
         files = []
@@ -126,14 +134,14 @@ class TestSuite:
         asm_files = glob.glob('{}/**/*.s'.format(self.output_dir), recursive=True)
         for asm_file in asm_files:
             args = [ASM_EXEC_PATH, '-O1', '-f', 'elf', '-g', '-F', 'dwarf', asm_file]
-            log.info('{}'.format(' '.join(args)))
+            self.log_info('{}'.format(' '.join(args)))
             subprocess.call(args)
 
     def link(self):
         out_files = os.path.join(self.output_dir, '*.o')
         out_main = self.output_file('main')
         args = 'ld -melf_i386 -o {} {}/*.o'.format(out_main, self.output_dir)
-        log.info(args)
+        self.log_info(args)
         subprocess.call(args, shell=True)
 
     def run(self):
@@ -142,16 +150,42 @@ class TestSuite:
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         ret = p.returncode
-        self.log_info('return code {}'.format(ret))
+
+        passing = None
+        if self._exp_ret is not None and int(ret) == int(self._exp_ret):
+            passing = True
+        elif self._exp_ret is None:
+            pass
+        else:
+            log.info('TEST {} FAILED RETURN CODE MISMATCH {} != {}'.format(self.name, int(ret), int(self._exp_ret)))
+            passing = False
+
+        if self._exp_out is not None and str(stdout) == str(self._exp_out):
+            passing = True
+        elif self._exp_out is None:
+            pass
+        else:
+            self.log_info('TEST FAILED STDOUT MISMATCH {} != {}'.format(stdout, self._exp_out))
+            passing = False
+
+        if passing:
+            self.state = TestState.PASSED
+            self.log_info('TEST PASSED')
+        elif passing is None:
+            self.log_info('NO CHECK SPECIFIED')
+        else:
+            self.state = TestState.FAILED
+            self.log_info('TEST FAILED')
 
     def compile_and_run(self):
+        self.state = TestState.RUNNING
         self.compile()
         self.assemble()
         self.link()
         self.run()
 
     def __repr__(self):
-        return '<TestSuite name={}, num_tests={}>'.format(self.name, len(self.src_files))
+        return '<TestSuite name={}, num_tests={} exp_ret={}>'.format(self.name, len(self.src_files), self._exp_ret)
 
 
 def gather_directory_files(dir_path):
@@ -166,14 +200,26 @@ def gather_tests(test_dir):
     for f in files:
         file_path = os.path.join(test_dir, f)
         if os.path.isfile(file_path) and f.endswith('.java'):
-            suite = TestSuite(f, [file_path], stdlib_files)
+            exp_ret_fname = file_path[0:-5] + '.ret'
+            exp_out_fname = file_path[0:-5] + '.out'
+            exp_out = None
+            exp_ret = None
+            log.info(exp_ret_fname)
+            if os.path.isfile(exp_ret_fname):
+                with open(exp_ret_fname, 'r') as ef:
+                    exp_ret = ef.read().strip()
+            if os.path.isfile(exp_out_fname):
+                with open(exp_out_fname, 'r') as ef:
+                    exp_out = ef.read().strip()
+            suite = TestSuite(f, [file_path], stdlib_files, exp_out, exp_ret)
             tests.append(suite)
         elif os.path.isdir(file_path):
             test_files = gather_directory_files(file_path)
             suite = TestSuite(f, test_files, stdlib_files)
             tests.append(suite)
         else:
-            log.warn('got unexpected file in test directory {}'.format(file_path))
+            pass
+            # log.warn('got unexpected file in test directory {}'.format(file_path))
     return tests
 
 
