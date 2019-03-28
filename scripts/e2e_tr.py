@@ -279,13 +279,13 @@ def run_tests(tests):
     for test in tests:
         if test.state == TestState.PASSED:
             npassed += 1
-            print('TEST {} PASSED'.format(test.name))
+            print('✓ {}'.format(test.name))
         elif test.state == TestState.FAILED:
             nfailed += 1
-            print('TEST {} FAILED see {} for details'.format(test.name, test._log_file))
+            print('❌ {} see {} for details'.format(test.name, test._log_file))
         else:
             nunknown += 1
-            print('TEST {} UNKNOWN'.format(test.name))
+            print('❓ {}'.format(test.name))
     print('{} PASSED, {} FAILED, {} INDETERMINATE'.format(npassed, nfailed, nunknown))
 
 if __name__ == '__main__':
