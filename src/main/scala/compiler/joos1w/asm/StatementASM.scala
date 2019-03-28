@@ -12,48 +12,49 @@ object StatementASM {
 
   def whileStatementASM(stmt: WhileStatement): ASM = {
     val myCounter = incrementAndReturnCounter
-    val conditionCode = MethodASM.methodASM(Some(stmt.expr)).code
-    val bodyCode = MethodASM.methodASM(Some(stmt.body)).code
+    val conditionCode = MethodASM.methodASM(Some(stmt.expr))
+    val bodyCode = MethodASM.methodASM(Some(stmt.body))
 
     ASM(s"""
            |;; While ( ${stmt.expr} )
-           |.start_while${myCounter}:
-           |$conditionCode
+           |.start_while${myCounter}:""") ++
+      conditionCode ++
+      ASM(s"""
            |cmp eax, 0
-           |je .end_while${myCounter}
-           |${bodyCode}
+           |je .end_while${myCounter}""") ++
+      bodyCode ++
+      ASM(s"""
            |jmp .start_while${myCounter}
-           |.end_while${myCounter}:
-           |""".stripMargin)
+           |.end_while${myCounter}:""")
   }
 
   def forStatementASM(stmt: ForStatement): ASM = {
     val myCounter = incrementAndReturnCounter
 
-    val initializationCode = MethodASM.methodASM(Some(stmt.initialization)).code
-    val terminationCode = MethodASM.methodASM(Some(stmt.termination)).code
-    val incrementCode = MethodASM.methodASM(Some(stmt.increment)).code
-    val bodyCode = MethodASM.methodASM(Some(stmt.body)).code
+    val initializationCode = MethodASM.methodASM(Some(stmt.initialization))
+    val terminationCode = MethodASM.methodASM(Some(stmt.termination))
+    val incrementCode = MethodASM.methodASM(Some(stmt.increment))
+    val bodyCode = MethodASM.methodASM(Some(stmt.body))
 
-    ASM(s"""
-           |;; FOR ( ${stmt.initialization} ${stmt.termination} ${stmt.increment} )
-           |${initializationCode}
-           |.start_for${myCounter}:
-           |${bodyCode}
-           |;; increment
-           |${incrementCode}
-           |;; check condition and jump as appropriate
-           |${terminationCode}
-           |;; determine if should jump
-           |cmp eax, 0
-           |je .end_for${myCounter}
-           |jmp .start_for${myCounter}
-           |.end_for${myCounter}:
-           |""".stripMargin)
+    ASM(
+      s";; FOR ( ${stmt.initialization} ${stmt.termination} ${stmt.increment} )") ++
+      initializationCode ++
+      ASM(s".start_for${myCounter}:") ++
+      bodyCode ++
+      ASM(s";; increment") ++
+      incrementCode ++
+      ASM(s";; check condition and jump as appropriate") ++
+      terminationCode ++
+      ASM(s"") ++
+      ASM(s""";; determine if should jump
+             |cmp eax, 0
+             |je .end_for${myCounter}
+             |jmp .start_for${myCounter}
+             |.end_for${myCounter}:
+       """.stripMargin)
   }
 
   def topLevelIfStatementASM(expr: TopLevelIf): ASM = {
-    val myCounter = incrementAndReturnCounter
     val children = expr.children
     ifStatementChildrenASM(children)
   }
