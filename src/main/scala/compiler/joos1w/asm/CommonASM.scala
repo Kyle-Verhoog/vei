@@ -17,8 +17,11 @@ object CommonASM {
         val intVal = intAST.integerValue
         ASM(s"mov eax, $intVal ;; integer literal")
       case Some(boolAST: literals.BooleanLiteral) =>
-        val intVal = if (boolAST.value) 1 else 0
-        ASM(s"mov eax, $intVal ;; boolean literal")
+        if (boolAST.value) ASM("""
+               |mov eax, 0 ;; eax := true
+               |not eax
+             """.stripMargin)
+        else ASM("mov eax, 0 ;; eax := false")
       case Some(nullAST: literals.NullLiteral) =>
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>

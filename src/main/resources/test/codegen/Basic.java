@@ -1,12 +1,9 @@
 public class Basic {
   public static int test() {
-    String s = "asdf";
-    String t = s;
-
-    if (s == t) {
-      return 1;
-    } else {
+    if (!true) {
       return 3;
+    } else {
+      return 2;
     }
   }
 }
