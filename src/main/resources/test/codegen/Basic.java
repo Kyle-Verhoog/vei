@@ -1,5 +1,9 @@
 public class Basic {
   public static int test() {
-    return ((3*(4+1)*2)/2);
+      if (1 < 3) {
+          return 2;
+      } else {
+          return 3;
+      }
   }
 }

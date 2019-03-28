@@ -56,6 +56,30 @@ object ExpressionASM {
                  |mov edx, 0
                  |div ebx
                  |""".stripMargin)
+        }
+      case None => ASM("")
+    }
+  }
+
+  def unaryExpressionASM(expr: UnaryExpression): ASM = {
+    val exprCode = Joos1WCodeGen.astASM(Some(expr.subExpression)).code
+
+    expr.operator match {
+      case "!" =>
+        ASM(s""";; UNARY ${expr.operator} ${expr.subExpression}
+               |$exprCode
+               |not eax
+               |""".stripMargin)
+      case _ => throw new RuntimeException("TODO IMPLEMENT")
+    }
+  }
+
+  def conditionalExpressionASM(expr: ConditionalExpression): ASM = {
+    expr.operator match {
+      case op =>
+        val expr1Code = Joos1WCodeGen.astASM(Some(expr.firstExpr)).code
+        val expr2Code = Joos1WCodeGen.astASM(Some(expr.secondExpr)).code
+        op match {
           case "!=" =>
             val myCounter = incrementAndReturnCounter
             ASM(s"""
@@ -162,24 +186,40 @@ object ExpressionASM {
                    |""".stripMargin)
 
         }
-      case None => ASM("")
     }
   }
 
-  def unaryExpressionASM(expr: UnaryExpression): ASM = {
-    val exprCode = Joos1WCodeGen.astASM(Some(expr.subExpression)).code
+  def topLevelIfStatementASM(expr: TopLevelIf): ASM = {
+    val myCounter = incrementAndReturnCounter
+    val children = expr.children
+    ifStatementChildrenASM(children)
+  }
 
-    expr.operator match {
-      case "!" =>
-        ASM(s""";; UNARY ${expr.operator} ${expr.subExpression}
-               |$exprCode
-               |not eax
+  def ifStatementChildrenASM(children: List[AST]): ASM = {
+    children.head match {
+      case child: IfStatement =>
+        val myCounter = incrementAndReturnCounter
+        val conditionCode = Joos1WCodeGen.astASM(Some(child.expr)).code
+        val bodyCode = Joos1WCodeGen.astASM(Some(child.body)).code
+        val elseCode = ifStatementChildrenASM(children.tail)
+
+        ASM(s"""
+               |;; IF ( $conditionCode )
+               |$conditionCode
+               |cmp eax, 0
+               |je else${myCounter}
+               |${bodyCode}
+               |jmp endif${myCounter}
+               |else${myCounter}:
+               |${elseCode}
+               |endif${myCounter}:
                |""".stripMargin)
-      case _ => throw new RuntimeException("TODO IMPLEMENT")
+      case child =>
+        if (children.length > 1)
+          throw new RuntimeException(
+            "Encountered non if statement child in the middle of an if statement list")
+        Joos1WCodeGen.astASM(Some(child))
     }
   }
 
-  def conditionalExpressionASM(expr: ConditionalExpression): ASM = {
-    ASM("")
-  }
 }
