@@ -1,12 +1,10 @@
 package compiler.joos1w.asm
 
-import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
 
 object MethodASM {
   def methodASM(ast: Option[AST]): ASM = {
-    println(ast)
     ast match {
       case Some(methodBody: MethodBody) =>
         if (methodBody.hasBody) methodASM(methodBody.leftChild) else ASM("")
@@ -16,11 +14,10 @@ object MethodASM {
       case Some(v: LocalVariableDeclaration) =>
         val env = v.env.asInstanceOf[VariableEnvironment]
         val offset = env.offset.get * 4
-        val declCode = methodASM(Some(v.variableDeclarator)).code
-        ASM(s""";; ${v.ttype} ${v.name} = ${v.variableDeclarator}
-               |$declCode
-               |mov [ebp - $offset], eax
-           """.stripMargin)
+        val declCode = methodASM(Some(v.variableDeclarator))
+        ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
+          declCode ++
+          ASM(s"mov [ebp - $offset], eax")
       case Some(astList: ASTList) =>
         astList.fieldName match {
           case "block_statements" =>
@@ -32,21 +29,22 @@ object MethodASM {
       case Some(stmt: TopLevelIf) =>
         StatementASM.topLevelIfStatementASM(stmt)
       case Some(retAST: Return) =>
-        val exprCode = methodASM(Some(retAST.expr())).code
-        ASM(s""";; return <expr>
-               |$exprCode jmp .method_end
-               |""".stripMargin)
+        val exprCode = methodASM(Some(retAST.expr()))
+        ASM(s";; return ${retAST.expr()}") ++
+          exprCode ++
+          ASM("jmp .method_end")
       case Some(forStatement: ForStatement) =>
         StatementASM.forStatementASM(forStatement)
       case Some(whileStatement: WhileStatement) =>
         StatementASM.whileStatementASM(whileStatement)
       case Some(assignment: Assignment) =>
-        val lhsCode = methodASM(Some(assignment.getLHS)).code
-        val rhsCode = methodASM(Some(assignment.getRHS)).code
-        ASM(s""";; ${assignment.getLHS} := ${assignment.getRHS}
-             |$lhsCode
-             |push ebx
-             |$rhsCode
+        val lhsCode = methodASM(Some(assignment.getLHS))
+        val rhsCode = methodASM(Some(assignment.getRHS))
+        ASM(s";; ${assignment.getLHS} := ${assignment.getRHS}") ++
+          lhsCode ++
+          ASM(s"push ebx") ++
+          rhsCode ++
+          ASM(s"""
              |mov ebx, eax
              |pop eax
              |mov [eax], ebx

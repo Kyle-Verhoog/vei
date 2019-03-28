@@ -14,7 +14,14 @@ object CommonASM {
       case Some(nullAST: literals.NullLiteral) =>
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>
-        ASM(s";; TODO string literal")
+        val str = strAST.value
+        new ASM(
+          text = "",
+          data = s"""
+              | $str: db "$str"
+            """.stripMargin
+        )
+        ASM(";; TODO string literal")
       case Some(strAST: literals.CharacterLiteral) =>
         ASM(s";; TODO character literal")
       case Some(vd: VariableDeclarator) =>
@@ -26,7 +33,7 @@ object CommonASM {
       case Some(expr: UnaryExpression) =>
         ExpressionASM.unaryExpressionASM(expr, recurseMethod)
       case Some(castExpression: CastExpression) =>
-        ASM(s";; TODO cast expressin")
+        ASM(s";; TODO cast expression")
       case Some(methodInvocation: MethodInvocation) =>
         ASM(s";; TODO method invocation")
       case Some(arrayAccess: ArrayAccess) =>

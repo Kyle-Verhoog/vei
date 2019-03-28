@@ -64,21 +64,21 @@ object StatementASM {
     children.head match {
       case child: IfStatement =>
         val myCounter = incrementAndReturnCounter
-        val conditionCode = MethodASM.methodASM(Some(child.expr)).code
-        val bodyCode = MethodASM.methodASM(Some(child.body)).code
-        val elseCode = ifStatementChildrenASM(children.tail).code
+        val conditionCode = MethodASM.methodASM(Some(child.expr))
+        val bodyCode = MethodASM.methodASM(Some(child.body))
+        val elseCode = ifStatementChildrenASM(children.tail)
 
-        ASM(s"""
-               |;; IF ( ${child.expr} )
-               |$conditionCode
+        ASM(s";; IF ( ${child.expr} )") ++
+          conditionCode ++
+          ASM(s"""
                |cmp eax, 0
-               |je .else${myCounter}
-               |${bodyCode}
+               |je .else${myCounter}""") ++
+          bodyCode ++
+          ASM(s"""
                |jmp .endif${myCounter}
-               |.else${myCounter}:
-               |${elseCode}
-               |.endif${myCounter}:
-               |""".stripMargin)
+               |.else${myCounter}:""") ++
+          elseCode ++
+          ASM(s""".endif${myCounter}:""")
       case child: TopLevelIf =>
         topLevelIfStatementASM(child)
       case child =>

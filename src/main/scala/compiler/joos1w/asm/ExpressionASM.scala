@@ -14,68 +14,70 @@ object ExpressionASM {
                            recurseMethod: Option[AST] => ASM): ASM = {
     expr.operation match {
       case Some(op) =>
-        val expr1Code = recurseMethod(Some(expr.firstExpr)).code
-        val expr2Code = recurseMethod(Some(expr.secondExpr)).code
+        val expr1Code = recurseMethod(Some(expr.firstExpr))
+        val expr2Code = recurseMethod(Some(expr.secondExpr))
         op match {
           case "+" =>
-            ASM(s"""
-                 |;; ${expr.firstExpr} + ${expr.secondExpr}
-                 |$expr1Code
-                 |push eax
-                 |$expr2Code
+            ASM(s";; ${expr.firstExpr} + ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
                  |pop ebx
                  |add eax, ebx
                  |""".stripMargin)
           case "-" =>
-            ASM(s"""
-                 |;; ${expr.firstExpr} - ${expr.secondExpr}
-                 |$expr1Code
-                 |push eax
-                 |$expr2Code
+            ASM(s";; ${expr.firstExpr} - ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
                  |mov ebx, eax
                  |pop eax
                  |sub eax, ebx
                  |""".stripMargin)
           case "*" =>
-            ASM(s"""
-                 |;; ${expr.firstExpr} * ${expr.secondExpr}
-                 |$expr1Code
-                 |push eax
-                 |$expr2Code
+            ASM(s";; ${expr.firstExpr} * ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
                  |pop ebx
                  |imul eax, ebx
                  |""".stripMargin)
           case "/" =>
-            ASM(s"""
-                 |;; ${expr.firstExpr} / ${expr.secondExpr}
-                 |$expr1Code
-                 |push eax
-                 |$expr2Code
+            ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
                  |mov ebx, eax
                  |pop eax
                  |mov edx, 0
                  |div ebx
                  |""".stripMargin)
-          case "%"          => ASM(";TODO") // TODO
-          case "instanceof" => ASM(";TODO") // TODO
+          case "%"          => ASM(";; TODO %") // TODO
+          case "instanceof" => ASM(";; TODO instanceof") // TODO
         }
-      case None => ASM("")
+      case _ => throw new MatchError(s"Expression match error")
     }
   }
 
   def unaryExpressionASM(expr: UnaryExpression,
                          recurseMethod: Option[AST] => ASM): ASM = {
-    val exprCode = recurseMethod(Some(expr.subExpression)).code
+    val exprCode = recurseMethod(Some(expr.subExpression))
 
     expr.operator match {
       case "!" =>
-        ASM(s""";; ${expr.operator} ${expr.subExpression}
-               |$exprCode
+        ASM(";; ${expr.operator} ${expr.subExpression}") ++
+          exprCode ++
+          ASM(s"""
                |not eax
                |""".stripMargin)
       case "-" =>
-        ASM(s""";; ${expr.operator} ${expr.subExpression}
-               |$exprCode
+        ASM(";; ${expr.operator} ${expr.subExpression}") ++
+          exprCode ++
+          ASM(s"""
                |sub eax, eax
                |sub eax, eax
                |""".stripMargin)
@@ -87,17 +89,16 @@ object ExpressionASM {
                                recurseMethod: Option[AST] => ASM): ASM = {
     expr.operator match {
       case op =>
-        val expr1Code = recurseMethod(Some(expr.firstExpr)).code
-        val expr2Code = recurseMethod(Some(expr.secondExpr)).code
+        val expr1Code = recurseMethod(Some(expr.firstExpr))
+        val expr2Code = recurseMethod(Some(expr.secondExpr))
         op match {
           case "!=" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} != ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax ; expr 2 result in ebx
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} != ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ;; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
@@ -108,12 +109,11 @@ object ExpressionASM {
                    |""".stripMargin)
           case "==" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} != ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax ; expr 2 result in ebx
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} == ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 0
@@ -124,12 +124,11 @@ object ExpressionASM {
                    |""".stripMargin)
           case ">=" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} >= ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} >= ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ;; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
@@ -140,12 +139,11 @@ object ExpressionASM {
                    |""".stripMargin)
           case ">" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} > ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} > ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ;; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
@@ -156,12 +154,11 @@ object ExpressionASM {
                    |""".stripMargin)
           case "<=" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} <= ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} <= ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ;; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
@@ -172,12 +169,11 @@ object ExpressionASM {
                    |""".stripMargin)
           case "<" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} < ${expr.secondExpr}
-                   |$expr2Code
-                   |mov ebx, eax
-                   |push ebx ;; store expr2 value
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} < ${expr.secondExpr}") ++
+              expr2Code ++
+              ASM("push eax ;; store expr2 value") ++
+              expr1Code ++
+              ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
                    |mov ebx, 1
@@ -188,24 +184,23 @@ object ExpressionASM {
                    |""".stripMargin)
           case "&&" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} && ${expr.secondExpr}
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} && ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM(s"""
                    |cmp eax, 0
                    |je .end_and${myCounter}
-                   |$expr2Code
-                   |.end_and${myCounter}:
-                   |""".stripMargin)
+                 """.stripMargin) ++
+              expr2Code ++
+              ASM(s".end_and${myCounter}:")
           case "||" =>
             val myCounter = incrementAndReturnCounter
-            ASM(s"""
-                   |;; ${expr.firstExpr} || ${expr.secondExpr}
-                   |$expr1Code
+            ASM(s";; ${expr.firstExpr} || ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM(s"""
                    |cmp eax, 1
-                   |je .end_and${myCounter}
-                   |$expr2Code
-                   |.end_and${myCounter}:
-                   |""".stripMargin)
+                   |je .end_and${myCounter}""".stripMargin) ++
+              expr2Code ++
+              ASM(s".end_and${myCounter}:")
 
         }
     }

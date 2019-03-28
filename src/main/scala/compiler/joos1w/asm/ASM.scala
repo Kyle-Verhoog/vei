@@ -6,29 +6,61 @@ object ASM {
   }
 }
 
-class ASM(val rawCode: String, clean: Boolean = false) {
-  def instructions: List[String] = {
-    if (!clean) {
-      val lines = rawCode.stripMargin.trim.split("\n").toList
+class ASM(val text: String,
+          val data: String = "",
+          val bss: String = "",
+          isClean: Boolean = false) {
+  def clean(code: String): List[String] = {
+    if (!isClean) {
+      val lines = code.stripMargin.trim.split("\n").toList
       lines.map(l => l.trim.stripMargin)
     } else {
-      rawCode.split("\n").toList
+      code.split("\n").toList
     }
   }
 
-  def code: String = {
+  def addData(data: String): ASM = {
+    new ASM(
+      text = text,
+      data = data ++ data,
+      bss = bss,
+      isClean = isClean,
+    )
+  }
+
+  def instructions: List[String] = {
+    val cleanText = clean(text)
+    val cleanData = clean(data)
+    val cleanBSS = clean(bss)
+
+    (if (cleanText.nonEmpty)
+       List("\nsection .text") ++ cleanText
+     else
+       Nil) ++ (if (cleanData.nonEmpty)
+                  List("\nsection .data") ++ cleanData
+                else
+                  Nil) ++ (if (cleanBSS.nonEmpty)
+                             List("\nsection .bss") ++ cleanBSS
+                           else Nil)
+  }
+
+  def _code: String = {
     instructions.mkString("\n") ++ "\n"
   }
 
   def ++(otherASM: ASM): ASM = {
-    new ASM(code ++ otherASM.code)
+    new ASM(
+      text = text ++ "\n" ++ otherASM.text,
+      data = data ++ "\n" ++ otherASM.data,
+      bss = bss ++ "\n" ++ otherASM.bss,
+    )
   }
 
   // append code with an indent
   def +++(otherASM: ASM): ASM = {
     val otherCodef =
       otherASM.instructions.map(instr => "  " ++ instr).mkString("\n")
-    new ASM(code ++ otherCodef ++ "\n", clean = true)
+    new ASM(_code ++ otherCodef ++ "\n", isClean = true)
   }
 }
 
