@@ -10,6 +10,27 @@ object StatementASM {
     counter
   }
 
+  def whileStatementASM(stmt: WhileStatement): ASM = {
+    val myCounter = incrementAndReturnCounter
+    val conditionCode = MethodASM.methodASM(Some(stmt.expr)).code
+    val bodyCode = MethodASM.methodASM(Some(stmt.body)).code
+
+    ASM(s"""
+           |;; While ( ${stmt.expr} )
+           |$conditionCode
+           |cmp eax, 0
+           |je .end_while${myCounter}
+           |${bodyCode}
+           |.end_while${myCounter}:
+           |""".stripMargin)
+  }
+
+  def forStatementASM(expr: ForStatement): ASM = {
+    val myCounter = incrementAndReturnCounter
+    val children = expr.children
+    ifStatementChildrenASM(children)
+  }
+
   def topLevelIfStatementASM(expr: TopLevelIf): ASM = {
     val myCounter = incrementAndReturnCounter
     val children = expr.children
