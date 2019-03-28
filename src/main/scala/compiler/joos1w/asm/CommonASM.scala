@@ -15,6 +15,8 @@ object CommonASM {
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>
         ASM(s";; TODO string literal")
+      case Some(strAST: literals.CharacterLiteral) =>
+        ASM(s";; TODO character literal")
       case Some(vd: VariableDeclarator) =>
         commonASM(Some(vd.expression), recurseMethod)
       case Some(expr: ConditionalExpression) =>

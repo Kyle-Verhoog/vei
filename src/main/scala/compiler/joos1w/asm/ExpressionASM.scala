@@ -69,11 +69,17 @@ object ExpressionASM {
 
     expr.operator match {
       case "!" =>
-        ASM(s""";; UNARY ${expr.operator} ${expr.subExpression}
+        ASM(s""";; ${expr.operator} ${expr.subExpression}
                |$exprCode
                |not eax
                |""".stripMargin)
-      case _ => throw new RuntimeException("TODO IMPLEMENT")
+      case "-" =>
+        ASM(s""";; ${expr.operator} ${expr.subExpression}
+               |$exprCode
+               |sub eax, eax
+               |sub eax, eax
+               |""".stripMargin)
+      case s => throw new MatchError(s"TODO IMPLEMENT $s")
     }
   }
 

@@ -41,14 +41,25 @@ object MethodASM {
       case Some(whileStatement: WhileStatement) =>
         ASM(s";; TODO while statement")
       case Some(assignment: Assignment) =>
-        ASM(s";; TODO assignment")
+        val lhsCode = methodASM(Some(assignment.getLHS)).code
+        val rhsCode = methodASM(Some(assignment.getRHS)).code
+        ASM(s""";; ${assignment.getLHS} := ${assignment.getRHS}
+             |$lhsCode
+             |push ebx
+             |$rhsCode
+             |mov ebx, eax
+             |pop eax
+             |mov [eax], ebx
+           """.stripMargin)
       case Some(thisCall: ThisCall) =>
         ASM(s";; TODO this call")
       case Some(name: Name) =>
         name.env.findLocalVariable(name.name) match {
           case Some(v: VariableEnvironment) =>
             val offset = v.offset.get * 4
-            ASM(s"mov eax, [ebp - $offset]")
+            ASM(s"""mov ebx, ebp - $offset ;; &var ${name.name}
+                 |  mov eax, [ebp - $offset] ;; *var ${name.name}
+               """.stripMargin)
 
           // check if it's a field
           case None =>
