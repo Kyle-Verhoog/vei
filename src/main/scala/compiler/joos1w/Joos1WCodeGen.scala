@@ -47,12 +47,13 @@ object Joos1WCodeGen {
           |$clsCode
           |""".stripMargin)
       case Some(meth: MethodDeclaration) =>
-        val pkgName = meth.env
+        val env = meth.env.asInstanceOf[MethodEnvironment]
+        val pkgName = env
           .asInstanceOf[MethodEnvironment]
           .findEnclosingClass()
           .packageName
           .replaceAllLiterally(".", "_")
-        val clsName = meth.env
+        val clsName = env
           .findEnclosingClass()
           .myAst
           .asInstanceOf[ClassDeclaration]
@@ -70,6 +71,8 @@ object Joos1WCodeGen {
         val methCode = astASM(Some(meth.body)).code
         ASM(s"""global $methId
                |$methId:
+               |mov ebp, esp
+               |sub esp, ${env.varCount * 4}
                |$methCode
                |""".stripMargin)
       case Some(methodBody: MethodBody) =>
@@ -104,10 +107,19 @@ object Joos1WCodeGen {
         val declCode = astASM(Some(v.variableDeclarator)).code
         ASM(s""";; ${v.ttype} ${v.name} = ${v.variableDeclarator}
              |$declCode
-             |mov [esp + ${offset * 4}], eax
+             |mov [ebp + ${offset * 4}], eax
            """.stripMargin)
       case Some(vd: VariableDeclarator) =>
         astASM(Some(vd.expression))
+      case Some(name: Name) =>
+        val offset = name.env
+          .serarchForVariable(name.name)
+          .get
+          .asInstanceOf[VariableEnvironment]
+          .offset
+        ASM(s"""
+             | mov eax, [ebp + $offset]
+           """.stripMargin)
       case _ => ASM(s"""nop
            |""".stripMargin)
     }
