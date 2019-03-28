@@ -51,6 +51,7 @@ object Joos1WCodeGen {
           .asInstanceOf[MethodEnvironment]
           .findEnclosingClass()
           .packageName
+          .replaceAllLiterally(".", "_")
         val clsName = meth.env
           .findEnclosingClass()
           .myAst
