@@ -44,10 +44,10 @@ class TestSuite:
         self._exp_out = expected_out
         self._exp_ret = expected_ret
         self.state = TestState.NOT_RUN
-        # init the directories
-        self.output_dir
         self._logs = []
         self._log_file = None
+        # init the directories
+        self.output_dir
 
     def _load_src_files(self, file_names):
         files = []
