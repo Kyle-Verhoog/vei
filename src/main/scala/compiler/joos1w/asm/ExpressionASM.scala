@@ -4,6 +4,13 @@ import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 
 object ExpressionASM {
+  var counter = 0
+
+  def incrementAndReturnCounter: Int = {
+    counter += 1
+    counter
+  }
+
   def generalExpressionASM(expr: GeneralExpression): ASM = {
     expr.operation match {
       case Some(op) =>
@@ -48,6 +55,111 @@ object ExpressionASM {
                  |mov edx, 0
                  |div ebx
                  |""".stripMargin)
+          case "!=" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} != ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax ; expr 2 result in ebx
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 1
+                   |jne end_not_equal${myCounter}
+                   |mov ebx, 0
+                   |end_not_equal${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case "==" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} != ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax ; expr 2 result in ebx
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 0
+                   |jne end_equal_equal${myCounter}
+                   |mov ebx, 1
+                   |end_equal_equal${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case ">=" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} >= ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 1
+                   |jge end_greater_equal${myCounter}
+                   |mov ebx, 0
+                   |end_greater_equal${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case ">" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} > ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 1
+                   |jg end_greater${myCounter}
+                   |mov ebx, 0
+                   |end_greater${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case "<=" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} <= ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 1
+                   |jle end_less_equal${myCounter}
+                   |mov ebx, 0
+                   |end_less_equal${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case "<" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} < ${expr.secondExpr}
+                   |$expr2Code
+                   |mov ebx, eax
+                   |$expr1Code
+                   |cmp eax, ebx
+                   |mov ebx, 1
+                   |jl end_less${myCounter}
+                   |mov ebx, 0
+                   |end_less${myCounter}
+                   |mov eax, ebx
+                   |""".stripMargin)
+          case "&&" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} && ${expr.secondExpr}
+                   |$expr1Code
+                   |cmp eax, 0
+                   |je end_and${myCounter}
+                   |$expr2Code
+                   |end_and${myCounter}:
+                   |""".stripMargin)
+          case "||" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s"""
+                   |;; ${expr.firstExpr} || ${expr.secondExpr}
+                   |$expr1Code
+                   |cmp eax, 1
+                   |je end_and${myCounter}
+                   |$expr2Code
+                   |end_and${myCounter}:
+                   |""".stripMargin)
+
         }
       case None => ASM("")
     }
