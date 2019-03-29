@@ -1,7 +1,10 @@
 package compiler.joos1w.ast
 
+import compiler.joos1w.environment.MethodEnvironment
+
 class MethodInvocation(val id: Option[String]) extends AST {
   var returnType: Option[String] = None
+  var methodDefinition: Option[MethodEnvironment] = None
 
   def name: String = {
     if (id.isDefined) return id.get

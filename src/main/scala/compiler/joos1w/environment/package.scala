@@ -601,6 +601,7 @@ package object environment {
 
       verifyCalling(env, klass, method.get)
       verifyUsagePermission(method.get, klass)
+      ast.methodDefinition = method
       types.buildTypeFromString(method.get.returnType, method.get)
     } else { // just look up the name
       // println("looking up method " + ast.name)
@@ -642,6 +643,7 @@ package object environment {
         verifyUsagePermission(method.get, klass)
       }
 
+      ast.methodDefinition = method
       types.buildTypeFromString(method.get.returnType, method.get)
     }
   }
