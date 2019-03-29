@@ -5,6 +5,7 @@ import compiler.joos1w.environment._
 
 object MethodASM {
   def methodASM(ast: Option[AST]): ASM = {
+    println(s"methodASM $ast")
     ast match {
       case Some(methodBody: MethodBody) =>
         if (methodBody.hasBody) methodASM(methodBody.leftChild) else ASM("")
@@ -76,7 +77,8 @@ object MethodASM {
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH methodASM on $ast")
         CommonASM.commonASM(Some(ast), MethodASM.methodASM)
-      case _ => throw new MatchError(s"methodAST match error on $ast")
+      case None => ASM("")
+      case _    => throw new MatchError(s"methodASM match error on $ast")
     }
   }
 }

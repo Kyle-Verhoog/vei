@@ -66,6 +66,10 @@ class ConstructorDeclaration(mods: List[String]) extends ASTMethodDeclaration {
     None
   }
 
+  def hasBody: Boolean = {
+    children.last.isInstanceOf[Empty]
+  }
+
   override def body: MethodBody = {
     val hasBody = children.last.isInstanceOf[Empty]
     val methodBody = new MethodBody(hasBody)

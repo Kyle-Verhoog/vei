@@ -50,6 +50,7 @@ object ExpressionASM {
               expr1Code ++
               ASM("push eax") ++
               expr2Code ++
+              // TODO something about the sign
               ASM(s"""
                  |mov ebx, eax
                  |pop eax

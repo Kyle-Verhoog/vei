@@ -35,7 +35,7 @@ object Joos1WCompiler {
       Joos1WIfStatement.fixIfs(ast)
     })
     println("Building environments...")
-    Joos1WEnvironment.buildEnvironment(weededAsts)
+    val rootEnv = Joos1WEnvironment.buildEnvironment(weededAsts)
     println("Building environments...")
     //println("Other tree...")
     //val root = new Root().populateNamespace(weededAsts)
@@ -102,7 +102,7 @@ object Joos1WCompiler {
         | char:
         |     dd 0
       """.stripMargin
-    ) :: Joos1WCodeGen.genCode(weededAsts)
+    ) :: Joos1WCodeGen.genCode(weededAsts, rootEnv)
 
     val pwd = System.getenv("PWD")
     println(s"OUTPUTTING TO $pwd")
