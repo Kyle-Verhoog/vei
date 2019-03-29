@@ -11,6 +11,13 @@ object CommonASM {
     s"str_$i"
   }
 
+  var counter = 0
+
+  def incrementAndReturnCounter: Int = {
+    counter += 1
+    counter
+  }
+
   def commonASM(ast: Option[AST], recurseMethod: Option[AST] => ASM): ASM = {
     ast match {
       case Some(intAST: literals.IntegerLiteral) =>
@@ -47,9 +54,54 @@ object CommonASM {
       case Some(methodInvocation: MethodInvocation) =>
         ASM(s";; TODO method invocation")
       case Some(arrayAccess: ArrayAccess) =>
-        ASM(s";; TODO array access")
+        val myCounter = incrementAndReturnCounter
+        val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
+        val index = MethodASM.methodASM(Some(arrayAccess.expression))
+        ASM(s"""
+               |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])""") ++
+        arrayPointer ++
+        ASM(s"""
+               |;; the pointer to the array is now in eax, first we check index bounds
+               |push eax ;; store array pointer
+               |mov ebx, [eax] ;; get array size
+               |push ebx ;; store array size""") ++
+        index ++
+        ASM(s"""
+               |;; eax has array index
+               |pop ecx ;; get array size
+               |pop ebx ;; get array pointer
+               |cmp eax, ecx ;; perform index bounds check
+               |jl .array_check_pass_upper_bound${myCounter}
+               |call __exception
+               |.array_check_pass_upper_bound${myCounter}:
+               |cmp eax, 0 ;; perform index bounds check
+               |jge .array_check_pass_lower_bound${myCounter}
+               |call __exception
+               |.array_check_pass_lower_bound${myCounter}:
+               |add eax, 1 ;; add offset for array metadata
+               |mult eax, 4
+               |mov eax, [ebx + eax]""")
+
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
-        ASM(s";; TODO array creation")
+        val myCounter = incrementAndReturnCounter
+        val arrayType =
+          MethodASM.methodASM(Some(arrayCreationExpression.primary))
+        val arraySize = MethodASM.methodASM(Some(arrayCreationExpression.expr))
+
+        ASM(s"""
+               |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])""") ++
+        arraySize ++
+        ASM(s"""
+                 |push eax ;; store actual array size
+                 |cmp eax, 0
+                 |jge .create_array${myCounter}
+                 |call __exception
+                 |.create_array${myCounter}:
+                 |add eax, 1
+                 |mult eax, 4 ;; number of bytes for array
+                 |call __malloc
+                 |pop ebx ;; get the size
+                 |mov [eax], ebx ;; put array size into first array element""")
       case Some(classInstanceCreation: ClassInstanceCreation) =>
         ASM(s";; TODO class instance creation")
       case Some(name: Name) =>

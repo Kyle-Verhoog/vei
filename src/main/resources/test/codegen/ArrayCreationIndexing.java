@@ -1,4 +1,4 @@
-public class Basic {
+public class ArrayCreationIndexing {
     public static int test() {
         ret = 0;
 
