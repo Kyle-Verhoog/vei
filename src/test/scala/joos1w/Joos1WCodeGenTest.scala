@@ -9,16 +9,16 @@ class Joos1WCodeGenTest extends FunSuite {
   test("ASM formatting") {
     assert(ASM(s"""
           mov eax, eab
-      """).code == "mov eax, eab\n")
+      """)._code == "mov eax, eab\n")
 
     assert(ASM(s"""
          | mov eax, eab
-       """.stripMargin).code == "mov eax, eab\n")
+       """.stripMargin)._code == "mov eax, eab\n")
     assert(ASM(s"""
                   | mov eax, eab
                   | ret
                   |     nop
-       """.stripMargin).code == "mov eax, eab\nret\nnop\n")
+       """.stripMargin)._code == "mov eax, eab\nret\nnop\n")
   }
 
   test("ASM normal append") {
@@ -29,7 +29,7 @@ class Joos1WCodeGenTest extends FunSuite {
             | nop
             | nop
             | nop
-          """.stripMargin)).code == "mov eax, eab\nnop\nnop\nnop\nnop\n")
+          """.stripMargin))._code == "mov eax, eab\nnop\nnop\nnop\nnop\n")
   }
 
   test("ASM indent append") {
@@ -40,7 +40,7 @@ class Joos1WCodeGenTest extends FunSuite {
                                   | nop
                                   | nop
                                   | nop
-          """.stripMargin)).code == "mov eax, eab\nret\n  nop\n  nop\n  nop\n")
+          """.stripMargin))._code == "mov eax, eab\nret\n  nop\n  nop\n  nop\n")
   }
 
   /*
