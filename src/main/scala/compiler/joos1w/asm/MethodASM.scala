@@ -41,13 +41,13 @@ object MethodASM {
         val lhsCode = methodASM(Some(assignment.getLHS))
         val rhsCode = methodASM(Some(assignment.getRHS))
         ASM(s";; ${assignment.getLHS} := ${assignment.getRHS}") ++
-          ASM(s";;starting lhs") ++
+          ASM(s";; := eval lhs") ++
           lhsCode ++
-          ASM(s";;done lhs") ++
+          ASM(s";; := saving lhs") ++
           ASM(s"push ebx") ++
-          ASM(s";;starting rhs") ++
+          ASM(s";; := eval rhs") ++
           rhsCode ++
-          ASM(s";;done rhs") ++
+          ASM(s";; lhs := rhs") ++
           ASM(s"""
              |mov ebx, eax
              |pop eax

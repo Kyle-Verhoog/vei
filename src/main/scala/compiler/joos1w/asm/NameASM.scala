@@ -8,6 +8,25 @@ object NameASM {
   def nameASM(ast: Option[AST]): ASM = {
     ast match {
       case Some(name: Name) =>
+        var asm = ASM("")
+        Joos1WCodeGen
+          .resolveQualifiedName(name.name, name.env)
+          .foreach({
+            case vEnv: VariableEnvironment =>
+              vEnv.myAst match {
+                case field: FieldDeclaration =>
+                  asm = asm ++ ASM(";; TODO field code gen")
+                case lvar: LocalVariableDeclaration =>
+                  asm = asm ++ ASM(";; TODO local var code gen")
+                case _ => asm = asm ++ ASM(s";; TODO? ${}")
+              }
+            case clsEnv: ClassEnvironment =>
+              asm = asm ++ ASM(s"TODO cls codegen")
+            case _ =>
+              asm = asm ++ ASM(s"TODO $name codegen")
+          })
+        asm
+      /*
         if (name.name.contains(".")) {
           ASM(
             s";; TODO field/qualified name lookup - could not find basename ${name.name}")
@@ -49,6 +68,7 @@ object NameASM {
                 s";; TODO field/qualified name lookup - could not find ${name.name}")
           }
         }
+       */
       case _ => throw new RuntimeException(s"NameASM match error $ast")
     }
   }
