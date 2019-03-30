@@ -58,7 +58,9 @@ object CommonASM {
         val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
         val index = MethodASM.methodASM(Some(arrayAccess.expression))
         ASM(s"""
-               |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])""") ++
+               |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
+               |extern __exception
+               |extern __malloc""") ++
         arrayPointer ++
         ASM(s"""
                |;; the pointer to the array is now in eax, first we check index bounds
@@ -79,17 +81,18 @@ object CommonASM {
                |call __exception
                |.array_check_pass_lower_bound${myCounter}:
                |add eax, 1 ;; add offset for array metadata
-               |mult eax, 4
+               |imul eax, 4
                |mov eax, [ebx + eax]""")
 
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
-        val arrayType =
-          MethodASM.methodASM(Some(arrayCreationExpression.primary))
+        //val arrayType = MethodASM.methodASM(Some(arrayCreationExpression.primary))
         val arraySize = MethodASM.methodASM(Some(arrayCreationExpression.expr))
 
         ASM(s"""
-               |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])""") ++
+               |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])
+               |extern __exception
+               |extern __malloc""") ++
         arraySize ++
         ASM(s"""
                  |push eax ;; store actual array size
@@ -98,7 +101,7 @@ object CommonASM {
                  |call __exception
                  |.create_array${myCounter}:
                  |add eax, 1
-                 |mult eax, 4 ;; number of bytes for array
+                 |imul eax, 4 ;; number of bytes for array
                  |call __malloc
                  |pop ebx ;; get the size
                  |mov [eax], ebx ;; put array size into first array element""")
