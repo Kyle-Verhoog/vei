@@ -325,12 +325,50 @@ object Joos1WCodeGen {
       |int 0x80""") ++ vtableASM
   }
 
+  def classSubClassTableLabel(clsEnv: ClassEnvironment): String = {
+    val clsLabel = classLabel(clsEnv)
+    s"sub_classes_$clsLabel"
+  }
+
+  def subclass1IsSubclassOfClass2Label(clsEnv1: ClassEnvironment,
+                                       clsEnv2: ClassEnvironment): String = {
+    val clsLabel1 = classLabel(clsEnv1)
+    val clsLabel2 = classLabel(clsEnv2)
+    s"is_subclass__${clsLabel1}__of__$clsLabel2"
+  }
+
+  def subClassTable(classes: List[ClassEnvironment]): ASM = {
+    var subClsTable = ASM("")
+    classes.foreach(cls1 => {
+      val clsLabel = classSubClassTableLabel(cls1)
+      subClsTable = subClsTable ++ ASM(s"""
+          | global $clsLabel ;; ${cls1.myAst} subclass entry
+          | $clsLabel:
+        """.stripMargin)
+      classes.foreach(cls2 => {
+        val label = subclass1IsSubclassOfClass2Label(cls1, cls2)
+        val isSubCls = cls1.isSubClassOf(cls2)
+        val res = if (isSubCls) "0xffffffff" else "0x0"
+        subClsTable = subClsTable ++ ASM(s"""
+            |global $label
+            |$label:
+            |dd $res  ;; ${cls1.myAst} is${if (!isSubCls) " not" else ""} a subclass of ${cls2.myAst}
+          """.stripMargin)
+      })
+    })
+    subClsTable
+  }
+
   def mkMainASMFile(ast: AST, classes: List[ClassEnvironment]): ASMFile = {
     ASMFile("__main.s", astMainASM(Some(ast), classes)._code)
   }
 
   def mkASMFile(ast: AST): ASMFile = {
     ASMFile(fileName(Some(ast)), astASM(Some(ast))._code)
+  }
+
+  def mkSubClassASMFile(classes: List[ClassEnvironment]): ASMFile = {
+    ASMFile("__subclassTable.s", subClassTable(classes)._code)
   }
 
   def genCode(asts: List[AST], rootEnv: GenericEnvironment): List[ASMFile] = {
@@ -342,7 +380,8 @@ object Joos1WCodeGen {
       .foreach(pkgEnv => {
         classes = classes ++ pkgEnv.classTable.values
       })
-    mkMainASMFile(asts.head, classes) :: asts.map(ast => mkASMFile(ast))
+    mkMainASMFile(asts.head, classes) :: mkSubClassASMFile(classes) :: asts.map(
+      ast => mkASMFile(ast))
   }
 
   def resolveQualifiedName(

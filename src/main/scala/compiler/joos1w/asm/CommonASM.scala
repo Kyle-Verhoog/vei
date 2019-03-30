@@ -183,7 +183,7 @@ object CommonASM {
           ASM(s"""
                |push edx ;; save object pointer
                |$externConslabel
-               |call $consLabel ;; assume constructor returns
+               |call $consLabel
                |pop eax  ;; restore object pointer
                |;; end class instance creation
            """.stripMargin)

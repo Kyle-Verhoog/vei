@@ -57,32 +57,11 @@ object MethodASM {
         ASM(s"mov eax, [ebp - 0] ;; this reference")
       case Some(name: Name) =>
         NameASM.nameASM(Some(name))
-      // if (name.name.contains(".")) {
-      //   ASM(
-      //     s";; TODO field/qualified name lookup - could not find ${name.name}")
-      // } else {
-      //   name.env.serarchForVariable(name.name) match {
-      //     case Some(v: VariableEnvironment) =>
-      //       if (v.offset.isDefined) {
-      //         val offset = v.offset.get * 4
-      //         ASM(s"""mov ebx, ebp     ;; ebx := &var ${name.name}
-      //                |  sub ebx, $offset
-      //                |  mov eax, [ebx] ;; eax := *var ${name.name}
-      //        """.stripMargin)
-      //       } else {
-      //         ASM(s";; TODO: fields")
-      //       }
-      //     // check if it's a field
-      //     case None =>
-      //       ASM(
-      //         s";; TODO field/qualified name lookup - could not find ${name.name}")
-      //   }
-      // }
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH methodASM on $ast")
         CommonASM.commonASM(Some(ast), MethodASM.methodASM)
       case None => ASM("")
-      case _    => throw new MatchError(s"mekhodASM match error on $ast")
+      case _    => throw new MatchError(s"methodASM match error on $ast")
     }
   }
 }

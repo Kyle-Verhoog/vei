@@ -10,7 +10,7 @@ object NameASM {
       case Some(name: Name) =>
         if (name.name.contains(".")) {
           ASM(
-            s";; TODO field/qualified name lookup - could not find ${name.name}")
+            s";; TODO field/qualified name lookup - could not find basename ${name.name}")
         } else {
           name.env.serarchForVariable(name.name) match {
             case Some(v: VariableEnvironment) =>

@@ -1,10 +1,10 @@
 public class Basic {
   public static int y = 3;
-  public static int z = y + 2;
+  public int x;
 
   public Basic() {
-    int x = 10;
-    int y = 15;
+    y = 10;
+    this.x = 15;
   }
 
   public int basicMethod(int i, int y) {
@@ -18,6 +18,8 @@ public class Basic {
   public static int test() {
     Basic b = new Basic();
     // int i = b.basicMethod(1, 2);
-    return b.z;
+    int i = b.y;
+    int j = b.x;
+    return i + j;
   }
 }

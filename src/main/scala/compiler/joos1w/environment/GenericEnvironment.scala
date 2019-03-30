@@ -110,12 +110,12 @@ class GenericEnvironment(val ast: AST,
 
   protected def searchForQualifiedVariable(
       name: String): Option[VariableEnvironment] = {
-    throw new RuntimeException("TODO") // TODO
+    throw new RuntimeException(s"TODO $name") // TODO
   }
 
   protected def searchForQualifiedMethod(
       sig: Signature): Option[MethodEnvironment] = {
-    throw new RuntimeException("TODO") // TODO
+    throw new RuntimeException(s"TODO $sig") // TODO
   }
 
   def serarchForVariable(name: String): Option[VariableEnvironment] = {
