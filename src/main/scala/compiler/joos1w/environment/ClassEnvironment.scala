@@ -1,11 +1,6 @@
 package compiler.joos1w.environment
 
-import compiler.joos1w.ast.{
-  AST,
-  ClassDeclaration,
-  FieldDeclaration,
-  InterfaceDeclaration
-}
+import compiler.joos1w.ast._
 import compiler.joos1w.environment.environment.Signature
 import exceptions.EnvironmentError
 
@@ -213,6 +208,46 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
 
   def numFields: Integer = {
     fields.length
+  }
+
+  def methods: List[MethodEnvironment] = {
+    containSet.values.foldLeft(List[MethodEnvironment]())((acc, env) => {
+      env match {
+        case v: MethodEnvironment => v :: acc
+        case _                    => acc
+      }
+    })
+  }
+
+  def constructors: List[MethodEnvironment] = {
+    containSet.values.foldLeft(List[MethodEnvironment]())((acc, env) => {
+      env match {
+        case v: MethodEnvironment =>
+          v.myAst match {
+            case c: ConstructorDeclaration => v :: acc
+            case _                         => acc
+          }
+        case _ => acc
+      }
+    })
+  }
+
+  def getConstructor(params: List[AST]): MethodEnvironment = {
+    val paramTypes =
+      params.map(param => environment.determineType(param, ast.env))
+    var cons: MethodEnvironment = null
+    constructors.foreach(constructor => {
+      val types = constructor.myAst
+        .asInstanceOf[ConstructorDeclaration]
+        .rawParameters
+        .map(param => environment.determineType(param, this))
+
+      if (types == paramTypes) {
+        cons = constructor
+      }
+    })
+
+    cons
   }
 
   def nodecl(signature: Signature): Boolean = {

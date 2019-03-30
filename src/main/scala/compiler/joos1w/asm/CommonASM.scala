@@ -148,18 +148,42 @@ object CommonASM {
       case Some(classInstanceCreation: ClassInstanceCreation) =>
         val env = classInstanceCreation.env
         val clsEnv = env.serarchForClass(classInstanceCreation.name).get
+        val clsAST = clsEnv.myAst.asInstanceOf[ClassDeclaration]
         val clsLabel = Joos1WCodeGen.classDefinitionLabel(clsEnv)
         // 1 for class vpointer
         val clsSize = 4 * (1 + clsEnv.numFields)
+
+        // Parameter code
+        val argCode =
+          classInstanceCreation.parameters
+            .map(param => {
+              ASM(s";; Parameter $param") ++
+                commonASM(Some(param), recurseMethod) ++
+                ASM("push eax")
+            })
+            .fold(ASM(""))(_ ++ _)
+
+        val constructor =
+          clsEnv.getConstructor(classInstanceCreation.parameters)
+        val consLabel = Joos1WCodeGen.methodDefinitionLabel(constructor)
+
+        val isSameClass = env.findEnclosingClass() == clsEnv
+        val externClsLabel = if (!isSameClass) s"extern $clsLabel" else ""
+        val externConslabel = if (!isSameClass) s"extern $consLabel" else ""
         ASM(s""";; begin class instance creation new $classInstanceCreation
                |mov eax, $clsSize
-               |call __malloc""".stripMargin) ++
-          (if (env.findEnclosingClass() != clsEnv)
-             ASM(s"extern $clsLabel")
-           else ASM("")) ++
-          ASM(s"""
+               |call __malloc
+               |$externClsLabel
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
+               |mov edx, eax  ;; store object location in edx to use later TODO?
+               |;; pass arguments to constructor""".stripMargin) ++
+          argCode ++
+          ASM(s"""
+               |push edx ;; save object pointer
+               |$externConslabel
+               |call $consLabel ;; assume constructor returns
+               |pop eax  ;; restore object pointer
                |;; end class instance creation
            """.stripMargin)
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
