@@ -1,6 +1,7 @@
 package compiler.joos1w.asm
 
 import compiler.joos1w.ast._
+import compiler.joos1w.environment._
 
 object CommonASM {
   var strCount = 0
@@ -52,7 +53,64 @@ object CommonASM {
       case Some(castExpression: CastExpression) =>
         ASM(s";; TODO cast expression")
       case Some(methodInvocation: MethodInvocation) =>
-        ASM(s";; TODO method invocation")
+        val methodEnv = methodInvocation.methodDefinition match {
+          case Some(methodEnvironment: MethodEnvironment) => methodEnvironment
+          case None =>
+            throw new MatchError(
+              "kevin lied to me about method invocations having environments")
+        }
+        val methodAST = methodEnv.myAst.asInstanceOf[MethodDeclaration]
+        val isStatic = methodAST.modifiers.contains("static")
+
+        // whether or not the method call is an implicit this.method() call
+        val isThisMethod = methodInvocation.name == methodAST.identifier
+        val offset = methodEnv.vtOffset
+
+        // Parameter code
+        val argCode =
+          methodInvocation.parameters
+            .map(param => {
+              ASM(s";; Parameter $param") ++
+                commonASM(Some(param), recurseMethod) ++
+                ASM("push eax")
+            })
+            .fold(ASM(""))(_ ++ _)
+
+        // Get the object reference for the method call or null if it's a static
+        // method
+        val objRefCode = if (isStatic) {
+          ASM(s"mov eax, 0 ;; null argument for static method")
+        } else if (isThisMethod) {
+          ASM(s";; Implicit this.${methodAST.identifier} method call") ++
+            MethodASM.methodASM(Some(new ThisCall()))
+        } else {
+          val baseName =
+            new Name(
+              methodInvocation.name.split("\\.").dropRight(1).mkString("."))
+          // ASM(s";; Method call on object ${baseName}") ++
+          //   MethodASM.methodASM(Some(baseName))
+          ASM(";; TODO method call on qualified name")
+        }
+
+        val methodCallCode =
+          if (methodInvocation.name == methodAST.identifier) {
+            ASM(s""";; Method invocation in same class
+                 |;; TODO eval and push args
+                 |
+             """.stripMargin)
+          } else {
+            ASM(";; TODO qualified method invocation")
+          }
+
+        ASM(s""";; Method invocation $methodInvocation
+             |;; Pushing args
+           """.stripMargin) ++
+          argCode ++
+          objRefCode ++
+          ASM(s"""
+               | push eax
+           """.stripMargin) ++
+          methodCallCode
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
         val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
@@ -109,12 +167,15 @@ object CommonASM {
                  |mov [eax], ebx ;; put array size into first array element""")
       case Some(classInstanceCreation: ClassInstanceCreation) =>
         ASM(s";; TODO class instance creation")
+      case Some(fieldAccess: FieldAccess) =>
+        ASM(s";; TODO field access")
       case Some(name: Name) =>
-        ASM(s";; name")
+        recurseMethod(Some(name))
       case Some(_: Empty) => ASM("")
       case Some(ast: AST) =>
         throw new MatchError(s"commonASM match error on $ast ${ast.toStrTree}")
-      case _ => throw new MatchError(s"commonASM match error on $ast")
+      case None => ASM("")
+      case _    => throw new MatchError(s"commonASM match error on $ast")
     }
   }
 }

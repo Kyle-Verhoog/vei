@@ -49,7 +49,7 @@ object Joos1WCodeGen {
           case Some(header: MethodHeader) =>
             header.methodDeclarator.parameters.children
               .map(p => p.asInstanceOf[FormalParameter].ttype)
-              .mkString("")
+              .mkString("_")
           case _ => ""
         }
       case method: ConstructorDeclaration =>
@@ -92,24 +92,93 @@ object Joos1WCodeGen {
     s"VT_$clsLabel"
   }
 
+  def staticFieldLabel(env: VariableEnvironment): String = {
+    val pkgName = env
+      .findEnclosingClass()
+      .packageName
+      .replaceAllLiterally(".", "_")
+    val clsName = env
+      .findEnclosingClass()
+      .myAst
+      .asInstanceOf[ClassDeclaration]
+      .identifier
+
+    val fieldType = env.myAst.asInstanceOf[FieldDeclaration].fieldType
+    val fieldName = env.myAst.asInstanceOf[FieldDeclaration].name
+    s"field_${pkgName}_${clsName}_${fieldType}_$fieldName"
+  }
+
+  def classASM(cls: ClassDeclaration): ASM = {
+    val pkgName = cls.env
+      .asInstanceOf[ClassEnvironment]
+      .packageName
+      .replaceAllLiterally(".", "_")
+    val clsName = cls.identifier
+    val clsId = s"${pkgName}_$clsName"
+    // val clsLabel = classLabel(cls.env.asInstanceOf[ClassEnvironment])
+
+    val clsEnv = cls.env.asInstanceOf[ClassEnvironment]
+
+    var fields = List[VariableEnvironment]()
+    clsEnv.containSet.values.foreach({
+      case fieldEnv: VariableEnvironment =>
+        if (fieldEnv.modifiers.contains("static")) {
+          fields = fieldEnv :: fields
+        }
+      case _ =>
+    })
+
+    // sort the fields by their order
+    fields = fields.sortBy(f => f.order)
+
+    var initCode = ASM(s"""
+                          |;; class initializer
+                          |global cls_init_$clsId
+                          |cls_init_$clsId:
+       """.stripMargin)
+    fields.foreach(f => {
+      val fieldCode =
+        astASM(Some(f.myAst.asInstanceOf[FieldDeclaration].variableDeclarator))
+      val fieldLabel = staticFieldLabel(f)
+      initCode = initCode ++ ASM(";; Initializing field")
+      initCode = initCode ++
+        fieldCode ++
+        new ASM(
+          s"""
+           | mov ebx, $fieldLabel
+           | mov [ebx], eax
+         """.stripMargin,
+          data = s"""
+               |$fieldLabel:
+               |dd 0
+             """.stripMargin
+        )
+    })
+    initCode = initCode ++ ASM("""
+        | ret ;; end of class initialization procedure
+      """.stripMargin)
+
+    ASM(s"""global $clsId
+           |$clsId:
+           |""".stripMargin) ++
+      astASM(Some(cls.getClassBody)) ++
+      initCode
+  }
+
+  def interfaceASM(int: InterfaceDeclaration): ASM = {
+    ASM(";; TODO interfaces")
+  }
+
   def astASM(ast: Option[AST]): ASM = {
-    println(s"astASM $ast")
     ast match {
       case Some(ast: CompilationUnit) =>
         astASM(ast.typeDeclaration)
       case Some(ast: TypeDeclaration) =>
         astASM(ast.leftChild)
       case Some(cls: ClassDeclaration) =>
-        val pkgName = cls.env
-          .asInstanceOf[ClassEnvironment]
-          .packageName
-          .replaceAllLiterally(".", "_")
-        val clsName = cls.identifier
-        val clsId = s"${pkgName}_$clsName"
-        ASM(s"""global $clsId
-          |$clsId:
-          |""".stripMargin) ++
-          astASM(Some(cls.getClassBody))
+        classASM(cls)
+      case Some(interfaceDeclaration: InterfaceDeclaration) =>
+        interfaceASM(interfaceDeclaration)
       case Some(meth: ConstructorDeclaration) =>
         // TODO constructors
         val env = meth.env.asInstanceOf[MethodEnvironment]
@@ -145,6 +214,25 @@ object Joos1WCodeGen {
                |pop ebp   ;; pop stack frame pointer
                |ret
                |""".stripMargin)
+      case Some(fieldDeclaration: FieldDeclaration) =>
+        // class fields are handled in classASM
+        ASM("")
+      // if (fieldDeclaration.modifiers.contains("static")) {
+      //   val label = staticFieldLabel(
+      //     fieldDeclaration.env.asInstanceOf[VariableEnvironment])
+      //   new ASM(
+      //     text = s"""""".stripMargin,
+      //     data = s"""
+      //        |;; Static field location ${fieldDeclaration.name}
+      //        |$label:
+      //        |dd 0
+      //      """.stripMargin
+      //   )
+      // } else {
+      //   ASM(s"""
+      //          |;; Field declaration
+      //    """.stripMargin)
+      // }
       case Some(astList: ASTList) =>
         astList.fieldName match {
           case "class_body_declarations" =>
@@ -154,7 +242,9 @@ object Joos1WCodeGen {
             throw new MatchError(
               s"astASM match error on ASTList $s ${astList.parent.get.parent.get.toStrTree}")
         }
-      case _ => ASM("nop")
+      case Some(name: Name) =>
+        // resolve a name when initializing fields
+        NameASM.nameASM(Some(name))
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH astASM on $ast")
         CommonASM.commonASM(Some(ast), astASM)
@@ -187,7 +277,7 @@ object Joos1WCodeGen {
             astList.children.foldLeft(ASM(""))((acc, ast) =>
               acc ++ astStaticIntTestASM(Some(ast)))
         }
-      case _ => ASM(";; TODO") // TODO
+      case _ => ASM(s";; TODO $ast") // TODO
     }
   }
 
@@ -222,11 +312,17 @@ object Joos1WCodeGen {
     classes.foreach(clsEnv => {
       methods = methods ++ clsEnv.methodTable.values
     })
+    val classInitCode = classes.fold(ASM(""))((acc, cls) => {
+      val clsInitCode = ASM(s"""
+           | 
+         """.stripMargin)
+    })
     val vtableASM = astVTableASM(classes, methods)
     val staticIntTestCode = astStaticIntTestASM(ast)
     ASM(s"""
       | global _start
       |_start:""") ++
+      classInitCode ++
       staticIntTestCode ++
       ASM(s"""
       |mov ebx, eax

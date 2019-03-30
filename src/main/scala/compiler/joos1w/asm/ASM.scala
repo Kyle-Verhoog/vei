@@ -50,9 +50,9 @@ class ASM(val text: String,
 
   def ++(otherASM: ASM): ASM = {
     new ASM(
-      text = text ++ "\n" ++ otherASM.text,
-      data = data ++ "\n" ++ otherASM.data,
-      bss = bss ++ "\n" ++ otherASM.bss,
+      text = text ++ (if (text.nonEmpty && otherASM.text.nonEmpty) "\n" else "") ++ otherASM.text,
+      data = data ++ (if (data.nonEmpty && otherASM.data.nonEmpty) "\n" else "") ++ otherASM.data,
+      bss = bss ++ (if (bss.nonEmpty && otherASM.bss.nonEmpty) "\n" else "") ++ otherASM.bss,
     )
   }
 
