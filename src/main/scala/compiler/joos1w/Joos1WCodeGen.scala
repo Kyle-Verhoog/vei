@@ -109,13 +109,7 @@ object Joos1WCodeGen {
   }
 
   def classASM(cls: ClassDeclaration): ASM = {
-    val pkgName = cls.env
-      .asInstanceOf[ClassEnvironment]
-      .packageName
-      .replaceAllLiterally(".", "_")
-    val clsName = cls.identifier
-    val clsId = s"${pkgName}_$clsName"
-    // val clsLabel = classLabel(cls.env.asInstanceOf[ClassEnvironment])
+    val clsLabel = classLabel(cls.env.asInstanceOf[ClassEnvironment])
 
     val clsEnv = cls.env.asInstanceOf[ClassEnvironment]
 
@@ -133,8 +127,8 @@ object Joos1WCodeGen {
 
     var initCode = ASM(s"""
                           |;; class initializer
-                          |global cls_init_$clsId
-                          |cls_init_$clsId:
+                          |global cls_init_$clsLabel
+                          |cls_init_$clsLabel:
        """.stripMargin)
     fields.foreach(f => {
       val fieldCode =
@@ -158,8 +152,8 @@ object Joos1WCodeGen {
         | ret ;; end of class initialization procedure
       """.stripMargin)
 
-    ASM(s"""global $clsId
-           |$clsId:
+    ASM(s"""global $clsLabel
+           |$clsLabel:
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody)) ++
       initCode
@@ -312,10 +306,18 @@ object Joos1WCodeGen {
     classes.foreach(clsEnv => {
       methods = methods ++ clsEnv.methodTable.values
     })
-    val classInitCode = classes.fold(ASM(""))((acc, cls) => {
-      val clsInitCode = ASM(s"""
-           | 
+    val classInitCode = classes.foldLeft(ASM(""))((acc, cls) => {
+      cls.myAst match {
+        case c: ClassDeclaration =>
+          val clsLabel = classLabel(cls)
+          acc ++ ASM(s"""
+                        |extern cls_init_$clsLabel
+                        |call cls_init_$clsLabel
          """.stripMargin)
+        case i: InterfaceDeclaration =>
+          acc
+        case _ => acc
+      }
     })
     val vtableASM = astVTableASM(classes, methods)
     val staticIntTestCode = astStaticIntTestASM(ast)
