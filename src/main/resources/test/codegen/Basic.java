@@ -20,6 +20,6 @@ public class Basic {
     // int i = b.basicMethod(1, 2);
     int i = b.y;
     int j = b.x;
-    return i + j;
+    return i;
   }
 }

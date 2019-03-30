@@ -26,7 +26,7 @@ object MethodASM {
         val declCode = methodASM(Some(v.variableDeclarator))
         ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
           declCode ++
-          ASM(s"mov [ebp - $offset], eax")
+          ASM(s"mov [ebp - $offset], eax ;; assign variable ${v.name}")
       case Some(astList: ASTList) =>
         astList.fieldName match {
           case "block_statements" =>

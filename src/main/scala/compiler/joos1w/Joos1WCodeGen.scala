@@ -381,14 +381,14 @@ object Joos1WCodeGen {
   def resolveQualifiedName(
       qualifiedName: String,
       enclosingEnv: GenericEnvironment): List[GenericEnvironment] = {
-    var i = 1
+    var i = 0
     val partsOfName = qualifiedName.split('.')
     var finalParts = List[GenericEnvironment]()
 
     // resolve all parts of the name
     while (i < partsOfName.length) {
       val possibleName = resolveQualifiedNameHead(
-        partsOfName.take(i).mkString("."),
+        partsOfName.take(i + 1).mkString("."),
         enclosingEnv)
       if (possibleName.isDefined) { // this means we found the first part of the name
         finalParts = finalParts :+ possibleName.get

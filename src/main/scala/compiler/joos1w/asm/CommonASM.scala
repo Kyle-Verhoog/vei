@@ -45,7 +45,8 @@ object CommonASM {
       case Some(strAST: literals.CharacterLiteral) =>
         ASM(s";; TODO character literal")
       case Some(vd: VariableDeclarator) =>
-        commonASM(Some(vd.expression), recurseMethod)
+        ASM(s";; variable declaration $vd") ++
+          commonASM(Some(vd.expression), recurseMethod)
       case Some(expr: ConditionalExpression) =>
         ExpressionASM.conditionalExpressionASM(expr, recurseMethod)
       case Some(expr: GeneralExpression) =>

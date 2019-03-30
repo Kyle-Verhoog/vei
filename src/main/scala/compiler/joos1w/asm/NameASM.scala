@@ -19,9 +19,30 @@ object NameASM {
             case vEnv: VariableEnvironment =>
               vEnv.myAst match {
                 case field: FieldDeclaration =>
-                  asm = asm ++ ASM(";; TODO field code gen")
+                  if (field.modifiers.contains("static")) {
+                    val cls = vEnv.findEnclosingClass()
+                    // val clsLabel = Joos1WCodeGen.cl
+                    val fieldLabel = Joos1WCodeGen.staticFieldLabel(vEnv)
+                    asm = asm ++ ASM(s"""
+                        |;; static field lookup
+                        |mov ebx, $fieldLabel ;; ebx <- address of static field
+                        |mov eax, [ebx]       ;; eax <- value of static field
+                      """.stripMargin)
+                  } else {
+                    // val fieldOffset =
+                    asm = asm ++ ASM(s"""
+                         |;; TODO field code gen
+                         |;; assume eax has address of object for field
+                         |""".stripMargin)
+                  }
                 case lvar: LocalVariableDeclaration =>
-                  asm = asm ++ ASM(";; TODO local var code gen")
+                  val offset = vEnv.offset.get * 4
+                  asm = asm ++ ASM(s"""
+                         |;; local variable lookup
+                         |mov ebx, ebp     ;; ebx <- address of local variable
+                         |sub ebx, $offset
+                         |mov eax, [ebx]   ;; eax <- value of local variable
+                         | """.stripMargin)
                 case _ => asm = asm ++ ASM(s";; TODO? ${}")
               }
             case clsEnv: ClassEnvironment =>
