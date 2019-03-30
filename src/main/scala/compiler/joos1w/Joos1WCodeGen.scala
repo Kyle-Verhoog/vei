@@ -190,12 +190,11 @@ object Joos1WCodeGen {
                  |mov ebp, esp
                  |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
           MethodASM.methodASM(Some(meth.body)) ++
-          ASM(s"""
-                   |.method_end:
-                   |add esp, $frameSize ;; pop the frame
-                   |pop ebp   ;; pop stack frame pointer
-                   |ret
-                   |""".stripMargin)
+          ASM(s"""|.method_end:
+                  |add esp, $frameSize ;; pop the frame
+                  |pop ebp   ;; pop stack frame pointer
+                  |ret
+                  |""".stripMargin)
       case Some(meth: MethodDeclaration) =>
         val env = meth.env.asInstanceOf[MethodEnvironment]
         val methDefLabel = methodDefinitionLabel(env)
@@ -216,22 +215,6 @@ object Joos1WCodeGen {
       case Some(fieldDeclaration: FieldDeclaration) =>
         // class fields are handled in classASM
         ASM("")
-      // if (fieldDeclaration.modifiers.contains("static")) {
-      //   val label = staticFieldLabel(
-      //     fieldDeclaration.env.asInstanceOf[VariableEnvironment])
-      //   new ASM(
-      //     text = s"""""".stripMargin,
-      //     data = s"""
-      //        |;; Static field location ${fieldDeclaration.name}
-      //        |$label:
-      //        |dd 0
-      //      """.stripMargin
-      //   )
-      // } else {
-      //   ASM(s"""
-      //          |;; Field declaration
-      //    """.stripMargin)
-      // }
       case Some(astList: ASTList) =>
         astList.fieldName match {
           case "class_body_declarations" =>

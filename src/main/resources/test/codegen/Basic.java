@@ -15,8 +15,8 @@ public class Basic {
   }
 
   public static int test() {
-    // Basic b = new Basic();
+    Basic b = new Basic();
     // int i = b.basicMethod(1, 2);
-    return z;
+    return b.z;
   }
 }

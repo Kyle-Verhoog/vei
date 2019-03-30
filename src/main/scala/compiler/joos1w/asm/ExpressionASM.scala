@@ -18,13 +18,14 @@ object ExpressionASM {
         val expr2Code = recurseMethod(Some(expr.secondExpr))
         op match {
           case "+" =>
-            ASM(s";; ${expr.firstExpr} + ${expr.secondExpr}") ++
+            ASM(s";; begin ${expr.firstExpr} + ${expr.secondExpr}") ++
               expr1Code ++
               ASM("push eax") ++
               expr2Code ++
               ASM(s"""
                  |pop ebx
                  |add eax, ebx
+                 |;; end ${expr.firstExpr} + ${expr.secondExpr}
                  |""".stripMargin)
           case "-" =>
             ASM(s";; ${expr.firstExpr} - ${expr.secondExpr}") ++
@@ -35,6 +36,7 @@ object ExpressionASM {
                  |mov ebx, eax
                  |pop eax
                  |sub eax, ebx
+                 |;; end ${expr.firstExpr} - ${expr.secondExpr}
                  |""".stripMargin)
           case "*" =>
             ASM(s";; ${expr.firstExpr} * ${expr.secondExpr}") ++
@@ -44,6 +46,7 @@ object ExpressionASM {
               ASM(s"""
                  |pop ebx
                  |imul eax, ebx
+                 |;; end ${expr.firstExpr} * ${expr.secondExpr}
                  |""".stripMargin)
           case "/" =>
             ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
@@ -56,9 +59,10 @@ object ExpressionASM {
                  |pop eax
                  |mov edx, 0
                  |div ebx
+                 |;; end ${expr.firstExpr} / ${expr.secondExpr}
                  |""".stripMargin)
-          case "%"          =>
-            ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
+          case "%" =>
+            ASM(s";; ${expr.firstExpr} % ${expr.secondExpr}") ++
               expr1Code ++
               ASM("push eax") ++
               expr2Code ++
@@ -69,6 +73,7 @@ object ExpressionASM {
                      |mov edx, 0
                      |div ebx
                      |mov eax, edx ;; get remainder into eax from edx
+                     |;; end ${expr.firstExpr} % ${expr.secondExpr}
                      |""".stripMargin)
           case "instanceof" => ASM(";; TODO instanceof") // TODO
         }

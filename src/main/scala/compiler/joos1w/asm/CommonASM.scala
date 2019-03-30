@@ -1,5 +1,6 @@
 package compiler.joos1w.asm
 
+import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
 
@@ -119,15 +120,15 @@ object CommonASM {
                |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
                |extern __exception
                |extern __malloc""") ++
-        arrayPointer ++
-        ASM(s"""
+          arrayPointer ++
+          ASM(s"""
                |;; the pointer to the array is now in ebx, first we check index bounds
                |mov ebx, [ebx]
                |push ebx ;; store array pointer
                |mov eax, [ebx] ;; get array size
                |push eax ;; store array size""") ++
-        index ++
-        ASM(s"""
+          index ++
+          ASM(s"""
                |;; eax has array index
                |mov edx, eax ;; edx now has array index
                |pop ecx ;; get array size
@@ -144,7 +145,23 @@ object CommonASM {
                |imul edx, 4
                |add ebx, edx,
                |mov eax, [ebx]""")
-
+      case Some(classInstanceCreation: ClassInstanceCreation) =>
+        val env = classInstanceCreation.env
+        val clsEnv = env.serarchForClass(classInstanceCreation.name).get
+        val clsLabel = Joos1WCodeGen.classDefinitionLabel(clsEnv)
+        // 1 for class vpointer
+        val clsSize = 4 * (1 + clsEnv.numFields)
+        ASM(s""";; begin class instance creation new $classInstanceCreation
+               |mov eax, $clsSize
+               |call __malloc""".stripMargin) ++
+          (if (env.findEnclosingClass() != clsEnv)
+             ASM(s"extern $clsLabel")
+           else ASM("")) ++
+          ASM(s"""
+               |mov ebx, $clsLabel ;; store class pointer as first item in obj
+               |mov [eax], ebx
+               |;; end class instance creation
+           """.stripMargin)
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
         //val arrayType = MethodASM.methodASM(Some(arrayCreationExpression.primary))
@@ -154,8 +171,8 @@ object CommonASM {
                |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])
                |extern __exception
                |extern __malloc""") ++
-        arraySize ++
-        ASM(s"""
+          arraySize ++
+          ASM(s"""
                  |push eax ;; store actual array size
                  |cmp eax, 0
                  |jge .create_array${myCounter}
@@ -166,8 +183,6 @@ object CommonASM {
                  |call __malloc
                  |pop ebx ;; get the size
                  |mov [eax], ebx ;; put array size into first array element""")
-      case Some(classInstanceCreation: ClassInstanceCreation) =>
-        ASM(s";; TODO class instance creation")
       case Some(fieldAccess: FieldAccess) =>
         ASM(s";; TODO field access")
       case Some(name: Name) =>
@@ -180,4 +195,3 @@ object CommonASM {
     }
   }
 }
-

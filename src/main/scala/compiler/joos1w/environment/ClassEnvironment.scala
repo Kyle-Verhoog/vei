@@ -1,6 +1,11 @@
 package compiler.joos1w.environment
 
-import compiler.joos1w.ast.{AST, ClassDeclaration, InterfaceDeclaration}
+import compiler.joos1w.ast.{
+  AST,
+  ClassDeclaration,
+  FieldDeclaration,
+  InterfaceDeclaration
+}
 import compiler.joos1w.environment.environment.Signature
 import exceptions.EnvironmentError
 
@@ -168,6 +173,46 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     })
 
     map.toMap
+  }
+
+  def staticFields: List[VariableEnvironment] = {
+    containSet.values.foldLeft(List[VariableEnvironment]())((acc, env) => {
+      env match {
+        case v: VariableEnvironment =>
+          v.myAst match {
+            case f: FieldDeclaration =>
+              if (f.modifiers.contains("static")) v :: acc else acc
+            case _ => acc
+          }
+        case _ => acc
+      }
+    })
+  }
+
+  def fields: List[VariableEnvironment] = {
+    containSet.values.foldLeft(List[VariableEnvironment]())((acc, env) => {
+      env match {
+        case v: VariableEnvironment =>
+          v.myAst match {
+            case _: FieldDeclaration => v :: acc
+            case _                   => acc
+          }
+        case _ => acc
+      }
+    })
+  }
+
+  def allFields: List[VariableEnvironment] = {
+    containSet.values.foldLeft(List[VariableEnvironment]())((acc, env) => {
+      env match {
+        case v: VariableEnvironment => v :: acc
+        case _                      => acc
+      }
+    })
+  }
+
+  def numFields: Integer = {
+    fields.length
   }
 
   def nodecl(signature: Signature): Boolean = {
