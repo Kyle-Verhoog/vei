@@ -109,9 +109,9 @@ object Joos1WCodeGen {
   }
 
   def classASM(cls: ClassDeclaration): ASM = {
-    val clsLabel = classLabel(cls.env.asInstanceOf[ClassEnvironment])
-
     val clsEnv = cls.env.asInstanceOf[ClassEnvironment]
+    val clsLabel = classLabel(clsEnv)
+    val clsVTableLabel = classVTableLabel(clsEnv)
 
     var fields = List[VariableEnvironment]()
     clsEnv.containSet.values.foreach({
@@ -124,10 +124,7 @@ object Joos1WCodeGen {
 
     // sort the fields by their order
     fields = fields.sortBy(f => f.order)
-
     var initCode = ASM(s"""
-                          |;; class initializer
-                          |global cls_init_$clsLabel
                           |cls_init_$clsLabel:
        """.stripMargin)
     fields.foreach(f => {
@@ -152,8 +149,16 @@ object Joos1WCodeGen {
         | ret ;; end of class initialization procedure
       """.stripMargin)
 
-    ASM(s"""global $clsLabel
+    ASM(s"""
+           |extern __malloc
+           |extern __exception
+           |extern $clsVTableLabel
+           |
+           |;; class initializer
+           |global cls_init_$clsLabel
+           |global $clsLabel
            |$clsLabel:
+           |dd $clsVTableLabel
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody)) ++
       initCode
@@ -281,7 +286,11 @@ object Joos1WCodeGen {
     classes.foreach(cls => {
       val clsVTLabel = classVTableLabel(cls)
       var methCount = 0
-      asm = asm ++ new ASM("", data = s"$clsVTLabel:")
+      asm = asm ++ new ASM("",
+                           data = s"""
+           |global $clsVTLabel
+           |$clsVTLabel:
+           |""".stripMargin)
       methods.foreach(method => {
         method.vtOffset = Some(methCount)
         methCount = methCount + 1
@@ -315,6 +324,7 @@ object Joos1WCodeGen {
                         |call cls_init_$clsLabel
          """.stripMargin)
         case i: InterfaceDeclaration =>
+          // TODO: do interfaces have any initialization?
           acc
         case _ => acc
       }
