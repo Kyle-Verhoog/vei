@@ -63,26 +63,28 @@ object CommonASM {
                |extern __malloc""") ++
         arrayPointer ++
         ASM(s"""
-               |;; the pointer to the array is now in eax, first we check index bounds
-               |push eax ;; store array pointer
-               |mov ebx, [eax] ;; get array size
-               |push ebx ;; store array size""") ++
+               |;; the pointer to the array is now in ebx, first we check index bounds
+               |push ebx ;; store array pointer
+               |mov eax, [ebx] ;; get array size
+               |push eax ;; store array size""") ++
         index ++
         ASM(s"""
                |;; eax has array index
+               |mov edx, eax ;; edx now has array index
                |pop ecx ;; get array size
                |pop ebx ;; get array pointer
-               |cmp eax, ecx ;; perform index bounds check
+               |cmp edx, ecx ;; perform index bounds check
                |jl .array_check_pass_upper_bound${myCounter}
                |call __exception
                |.array_check_pass_upper_bound${myCounter}:
-               |cmp eax, 0 ;; perform index bounds check
+               |cmp edx, 0 ;; perform index bounds check
                |jge .array_check_pass_lower_bound${myCounter}
                |call __exception
                |.array_check_pass_lower_bound${myCounter}:
-               |add eax, 1 ;; add offset for array metadata
-               |imul eax, 4
-               |mov eax, [ebx + eax]""")
+               |add edx, 1 ;; add offset for array metadata
+               |imul edx, 4
+               |add ebx, edx,
+               |mov eax, [ebx]""")
 
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
@@ -116,3 +118,4 @@ object CommonASM {
     }
   }
 }
+
