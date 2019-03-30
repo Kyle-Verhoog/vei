@@ -2,13 +2,7 @@ package compiler.joos1w
 
 import asm._
 import ast._
-import compiler.joos1w.environment.{
-  GenericEnvironment,
-  ClassEnvironment,
-  MethodEnvironment,
-  VariableEnvironment,
-  RootEnvironment,
-}
+import compiler.joos1w.environment._
 
 case class ASMFile(fileName: String, src: String)
 
@@ -428,11 +422,20 @@ object Joos1WCodeGen {
   def resolveQualifiedNamePart(
       name: String,
       previousEnv: GenericEnvironment): VariableEnvironment = {
-    previousEnv
-      .findEnclosingClass()
-      .containSet
-      .get(name, None)
-      .get
-      .asInstanceOf[VariableEnvironment]
+    try {
+      previousEnv
+        .findEnclosingClass()
+        .containSet
+        .get(name, None)
+        .get
+        .asInstanceOf[VariableEnvironment]
+    } catch {
+      case e: Exception =>
+        if (name == "length") {
+          new LengthEnvironmentt()
+        } else {
+          throw e
+        }
+    }
   }
 }
