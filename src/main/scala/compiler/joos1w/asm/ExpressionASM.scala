@@ -57,7 +57,19 @@ object ExpressionASM {
                  |mov edx, 0
                  |div ebx
                  |""".stripMargin)
-          case "%"          => ASM(";; TODO %") // TODO
+          case "%"          =>
+            ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              // TODO something about the sign
+              ASM(s"""
+                     |mov ebx, eax
+                     |pop eax
+                     |mov edx, 0
+                     |div ebx
+                     |mov eax, edx ;; get remainder into eax from edx
+                     |""".stripMargin)
           case "instanceof" => ASM(";; TODO instanceof") // TODO
         }
       case _ => throw new MatchError(s"Expression match error")
