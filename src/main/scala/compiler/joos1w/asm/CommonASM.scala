@@ -122,6 +122,7 @@ object CommonASM {
         arrayPointer ++
         ASM(s"""
                |;; the pointer to the array is now in ebx, first we check index bounds
+               |mov ebx, [ebx]
                |push ebx ;; store array pointer
                |mov eax, [ebx] ;; get array size
                |push eax ;; store array size""") ++

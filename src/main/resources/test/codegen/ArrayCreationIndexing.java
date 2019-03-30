@@ -6,17 +6,16 @@ public class ArrayCreationIndexing {
         myArray[0] = 1;
         ret = ret + myArray[0];
         // ret = 1
-/*
+
         myArray = new int[5];
         for (int i = 0; i < 5; i = i + 1) {
             myArray[i] = i + 1;
         }
 
         for (int i = 0; i < 5; i = i + 1) {
-            //ret = ret + myArray[i];
+            ret = ret + myArray[i];
         }
         // ret = 16
-*/
         return ret;
     }
 }
