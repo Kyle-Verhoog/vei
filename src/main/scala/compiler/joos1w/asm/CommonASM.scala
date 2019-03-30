@@ -3,6 +3,7 @@ package compiler.joos1w.asm
 import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
+import compiler.joos1w.environment.types.{CustomType, StringType}
 
 object CommonASM {
   var strCount = 0
@@ -141,7 +142,7 @@ object CommonASM {
                |jge .array_check_pass_lower_bound${myCounter}
                |call __exception
                |.array_check_pass_lower_bound${myCounter}:
-               |add edx, 1 ;; add offset for array metadata
+               |add edx, 2 ;; add offset for array metadata
                |imul edx, 4
                |add ebx, edx,
                |mov eax, [ebx]""")
@@ -188,25 +189,43 @@ object CommonASM {
            """.stripMargin)
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
-        //val arrayType = MethodASM.methodASM(Some(arrayCreationExpression.primary))
+
+        // find the type of the array, if not a primitive then we get the label for its entry
+        val ttype = environment.determineType(arrayCreationExpression.primary,
+                                              arrayCreationExpression.env)
+        val arrayTypeLabel: Option[String] = ttype match {
+          case ttype: CustomType => Option(Joos1WCodeGen.classLabel(ttype.env))
+          case ttype: StringType => Option(Joos1WCodeGen.classLabel(ttype.env))
+          case _                 => None
+        }
+
         val arraySize = MethodASM.methodASM(Some(arrayCreationExpression.expr))
 
-        ASM(s"""
+        var assembly =
+          ASM(s"""
                |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])
                |extern __exception
                |extern __malloc""") ++
-          arraySize ++
-          ASM(s"""
+            arraySize ++
+            ASM(s"""
                  |push eax ;; store actual array size
                  |cmp eax, 0
                  |jge .create_array${myCounter}
                  |call __exception
                  |.create_array${myCounter}:
-                 |add eax, 1
+                 |add eax, 2 ;; add offset for array metadata
                  |imul eax, 4 ;; number of bytes for array
                  |call __malloc
                  |pop ebx ;; get the size
                  |mov [eax], ebx ;; put array size into first array element""")
+
+        // insert label for array type if it is not a primitive type
+        if (arrayTypeLabel.isDefined) {
+          assembly = assembly ++ ASM(s"""
+                             |mov [eax + 4], ${arrayTypeLabel} ;; store array type pointer""")
+        }
+
+        assembly
       case Some(fieldAccess: FieldAccess) =>
         ASM(s";; TODO field access")
       case Some(name: Name) =>

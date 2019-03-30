@@ -344,4 +344,56 @@ object Joos1WCodeGen {
       })
     mkMainASMFile(asts.head, classes) :: asts.map(ast => mkASMFile(ast))
   }
+
+  def resolveQualifiedName(
+      qualifiedName: String,
+      enclosingEnv: GenericEnvironment): List[GenericEnvironment] = {
+    var i = 1
+    val partsOfName = qualifiedName.split('.')
+    var finalParts = List[GenericEnvironment]()
+
+    // resolve all parts of the name
+    while (i < partsOfName.length) {
+      val possibleName = resolveQualifiedNameHead(
+        partsOfName.take(i).mkString("."),
+        enclosingEnv)
+      if (possibleName.isDefined) { // this means we found the first part of the name
+        finalParts = finalParts :+ possibleName.get
+
+        i += 1
+        while (i < partsOfName.length) { // resolve remaining parts of the name
+          finalParts = finalParts :+ resolveQualifiedNamePart(partsOfName(i),
+                                                              finalParts.last)
+          i += 1
+        }
+      }
+      i += 1
+    }
+
+    finalParts
+  }
+
+  // will return either a variable env, class env or None,
+  def resolveQualifiedNameHead(
+      head: String,
+      enclosingEnv: GenericEnvironment): Option[GenericEnvironment] = {
+    if (enclosingEnv.serarchForVariable(head).isDefined) {
+      enclosingEnv.serarchForVariable(head)
+    } else if (enclosingEnv.lookupClass(head).isDefined) {
+      enclosingEnv.lookupClass(head)
+    } else {
+      None
+    }
+  }
+
+  def resolveQualifiedNamePart(
+      name: String,
+      previousEnv: GenericEnvironment): VariableEnvironment = {
+    previousEnv
+      .findEnclosingClass()
+      .containSet
+      .get(name, None)
+      .get
+      .asInstanceOf[VariableEnvironment]
+  }
 }
