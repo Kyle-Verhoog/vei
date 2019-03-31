@@ -34,7 +34,7 @@ public class Basic {
     // int k = test3();
     // int j = test3();
 
-    if (b instanceof Basic) {
+    if (b instanceof String) {
       return 99;
     }
 

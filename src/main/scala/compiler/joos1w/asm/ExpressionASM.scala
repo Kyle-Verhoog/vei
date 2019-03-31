@@ -92,17 +92,16 @@ object ExpressionASM {
               ASM(";; get left side instanceof") ++
               expr1Code ++
               ASM(s"""
-                     |push ebx ;; store lhs pointer
+                     |mov eax, [ebx] ;; store lhs pointer
+                     |mov eax, [eax]
                      |;; get instanceof right sides class into ebx
-                     |mov ebx, ${classLabel}
-                     |push ebx ;; save class pointer""".stripMargin) ++
-            expr2Code ++
+                    """.stripMargin) ++
+              expr2Code ++
               ASM(s"""
-                     |mov eax, ebx
-                     |pop ebx ;; restore class pointer, now eax has pointer to rhs, ebx has pointer to lhs
+                     |;;now eax has pointer to lhs, ebx has pointer to rhs
                      |;; perform actual instance of, eax has lhs class, ebx has rhs class
-                     |mov ecx, [eax + 8] ;; get offset of subclass table for rhs
-                     |mov edx, [ebx + 4] ;; get offset to subclass table for lhs
+                     |mov ecx, [ebx + 8] ;; get offset of subclass table for rhs
+                     |mov edx, [eax + 4] ;; get offset to subclass table for lhs
                      |mov eax, 0xffffffff
                      |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                      |mov eax, 0xffffffff
@@ -258,3 +257,4 @@ object ExpressionASM {
     }
   }
 }
+

@@ -54,7 +54,7 @@ object NameASM {
               if (name.env.findEnclosingClass() != clsEnv) {
                 extern = ASM(s"""extern ${label}""")
               }
-              asm = asm ++ extern ++ ASM(s"mov ebx, ${label}")
+              asm = asm ++ ASM(s";nonsense") ++ extern ++ ASM(s"mov ebx, ${label}")
             case _ =>
               asm = asm ++ ASM(s";; TODO $name codegen")
           })
