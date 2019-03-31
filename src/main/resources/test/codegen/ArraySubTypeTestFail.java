@@ -6,7 +6,7 @@ public class ArraySubTypeTestFail {
         Object[] objs = new Object[10];
         String[] strings = new String[10];
 
-        strings = objs;
+        strings = (String[])objs;
 
         return ret;
     }

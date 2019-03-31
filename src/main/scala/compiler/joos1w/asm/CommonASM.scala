@@ -83,7 +83,7 @@ object CommonASM {
             }
 
             ASM(s"""
-                   |CAST EXPRESSION from ${castExpression.beingCast} to ${typeCastTo}
+                   |;;CAST EXPRESSION from ${castExpression.beingCast} to ${typeCastTo}
                    |;; get class that it is being cast to
                    |mov ebx, ${classLabel}
                    |push ebx ;; save class pointer""") ++
@@ -107,8 +107,6 @@ object CommonASM {
                |
              """.stripMargin) ++ codeBeingCast // TODO primitive casts
         }
-
-        ASM(s";; TODO cast expression")
       case Some(methodInvocation: MethodInvocation) =>
         val methodEnv = methodInvocation.methodDefinition match {
           case Some(methodEnvironment: MethodEnvironment) => methodEnvironment
