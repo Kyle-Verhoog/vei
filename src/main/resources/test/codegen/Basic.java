@@ -29,10 +29,15 @@ public class Basic {
 
   public static int test() {
     Basic b = new Basic(3, 6);
-    int x = b.method(5);
+    //int x = b.method(5);
     // int j = test2(3);
     // int k = test3();
     // int j = test3();
-    return x;
+
+    if (b instanceof Basic) {
+      return 99;
+    }
+
+    return 69;
   }
 }

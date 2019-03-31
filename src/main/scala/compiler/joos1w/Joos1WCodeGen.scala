@@ -155,6 +155,7 @@ object Joos1WCodeGen {
            |global $clsLabel
            |$clsLabel:
            |dd $clsVTableLabel
+           |extern $clsSubClsLabel
            |dd $clsSubClsLabel
            |dd ${clsEnv.subClsTableOffset}
            |""".stripMargin) ++

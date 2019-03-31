@@ -95,14 +95,14 @@ object ExpressionASM {
                      |push ebx ;; store lhs pointer
                      |;; get instanceof right sides class into ebx
                      |mov ebx, ${classLabel}
-                     |push ebx ;; save class pointer""".stripMargin)
+                     |push ebx ;; save class pointer""".stripMargin) ++
             expr2Code ++
               ASM(s"""
                      |mov eax, ebx
-                     |pop ebx ;; restore class pointer, now eax has pointer to lhs, ebx has pointer to rhs
+                     |pop ebx ;; restore class pointer, now eax has pointer to rhs, ebx has pointer to lhs
                      |;; perform actual instance of, eax has lhs class, ebx has rhs class
-                     |mov ecx, [ebx + 8] ;; get offset of subclass table for rhs
-                     |mov edx, [eax + 4] ;; get offset to subclass table for lhs
+                     |mov ecx, [eax + 8] ;; get offset of subclass table for rhs
+                     |mov edx, [ebx + 4] ;; get offset to subclass table for lhs
                      |mov eax, 0xffffffff
                      |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                      |mov eax, 0xffffffff
@@ -110,7 +110,6 @@ object ExpressionASM {
                      |mov eax, 0
                      |.instanceof_subtype_check_pass${myCounter}:""".stripMargin)
 
-            ASM(s";; TODO fix instance of")
         }
       case _ => throw new MatchError(s"Expression match error")
     }

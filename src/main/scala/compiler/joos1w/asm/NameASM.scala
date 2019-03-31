@@ -49,7 +49,12 @@ object NameASM {
                 case x => asm = asm ++ ASM(s";; TODO? ${x}")
               }
             case clsEnv: ClassEnvironment =>
-              asm = asm ++ ASM(s";; TODO cls name codegen")
+              val label = Joos1WCodeGen.classLabel(clsEnv)
+              var extern = ASM(s"""""")
+              if (name.env.findEnclosingClass() != clsEnv) {
+                extern = ASM(s"""extern ${label}""")
+              }
+              asm = asm ++ extern ++ ASM(s"mov ebx, ${label}")
             case _ =>
               asm = asm ++ ASM(s";; TODO $name codegen")
           })
