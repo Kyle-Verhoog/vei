@@ -64,9 +64,11 @@ object MethodASM {
                   ASM(s"""
                        |;; perform array access sub type check
                        |extern __exception
-                       |mov ecx, [ebx + 4] ;; get addr to subclass table for rhs
+                       |mov ecx, [ebx]
+                       |mov ecx, [ecx + 4] ;; get addr to subclass table for rhs
                        |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
-                       |mov edx, [edx + 8] ;; get offset of subclass table for lhs
+                       |mov ebx, [edx]
+                       |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
                        |push edx ;; put back lhs pointer
                        |push eax ;; save rhs value
                        |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs

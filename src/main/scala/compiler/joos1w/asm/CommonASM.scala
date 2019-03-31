@@ -87,6 +87,7 @@ object CommonASM {
               ASM(s"""
                    |push eax ; store thing being cast to return after cast check complete
                    |mov eax, ebx ;; eax has pointer to thing being cast
+                   |mov eax, [eax] ;; need to dereference
                    |pop ebx ;; restore class pointer of type being casted to
                    |;; perform cast check
                    |mov ecx, [ebx + 8] ;; get offset of subclass table for type being cast to
@@ -290,7 +291,7 @@ object CommonASM {
         // insert label for array type if it is not a primitive type
         if (arrayTypeLabel.isDefined) {
           assembly = assembly ++ ASM(s"""
-                             |mov [eax + 4], ${arrayTypeLabel} ;; store array type pointer""")
+                             |mov [eax + 4], ${arrayTypeLabel.get} ;; store array type pointer""")
         }
 
         assembly
