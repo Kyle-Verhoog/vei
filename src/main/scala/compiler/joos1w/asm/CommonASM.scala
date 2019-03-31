@@ -85,6 +85,9 @@ object CommonASM {
         val methodAST = methodEnv.myAst.asInstanceOf[MethodDeclaration]
         val isStatic = methodAST.modifiers.contains("static")
 
+        val containingCls = methodInvocation.env.findEnclosingClass()
+        val methodInCls = containingCls.declareSet.values.toSet contains methodEnv
+
         // whether or not the method call is an implicit this.method() call
         val isThisMethod = methodInvocation.name == methodAST.identifier
         val offset = methodEnv.vtOffset
@@ -99,7 +102,7 @@ object CommonASM {
         } else if (isThisMethod) {
           ASM(s";; Implicit this.${methodAST.identifier} method call") ++
             ASM(s"""
-                 |mov eax, ebp ;; 'this' should be in frame pointer"
+                 |mov eax, ebp ;; "this" should be in frame pointer
                  |push eax
                """.stripMargin)
         } else {
@@ -128,12 +131,15 @@ object CommonASM {
 
         val methodLabel = Joos1WCodeGen.methodDefinitionLabel(methodEnv)
         val methodCallCode =
-          if (isThisMethod) {
+          if (methodInCls) {
             ASM(s"""
                  |call $methodLabel ;; invoke method ${methodAST}
              """.stripMargin)
           } else {
-            ASM(";; TODO qualified method invocation")
+            ASM(s"""
+                 |extern $methodLabel
+                 |call $methodLabel ;; invoke external method ${methodAST}
+               """.stripMargin)
           }
 
         ASM(s""";; Method invocation $methodInvocation""".stripMargin) ++
@@ -141,6 +147,7 @@ object CommonASM {
           objRefCode ++
           argPushCode ++
           methodCallCode ++
+          argPopCode ++
           methodPostcall
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
@@ -221,8 +228,8 @@ object CommonASM {
                |call $consLabel ;; Constructor should return obj pointer in eax
                |;; end class instance creation
            """.stripMargin) ++
-          methodPostcall ++
-          argPopCode
+          argPopCode ++
+          methodPostcall
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
 

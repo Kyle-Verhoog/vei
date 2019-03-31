@@ -106,6 +106,8 @@ object ExpressionASM {
                      |je .instanceof_subtype_check_pass${myCounter}
                      |mov eax, 0
                      |.instanceof_subtype_check_pass${myCounter}:""".stripMargin)
+
+            ASM(s";; TODO fix instance of")
         }
       case _ => throw new MatchError(s"Expression match error")
     }

@@ -45,9 +45,9 @@ object NameASM {
                 case _ => asm = asm ++ ASM(s";; TODO? ${}")
               }
             case clsEnv: ClassEnvironment =>
-              asm = asm ++ ASM(s"TODO cls codegen")
+              asm = asm ++ ASM(s";; TODO cls name codegen")
             case _ =>
-              asm = asm ++ ASM(s"TODO $name codegen")
+              asm = asm ++ ASM(s";; TODO $name codegen")
           })
         asm
       /*
