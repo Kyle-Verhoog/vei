@@ -1,6 +1,6 @@
 package compiler.joos1w.environment
 
-import compiler.joos1w.ast.AST
+import compiler.joos1w.ast.{AST, LocalVariableDeclaration}
 import compiler.joos1w.environment.environment.Signature
 import exceptions.EnvironmentError
 
@@ -12,8 +12,8 @@ class GenericEnvironment(val ast: AST,
                            None) {
   val childrenEnvironments: ListBuffer[GenericEnvironment] =
     ListBuffer[GenericEnvironment]()
-  var varCount = 0
-  var offset = 0
+  var fpOffset = 0
+  var localVarOffset = 0
 
   // TODO consider having more specific tables that return specific AST types
   val classTable: mutable.HashMap[String, ClassEnvironment] =
@@ -37,9 +37,12 @@ class GenericEnvironment(val ast: AST,
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
     }
-    val method = findEnclosingMethod()
-    offset = method.varCount
-    method.varCount += 1
+    env.myAst match {
+      case _: LocalVariableDeclaration =>
+        val method = findEnclosingMethod()
+        localVarOffset = method.localVarCount
+        method.localVarCount += 1
+    }
     variableTable += name -> env
     if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)
   }

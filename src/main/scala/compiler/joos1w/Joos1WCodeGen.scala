@@ -176,16 +176,16 @@ object Joos1WCodeGen {
 
   def methodASM(env: MethodEnvironment, bodyASM: ASM): ASM = {
     val methDefLabel = methodDefinitionLabel(env)
-    val frameSize = 4 * env.varCount
-    val pOffset = paramOffset(env)
+    val frameSize = 4 * env.localVarCount
     ASM(s"""global $methDefLabel
            |$methDefLabel:
+           |push ebp
            |mov ebp, esp ;; frame pointer <- stack pointer
-           |add ebp, $pOffset ;; move the frame pointer up for params
            |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
       bodyASM ++
       ASM(s"""|.method_end:
-              |add esp, ${frameSize} ;; pop the frame
+              |mov esp, ebp ;; reset stack pointer
+              |pop ebp
               |ret
               |""".stripMargin)
   }
@@ -202,19 +202,20 @@ object Joos1WCodeGen {
         interfaceASM(interfaceDeclaration)
       case Some(const: ConstructorDeclaration) =>
         val env = const.env.asInstanceOf[MethodEnvironment]
+        val objRefOffset = 4 * env.paramCount
         val bodyASM = MethodASM.methodASM(Some(const.children(1))) ++
           ASM(s"""
-            | mov eax, [ebp] ;; constructor returns reference to obj
+            | mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
           """.stripMargin)
         val nparams = const.rawParameters.length
-        env.nparams = nparams
+        env.nparams = nparams // no +1 because constructors have another arg added
         ASM(s";; constructor definition") ++
           methodASM(env, bodyASM) ++ ASM(s";; constructor end")
       case Some(meth: MethodDeclaration) =>
         val env = meth.env.asInstanceOf[MethodEnvironment]
         val bodyASM = MethodASM.methodASM(Some(meth.body))
         val nparams = meth.header.get.parameters.length
-        env.nparams = nparams
+        env.nparams = nparams // + 1 for implicit this reference
         ASM(s";; method definition") ++
           methodASM(env, bodyASM) ++ ASM(s";; method end")
       case Some(fieldDeclaration: FieldDeclaration) =>
@@ -251,12 +252,14 @@ object Joos1WCodeGen {
         if (meth.identifier == "test") {
           val env = meth.env.asInstanceOf[MethodEnvironment]
           val methDefLabel = methodDefinitionLabel(env)
-          CommonASM.methodPrecall ++
-            ASM(s"""
+
+          ASM(s"""
+                 |mov eax, 0 ;; push null "this" reference
+                 |push eax
                  |extern $methDefLabel
                  |call $methDefLabel
-                 |""".stripMargin) ++
-            CommonASM.methodPostcall
+                 |pop ebx ;; pop null "this" reference
+                 |""".stripMargin)
         } else {
           ASM("")
         }
@@ -310,12 +313,10 @@ object Joos1WCodeGen {
         case c: ClassDeclaration =>
           val clsLabel = classLabel(cls)
           acc ++
-            CommonASM.methodPrecall ++
             ASM(s"""
                    |extern cls_init_$clsLabel
                    |call cls_init_$clsLabel
-         """.stripMargin) ++
-            CommonASM.methodPostcall
+         """.stripMargin)
         case i: InterfaceDeclaration =>
           // TODO: do interfaces have any initialization?
           acc

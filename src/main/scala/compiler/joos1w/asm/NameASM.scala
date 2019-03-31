@@ -35,14 +35,22 @@ object NameASM {
                          |""".stripMargin)
                   }
                 case lvar: LocalVariableDeclaration =>
-                  val offset = 4 * vEnv.offset
+                  val offset = 4 * vEnv.localVarOffset
                   asm = asm ++ ASM(s"""
                          |;; local variable lookup
                          |mov ebx, ebp     ;; ebx <- address of local variable
                          |sub ebx, $offset
                          |mov eax, [ebx]   ;; eax <- value of local variable
                          | """.stripMargin)
-                case _ => asm = asm ++ ASM(s";; TODO? ${}")
+                case fparam: FormalParameter =>
+                  val offset = 4 * vEnv.fpOffset
+                  asm = asm ++ ASM(s"""
+                                      |;; formal param lookup
+                                      |mov ebx, ebp     ;; ebx <- address of local variable
+                                      |add ebx, $offset
+                                      |mov eax, [ebx]   ;; eax <- value of local variable
+                                      | """.stripMargin)
+                case x => asm = asm ++ ASM(s";; TODO? ${x}")
               }
             case clsEnv: ClassEnvironment =>
               asm = asm ++ ASM(s";; TODO cls name codegen")

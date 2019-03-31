@@ -22,7 +22,7 @@ object MethodASM {
         ASM(s"mov eax, $intVal ;; integer literal")
       case Some(v: LocalVariableDeclaration) =>
         val env = v.env.asInstanceOf[VariableEnvironment]
-        val offset = env.offset * 4
+        val offset = 4 * env.localVarOffset
         val declCode = methodASM(Some(v.variableDeclarator))
         ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
           declCode ++

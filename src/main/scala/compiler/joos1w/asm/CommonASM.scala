@@ -22,25 +22,7 @@ object CommonASM {
     counter
   }
 
-  val methodPrecall: ASM = {
-    ASM(s"""
-         |push ebp ;; save frame pointer
-         |;; push esp ;; save stack pointer
-         |;; push ebx ;; save ebx
-         |;; push esi ;; save esi
-         |;; push edi ;; save esi
-       """.stripMargin)
-  }
-
-  val methodPostcall: ASM = {
-    ASM(s"""
-         |;; pop edi ;; restore edi
-         |;; pop esi ;; restore esi
-         |;; pop ebx ;; restore ebx
-         |;; pop esp ;; restore esp
-         |pop ebp ;; save frame pointer
-       """.stripMargin)
-  }
+  //def procedureCall(objRef: ASM, params: List[AST]): ASM = {}
 
   def commonASM(ast: Option[AST], recurseMethod: Option[AST] => ASM): ASM = {
     ast match {
@@ -166,15 +148,14 @@ object CommonASM {
 
         // Parameter pushing code
         val argPushCode =
-          params.reverse
+          params
             .map(param => {
-              ASM(s";; Parameter $param") ++
-                commonASM(Some(param), recurseMethod) ++
-                ASM(s"push eax ;; push $param")
+              commonASM(Some(param), recurseMethod) ++
+                ASM(s"push eax ;; push param $param")
             })
             .fold(ASM(""))(_ ++ _)
 
-        val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)}")
+        val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)} ;; pop args")
 
         val methodLabel = Joos1WCodeGen.methodDefinitionLabel(methodEnv)
         val methodCallCode =
@@ -190,12 +171,10 @@ object CommonASM {
           }
 
         ASM(s""";; Method invocation $methodInvocation""".stripMargin) ++
-          methodPrecall ++
           objRefCode ++
           argPushCode ++
           methodCallCode ++
-          argPopCode ++
-          methodPostcall
+          argPopCode
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
         val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
@@ -241,7 +220,7 @@ object CommonASM {
 
         // Parameter code
         val argPushCode =
-          params.reverse
+          params
             .map(param => {
               ASM(s";; Parameter $param") ++
                 commonASM(Some(param), recurseMethod) ++
@@ -249,7 +228,8 @@ object CommonASM {
             })
             .fold(ASM(""))(_ ++ _)
 
-        val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)}")
+        val argPopCode = ASM(
+          s"add esp, ${4 * (params.length + 1)} ;; pop arguments off stack")
 
         val constructor =
           clsEnv.getConstructor(classInstanceCreation.parameters)
@@ -265,7 +245,6 @@ object CommonASM {
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
                |mov edx, eax  ;; store object location in edx to use later TODO?""".stripMargin) ++
-          methodPrecall ++
           ASM("""
             |;; pass arguments to constructor
             |push edx ;; save object pointer """.stripMargin) ++
@@ -275,8 +254,7 @@ object CommonASM {
                |call $consLabel ;; Constructor should return obj pointer in eax
                |;; end class instance creation
            """.stripMargin) ++
-          argPopCode ++
-          methodPostcall
+          argPopCode
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
 

@@ -11,6 +11,8 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   var vtOffset: Option[Int] = None
   var nparams = 0
+  var paramCount = 2 // one for the default objRef and for the saved ebp
+  var localVarCount = 1
 
   def signature: Signature = {
     myAst match {
@@ -68,6 +70,11 @@ class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
       println("the keys" + variableTable.keySet)
       throw EnvironmentError(
         "Local variable: " + name + " already declared in current scope")
+    }
+    env.myAst match {
+      case _: FormalParameter =>
+        env.fpOffset = this.paramCount
+        this.paramCount += 1
     }
     verifyVariable(name)
     variableTable += name -> env
