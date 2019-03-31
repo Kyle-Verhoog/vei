@@ -79,7 +79,6 @@ object CommonASM {
 
             ASM(s"""
                    |CAST EXPRESSION from ${castExpression.beingCast} to ${typeCastTo}
-                   |extern __exception
                    |;; get class that it is being cast to
                    |mov ebx, ${classLabel}
                    |push ebx ;; save class pointer""") ++
@@ -166,7 +165,6 @@ object CommonASM {
              """.stripMargin)
           } else {
             ASM(s"""
-                 |extern $methodLabel
                  |call $methodLabel ;; invoke external method ${methodAST}
                """.stripMargin)
           }
@@ -182,8 +180,7 @@ object CommonASM {
         val index = MethodASM.methodASM(Some(arrayAccess.expression))
         ASM(s"""
                |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
-               |extern __exception
-               |extern __malloc""") ++
+               |""") ++
           arrayPointer ++
           ASM(s"""
                |;; the pointer to the array is now in ebx, first we check index bounds
@@ -236,22 +233,17 @@ object CommonASM {
           clsEnv.getConstructor(classInstanceCreation.parameters)
         val consLabel = Joos1WCodeGen.methodDefinitionLabel(constructor)
 
-        val isSameClass = env.findEnclosingClass() == clsEnv
-        val externClsLabel = if (!isSameClass) s"extern $clsLabel" else ""
-        val externConslabel = if (!isSameClass) s"extern $consLabel" else ""
         ASM(s""";; begin class instance creation new $classInstanceCreation
                |mov eax, $clsSize
                |call __malloc
-               |$externClsLabel
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
-               |mov edx, eax  ;; store object location in edx to use later TODO?""".stripMargin) ++
-          ASM("""
-            |;; pass arguments to constructor
-            |push edx ;; save object pointer """.stripMargin) ++
+               |mov edx, eax  ;; store object location in edx to use later TODO?
+               |push edx ;; save object pointer
+               |;; pass arguments to constructor
+               |""".stripMargin) ++
           argPushCode ++
           ASM(s"""
-               |$externConslabel
                |call $consLabel ;; Constructor should return obj pointer in eax
                |;; end class instance creation
            """.stripMargin) ++
@@ -273,8 +265,7 @@ object CommonASM {
         var assembly =
           ASM(s"""
                |;; Create an array of type: ${arrayCreationExpression.primary} size: [${arrayCreationExpression.expr}])
-               |extern __exception
-               |extern __malloc""") ++
+               |""") ++
             arraySize ++
             ASM(s"""
                  |push eax ;; store actual array size

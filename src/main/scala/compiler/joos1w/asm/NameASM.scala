@@ -16,7 +16,6 @@ object NameASM {
               vEnv.myAst match {
                 case field: FieldDeclaration =>
                   if (field.modifiers.contains("static")) {
-                    val cls = vEnv.findEnclosingClass()
                     val fieldLabel = Joos1WCodeGen.staticFieldLabel(vEnv)
                     asm = asm ++ ASM(s"""
                         |;; static field lookup
@@ -50,11 +49,7 @@ object NameASM {
               }
             case clsEnv: ClassEnvironment =>
               val label = Joos1WCodeGen.classLabel(clsEnv)
-              var extern = ASM(s"""""")
-              if (name.env.findEnclosingClass() != clsEnv) {
-                extern = ASM(s"""extern ${label}""")
-              }
-              asm = asm ++ ASM(s";nonsense") ++ extern ++ ASM(s"mov ebx, ${label}")
+              asm = asm ++ ASM(s"mov ebx, ${label}")
             case _ =>
               asm = asm ++ ASM(s";; TODO $name codegen")
           })

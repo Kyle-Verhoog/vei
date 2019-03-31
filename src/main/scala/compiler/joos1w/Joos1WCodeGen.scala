@@ -145,19 +145,14 @@ object Joos1WCodeGen {
       """.stripMargin)
 
     ASM(s"""
-           |extern __malloc
-           |extern __exception
-           |extern $clsVTableLabel
-           |
            |
            |;; class initializer
            |global cls_init_$clsLabel
            |global $clsLabel
            |$clsLabel:
            |dd $clsVTableLabel
-           |extern $clsSubClsLabel
            |dd $clsSubClsLabel
-           |dd ${clsEnv.subClsTableOffset * 4}
+           |dd ${4 * clsEnv.subClsTableOffset}
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody)) ++
       initCode
@@ -181,17 +176,40 @@ object Joos1WCodeGen {
   def methodASM(env: MethodEnvironment, bodyASM: ASM): ASM = {
     val methDefLabel = methodDefinitionLabel(env)
     val frameSize = 4 * env.localVarCount
-    ASM(s"""global $methDefLabel
+    if (methDefLabel == "java_io_OutputStream_nativeWrite_int") {
+      new ASM(
+        s"""
+           |; Implementation of java.io.OutputStream.nativeWrite method.
+           |; Outputs the low-order byte of eax to standard output.
+           |global ${methDefLabel}
+           |${methDefLabel}:
+           |    mov [char], al ; save the low order byte in memory
+           |    mov eax, 4     ; sys_write system call
+           |    mov ecx, char  ; address of bytes to write
+           |    mov ebx, 1     ; stdout
+           |    mov edx, 1     ; number of bytes to write
+           |    int 0x80
+           |    mov eax, 0     ; return 0
+           |    ret
+         """.stripMargin,
+        data = s"""
+                  | char:
+                  |     dd 0
+         """.stripMargin
+      )
+    } else {
+      ASM(s"""global $methDefLabel
            |$methDefLabel:
            |push ebp
            |mov ebp, esp ;; frame pointer <- stack pointer
            |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
-      bodyASM ++
-      ASM(s"""|.method_end:
+        bodyASM ++
+        ASM(s"""|.method_end:
               |mov esp, ebp ;; reset stack pointer
               |pop ebp
               |ret
               |""".stripMargin)
+    }
   }
 
   def astASM(ast: Option[AST]): ASM = {
@@ -260,7 +278,6 @@ object Joos1WCodeGen {
           ASM(s"""
                  |mov eax, 0 ;; push null "this" reference
                  |push eax
-                 |extern $methDefLabel
                  |call $methDefLabel
                  |pop ebx ;; pop null "this" reference
                  |""".stripMargin)
@@ -295,7 +312,6 @@ object Joos1WCodeGen {
         asm = asm ++ new ASM(
           text = "",
           data = s"""
-               |extern $methodLabel
                |dd $methodLabel
              """.stripMargin
         )
@@ -318,7 +334,6 @@ object Joos1WCodeGen {
           val clsLabel = classLabel(cls)
           acc ++
             ASM(s"""
-                   |extern cls_init_$clsLabel
                    |call cls_init_$clsLabel
          """.stripMargin)
         case i: InterfaceDeclaration =>

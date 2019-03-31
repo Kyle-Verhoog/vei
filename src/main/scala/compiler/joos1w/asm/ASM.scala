@@ -44,8 +44,41 @@ class ASM(val text: String,
                            else Nil)
   }
 
+  def addExterns(code: String): String = {
+    var externs = Map[String, String]()
+    code
+      .split("\n")
+      .foreach(line => {
+        var skip = false
+
+        line
+          .split(" ")
+          .foreach(word => {
+            if (word == ";;" || word == ";") {
+              // skip the rest of the line
+              skip = true
+            } else {
+              // if the code does not contain the definition for a label then add it
+              // to the accumulator
+              if (!skip && !externs.contains(word) &&
+                  word.contains("_") &&
+                  !word.contains(":") && !word.startsWith(".") && !code
+                    .contains(word ++ ":")) {
+                // val label = word.contains(":")
+                //println(s"${word ++ ":"} wtf   ${!code.contains(word ++ ":")}")
+                val externStmt = s"extern $word ;; import $word"
+                externs = externs + (word -> externStmt)
+              }
+            }
+          })
+      })
+    externs.values.mkString("\n") ++ "\n\n" ++ code
+  }
+
   def _code: String = {
-    instructions.mkString("\n") ++ "\n"
+    val codeWithoutExterns = instructions.mkString("\n") ++ "\n"
+    addExterns(codeWithoutExterns)
+    // val codeWithoutExterns = instructions.mkString("\n") ++ "\n"
   }
 
   def ++(otherASM: ASM): ASM = {

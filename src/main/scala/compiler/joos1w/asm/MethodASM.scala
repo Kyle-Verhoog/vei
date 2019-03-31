@@ -63,7 +63,6 @@ object MethodASM {
                 case ttype @ ((_: StringType) | (_: CustomType)) =>
                   ASM(s"""
                        |;; perform array access sub type check
-                       |extern __exception
                        |mov ecx, [ebx]
                        |mov ecx, [ecx + 4] ;; get addr to subclass table for rhs
                        |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
