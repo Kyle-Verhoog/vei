@@ -23,10 +23,12 @@ object NameASM {
                         |mov eax, [ebx]       ;; eax <- value of static field
                       """.stripMargin)
                   } else {
-                    // val fieldOffset =
+                    val fieldOffset = 4 * (vEnv.order + 1)
                     asm = asm ++ ASM(s"""
-                         |;; TODO field code gen
-                         |;; assume eax has address of object for field
+                         |;; Instance field access
+                         |;; assume ebx has address of object for field
+                         |add ebx, $fieldOffset ;; ebx <- addr of ${field.name}
+                         |mov eax, [ebx] ;; eax <- ${field.name}
                          |""".stripMargin)
                   }
                 case lvar: LocalVariableDeclaration =>

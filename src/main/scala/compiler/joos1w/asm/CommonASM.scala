@@ -207,9 +207,16 @@ object CommonASM {
                |add ebx, edx,
                |mov eax, [ebx]""")
       case Some(classInstanceCreation: ClassInstanceCreation) =>
+        /**
+          * Instances have the following form
+          *  [  addr of class    ]
+          *  [  instance field 1 ]
+          *  [  instance field 2 ]
+          *  [       ....        ]
+          *  [  instance field n ]
+          */
         val env = classInstanceCreation.env
         val clsEnv = env.serarchForClass(classInstanceCreation.name).get
-        val clsAST = clsEnv.myAst.asInstanceOf[ClassDeclaration]
         val clsLabel = Joos1WCodeGen.classDefinitionLabel(clsEnv)
         // 1 for class vpointer
         val clsSize = 4 * (1 + clsEnv.numFields)

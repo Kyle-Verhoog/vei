@@ -135,6 +135,7 @@ object Joos1WCodeGen {
            | mov [ebx], eax
          """.stripMargin,
           data = s"""
+               |global $fieldLabel
                |$fieldLabel:
                |dd 0
              """.stripMargin
