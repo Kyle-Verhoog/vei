@@ -3,6 +3,7 @@ package compiler.joos1w.asm
 import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
+import compiler.joos1w.environment.environment.determineType
 import compiler.joos1w.environment.types.{CustomType, StringType}
 
 object CommonASM {
@@ -74,6 +75,52 @@ object CommonASM {
       case Some(expr: UnaryExpression) =>
         ExpressionASM.unaryExpressionASM(expr, recurseMethod)
       case Some(castExpression: CastExpression) =>
+        // TODO widening for numeric types
+        // TODO handle casting arrays
+
+        val myCounter = incrementAndReturnCounter
+        val codeBeingCast = MethodASM.methodASM(Some(castExpression.beingCast))
+
+        val typeCastTo = if (castExpression.simpleType.isDefined) {
+          types.buildTypeFromString(castExpression.simpleType.get,
+                                    castExpression.env)
+        } else { // it has an expression as its type
+          determineType(castExpression.children.head, castExpression.env)
+        }
+
+        typeCastTo match {
+          case ttype @ ((_: StringType) | (_: CustomType)) =>
+            val classLabel = ttype match {
+              case ttype: StringType => Joos1WCodeGen.classLabel(ttype.env)
+              case ttype: CustomType => Joos1WCodeGen.classLabel(ttype.env)
+            }
+
+            ASM(s"""
+                   |CAST EXPRESSION from ${castExpression.beingCast} to ${typeCastTo}
+                   |extern __exception
+                   |;; get class that it is being cast to
+                   |mov ebx, ${classLabel}
+                   |push ebx ;; save class pointer""") ++
+              codeBeingCast ++
+              ASM(s"""
+                   |push eax ; store thing being cast to return after cast check complete
+                   |mov eax, ebx ;; eax has pointer to thing being cast
+                   |pop ebx ;; restore class pointer of type being casted to
+                   |;; perform cast check
+                   |mov ecx, [ebx + 8] ;; get offset of subclass table for type being cast to
+                   |mov edx, [eax + 4] ;; get offset to subclass table for thing that is being cast
+                   |mov eax, 0xffffffff
+                   |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
+                   |pop eax ;; restore the thing being cast into eax
+                   |je .cast_expression_pass${myCounter}
+                   |call __exception
+                   |.cast_expression_pass${myCounter}:""".stripMargin)
+          case _ => ASM(s"""
+               |;;TODO PRIMITIVE CAST CHECK
+               |
+             """.stripMargin) ++ codeBeingCast // TODO primitive casts
+        }
+
         ASM(s";; TODO cast expression")
       case Some(methodInvocation: MethodInvocation) =>
         val methodEnv = methodInvocation.methodDefinition match {
