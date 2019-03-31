@@ -3,7 +3,7 @@ package compiler.joos1w.asm
 import compiler.joos1w.asm.CommonASM.incrementAndReturnCounter
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
-import compiler.joos1w.environment.types.{CustomType, StringType}
+import compiler.joos1w.environment.types.{ArrayType, CustomType, StringType}
 
 object MethodASM {
   var counter = 0
@@ -59,6 +59,7 @@ object MethodASM {
                                                       assignment.getRHS.env)
 
               // if RHS is not a primitive, we do the subtype check
+              // TODO handle primitive
               rhsType match {
                 case ttype @ ((_: StringType) | (_: CustomType)) =>
                   ASM(s"""
@@ -78,7 +79,45 @@ object MethodASM {
            """.stripMargin)
                 case _ => ASM(s"""""")
               }
-            case _ => ASM(s"""""")
+            // otherwise, check type of lhs, if it's an array we want to make sure it is assignable
+            case _ =>
+              if (environment
+                    .determineType(assignment.getLHS, assignment.env)
+                    .isInstanceOf[ArrayType]) {
+                // get lhs arrays type
+                val lhsType = environment
+                  .determineType(assignment.getLHS, assignment.env)
+                  .asInstanceOf[ArrayType]
+                  .rootType
+                val rhsType = environment.determineType(assignment.getRHS,
+                                                        assignment.getRHS.env)
+                // if RHS is not a primitive, we do the subtype check
+                // TODO handle primitive
+                rhsType match {
+                  case ttype @ ((_: StringType) | (_: CustomType)) =>
+                    ASM(s"""
+                         |;; perform array access sub type check
+                         |mov ecx, [ebx]
+                         |mov ecx, [ecx + 4] ;; get addr to subclass table for rhs
+                         |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
+                         |mov ebx, [edx]
+                         |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
+                         |push edx ;; put back lhs pointer
+                         |push eax ;; save rhs value
+                         |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
+                         |je .array_subclass_check_pass${myCounter}
+
+
+                         |.array_subclass_check_pass${myCounter}
+:
+                         |pop eax ;; restore rhs value, finished
+                e check
+           """.stripMargin)
+                  case _ => ASM(s"""""")
+                }
+              } else {
+                ASM(s"""""")
+              }
           }
 
         ASM(s";; ${assignment.getLHS} := ${assignment.getRHS}") ++

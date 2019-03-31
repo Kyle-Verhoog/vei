@@ -4,7 +4,7 @@ import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
 import compiler.joos1w.environment.environment.determineType
-import compiler.joos1w.environment.types.{CustomType, StringType}
+import compiler.joos1w.environment.types.{ArrayType, CustomType, StringType}
 
 object CommonASM {
   var strCount = 0
@@ -63,11 +63,16 @@ object CommonASM {
         val myCounter = incrementAndReturnCounter
         val codeBeingCast = MethodASM.methodASM(Some(castExpression.beingCast))
 
-        val typeCastTo = if (castExpression.simpleType.isDefined) {
+        var typeCastTo = if (castExpression.simpleType.isDefined) {
           types.buildTypeFromString(castExpression.simpleType.get,
                                     castExpression.env)
         } else { // it has an expression as its type
           determineType(castExpression.children.head, castExpression.env)
+        }
+
+        // if typeCastTo is an array, get the actual type
+        if (typeCastTo.isInstanceOf[ArrayType]) {
+          typeCastTo = typeCastTo.asInstanceOf[ArrayType].rootType
         }
 
         typeCastTo match {
@@ -289,7 +294,8 @@ object CommonASM {
         // insert label for array type if it is not a primitive type
         if (arrayTypeLabel.isDefined) {
           assembly = assembly ++ ASM(s"""
-                             |mov [eax + 4], ${arrayTypeLabel.get} ;; store array type pointer""")
+                             |mov edx, ${arrayTypeLabel.get}
+                             |mov [eax + 4], edx ;; store array type pointer""")
         }
 
         assembly
