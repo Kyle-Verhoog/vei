@@ -1,9 +1,18 @@
 package compiler.joos1w.asm
 
+import compiler.joos1w.asm.CommonASM.incrementAndReturnCounter
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
+import compiler.joos1w.environment.types.{CustomType, StringType}
 
 object MethodASM {
+  var counter = 0
+
+  def incrementAndReturnCounter: Int = {
+    counter += 1
+    counter
+  }
+
   def methodASM(ast: Option[AST]): ASM = {
     ast match {
       case Some(methodBody: MethodBody) =>
@@ -38,8 +47,39 @@ object MethodASM {
       case Some(whileStatement: WhileStatement) =>
         StatementASM.whileStatementASM(whileStatement)
       case Some(assignment: Assignment) =>
+        val myCounter = incrementAndReturnCounter
         val lhsCode = methodASM(Some(assignment.getLHS))
         val rhsCode = methodASM(Some(assignment.getRHS))
+
+        val subTypeCheckCode =
+          assignment.getLHS match {
+            // if LHS is array access, do subtype check
+            case lhs: ArrayAccess =>
+              val rhsType = environment.determineType(assignment.getRHS,
+                                                      assignment.getRHS.env)
+
+              // if RHS is not a primitive, we do the subtype check
+              rhsType match {
+                case ttype: StringType | ttype1: CustomType =>
+                  ASM(s"""
+                       |;; perform array access sub type check
+                       |extern __exception
+                       |mov ecx, [ebx + 4] ;; get addr to subclass table for rhs
+                       |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
+                       |mov edx, [edx + 8] ;; get offset of subclass table for lhs
+                       |push edx ;; put back lhs pointer
+                       |push eax ;; save rhs value
+                       |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
+                       |je .array_subclass_check_pass${myCounter}
+                       |call __exception
+                       |.array_subclass_check_pass${myCounter}:
+                       |pop eax ;; restore rhs value, finished array access sub type check
+           """.stripMargin)
+                case _                 => ASM(s"""""")
+              }
+            case _ => ASM(s"""""")
+          }
+
         ASM(s";; ${assignment.getLHS} := ${assignment.getRHS}") ++
           ASM(s";; := eval lhs") ++
           lhsCode ++
@@ -47,6 +87,8 @@ object MethodASM {
           ASM(s"push ebx") ++
           ASM(s";; := eval rhs") ++
           rhsCode ++
+          ASM(s""";; := eax has rhs, ebx has rhs pointer""") ++
+          subTypeCheckCode ++
           ASM(s";; lhs := rhs") ++
           ASM(s"""
              |mov ebx, eax

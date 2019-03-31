@@ -75,7 +75,25 @@ object ExpressionASM {
                      |mov eax, edx ;; get remainder into eax from edx
                      |;; end ${expr.firstExpr} % ${expr.secondExpr}
                      |""".stripMargin)
-          case "instanceof" => ASM(";; TODO instanceof") // TODO
+          case "instanceof" =>
+            val myCounter = incrementAndReturnCounter
+            ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
+              ASM(";; get left instance of") ++
+              expr1Code ++
+              ASM(s"""
+                     |push ebx ;; store lhs pointer
+                     |;; get right instance of""".stripMargin)
+            expr2Code ++
+              ASM(s"""
+                     |;; perform actual instance of
+                     |pop eax ;; eax has pointer to lhs, ebx has pointer to rhs
+                     |mov ecx, [ebx + 4] ;; get addr to subclass table for rhs
+                     |mov edx, [eax + 8] ;; get offset of subclass table for lhs
+                     |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
+                     |mov eax, 0xffffffff
+                     |je .instanceof_subtype_check_pass${myCounter}
+                     |mov eax, 0
+                     |.instanceof_subtype_check_pass${myCounter}:""".stripMargin)
         }
       case _ => throw new MatchError(s"Expression match error")
     }
