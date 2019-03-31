@@ -156,7 +156,7 @@ object Joos1WCodeGen {
            |$clsLabel:
            |dd $clsVTableLabel
            |dd $clsSubClsLabel
-           |dd ${cls.subClsOffset}
+           |dd ${clsEnv.subClsTableOffset}
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody)) ++
       initCode
