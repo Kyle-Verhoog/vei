@@ -60,7 +60,7 @@ object MethodASM {
 
               // if RHS is not a primitive, we do the subtype check
               rhsType match {
-                case ttype: StringType | ttype1: CustomType =>
+                case ttype @ ((_: StringType) | (_: CustomType)) =>
                   ASM(s"""
                        |;; perform array access sub type check
                        |extern __exception
@@ -75,7 +75,7 @@ object MethodASM {
                        |.array_subclass_check_pass${myCounter}:
                        |pop eax ;; restore rhs value, finished array access sub type check
            """.stripMargin)
-                case _                 => ASM(s"""""")
+                case _ => ASM(s"""""")
               }
             case _ => ASM(s"""""")
           }

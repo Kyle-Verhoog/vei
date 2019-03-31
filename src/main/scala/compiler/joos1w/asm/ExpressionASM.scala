@@ -1,6 +1,9 @@
 package compiler.joos1w.asm
 
+import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
+import compiler.joos1w.environment.environment
+import compiler.joos1w.environment.types.{CustomType, StringType}
 
 object ExpressionASM {
   var counter = 0
@@ -77,18 +80,27 @@ object ExpressionASM {
                      |""".stripMargin)
           case "instanceof" =>
             val myCounter = incrementAndReturnCounter
+            val rhs = environment.determineType(expr.secondExpr, expr.env)
+            val rhsTypeEnv = rhs match {
+              case rhs: StringType => rhs.env
+              case rhs: CustomType => rhs.env
+            }
+
+            val classLabel = Joos1WCodeGen.classLabel(rhsTypeEnv)
+
             ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
-              ASM(";; get left instance of") ++
+              ASM(";; get left side instanceof") ++
               expr1Code ++
               ASM(s"""
                      |push ebx ;; store lhs pointer
-                     |;; get right instance of""".stripMargin)
+                     |;; get instanceof right sides class into ebx
+                     |mov ebx, ${classLabel}""".stripMargin)
             expr2Code ++
               ASM(s"""
-                     |;; perform actual instance of
+                     |;; perform actual instance of, eax has lhs class, ebx has rhs class
                      |pop eax ;; eax has pointer to lhs, ebx has pointer to rhs
-                     |mov ecx, [ebx + 4] ;; get addr to subclass table for rhs
-                     |mov edx, [eax + 8] ;; get offset of subclass table for lhs
+                     |mov ecx, [ebx + 8] ;; get offset of subclass table for rhs
+                     |mov edx, [eax + 4] ;; get offset to subclass table for lhs
                      |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
                      |mov eax, 0xffffffff
                      |je .instanceof_subtype_check_pass${myCounter}
