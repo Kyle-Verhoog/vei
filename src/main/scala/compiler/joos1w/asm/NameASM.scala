@@ -9,10 +9,6 @@ object NameASM {
     ast match {
       case Some(name: Name) =>
         var asm = ASM("")
-        println(s"KEVIN SAID TO PRINT SOME CRAP ${name}")
-        println(
-          Joos1WCodeGen
-            .resolveQualifiedName(name.name, name.env))
         Joos1WCodeGen
           .resolveQualifiedName(name.name, name.env)
           .foreach({

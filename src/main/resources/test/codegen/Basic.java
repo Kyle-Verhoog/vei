@@ -7,9 +7,9 @@ public class Basic {
     // this.x = 15;
   }
 
-  // public int basicMethod(int i, int y) {
-  //   return i + y;
-  // }
+  public int method(int x) {
+    return x*2;
+  }
 
   public static int test1(int KYLEPARAM1, int KYLEPARAM2) {
     int KYLE1 = 0;
@@ -29,11 +29,10 @@ public class Basic {
 
   public static int test() {
     Basic b = new Basic(3, 6);
-    Basic e = new Basic(1, 7);
-    Basic f = new Basic(4, 5);
+    int x = b.method(5);
     // int j = test2(3);
     // int k = test3();
     // int j = test3();
-    return b.y;
+    return x;
   }
 }

@@ -8,6 +8,9 @@ import scala.collection.mutable
 
 class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
+
+  var subClsTableOffset = 0
+
   myAst match {
     case ast: ClassDeclaration => {
       insertClass(ast.identifier, this)

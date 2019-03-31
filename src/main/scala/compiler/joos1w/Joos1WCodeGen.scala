@@ -106,6 +106,7 @@ object Joos1WCodeGen {
     val clsEnv = cls.env.asInstanceOf[ClassEnvironment]
     val clsLabel = classLabel(clsEnv)
     val clsVTableLabel = classVTableLabel(clsEnv)
+    val clsSubClsLabel = classSubClassTableLabel(clsEnv)
 
     var fields = List[VariableEnvironment]()
     clsEnv.containSet.values.foreach({
@@ -154,6 +155,8 @@ object Joos1WCodeGen {
            |global $clsLabel
            |$clsLabel:
            |dd $clsVTableLabel
+           |dd $clsSubClsLabel
+           |dd ${cls.subClsOffset}
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody)) ++
       initCode
@@ -356,10 +359,13 @@ object Joos1WCodeGen {
           | global $clsLabel ;; ${cls1.myAst} subclass entry
           | $clsLabel:
         """.stripMargin)
+      var i = 0
       classes.foreach(cls2 => {
         val label = subclass1IsSubclassOfClass2Label(cls1, cls2)
         val isSubCls = cls1.isSubClassOf(cls2)
         val res = if (isSubCls) "0xffffffff" else "0x0"
+        cls2.subClsTableOffset = i
+        i += 1
         subClsTable = subClsTable ++ ASM(s"""
             |global $label
             |$label:
