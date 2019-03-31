@@ -21,6 +21,26 @@ object CommonASM {
     counter
   }
 
+  val methodPrecall: ASM = {
+    ASM(s"""
+         |push ebp ;; save frame pointer
+         |;; push esp ;; save stack pointer
+         |;; push ebx ;; save ebx
+         |;; push esi ;; save esi
+         |;; push edi ;; save esi
+       """.stripMargin)
+  }
+
+  val methodPostcall: ASM = {
+    ASM(s"""
+         |;; pop edi ;; restore edi
+         |;; pop esi ;; restore esi
+         |;; pop ebx ;; restore ebx
+         |;; pop esp ;; restore esp
+         |pop ebp ;; save frame pointer
+       """.stripMargin)
+  }
+
   def commonASM(ast: Option[AST], recurseMethod: Option[AST] => ASM): ASM = {
     ast match {
       case Some(intAST: literals.IntegerLiteral) =>
@@ -69,51 +89,59 @@ object CommonASM {
         val isThisMethod = methodInvocation.name == methodAST.identifier
         val offset = methodEnv.vtOffset
 
-        // Parameter code
-        val argCode =
-          methodInvocation.parameters
-            .map(param => {
-              ASM(s";; Parameter $param") ++
-                commonASM(Some(param), recurseMethod) ++
-                ASM("push eax")
-            })
-            .fold(ASM(""))(_ ++ _)
-
         // Get the object reference for the method call or null if it's a static
         // method
         val objRefCode = if (isStatic) {
-          ASM(s"mov eax, 0 ;; null argument for static method")
+          ASM(s"""
+               |mov eax, 0 ;; null argument for static method
+               |push eax
+             """.stripMargin)
         } else if (isThisMethod) {
           ASM(s";; Implicit this.${methodAST.identifier} method call") ++
-            MethodASM.methodASM(Some(new ThisCall()))
+            ASM(s"""
+                 |mov eax, ebp ;; 'this' should be in frame pointer"
+                 |push eax
+               """.stripMargin)
         } else {
           val baseName =
-            new Name(
-              methodInvocation.name.split("\\.").dropRight(1).mkString("."))
-          // ASM(s";; Method call on object ${baseName}") ++
-          //   MethodASM.methodASM(Some(baseName))
-          ASM(";; TODO method call on qualified name")
+            methodInvocation.name.split("\\.").dropRight(1).mkString(".")
+          val name = new Name(baseName)
+          name.env = methodInvocation.env
+          ASM(s";; Find base object/field for method invocation") ++
+            NameASM.nameASM(Some(name)) ++
+            ASM(s"push eax ;; push obj reference as arg")
         }
 
+        val params = methodInvocation.parameters
+
+        // Parameter pushing code
+        val argPushCode =
+          params.reverse
+            .map(param => {
+              ASM(s";; Parameter $param") ++
+                commonASM(Some(param), recurseMethod) ++
+                ASM(s"push eax ;; push $param")
+            })
+            .fold(ASM(""))(_ ++ _)
+
+        val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)}")
+
+        val methodLabel = Joos1WCodeGen.methodDefinitionLabel(methodEnv)
         val methodCallCode =
-          if (methodInvocation.name == methodAST.identifier) {
-            ASM(s""";; Method invocation in same class
-                 |;; TODO eval and push args
-                 |
+          if (isThisMethod) {
+            ASM(s"""
+                 |call $methodLabel ;; invoke method ${methodAST}
              """.stripMargin)
           } else {
             ASM(";; TODO qualified method invocation")
           }
 
-        ASM(s""";; Method invocation $methodInvocation
-             |;; Pushing args
-           """.stripMargin) ++
-          argCode ++
+        ASM(s""";; Method invocation $methodInvocation""".stripMargin) ++
+          methodPrecall ++
           objRefCode ++
-          ASM(s"""
-               | push eax
-           """.stripMargin) ++
-          methodCallCode
+          argPushCode ++
+          methodCallCode ++
+          methodPostcall
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
         val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
@@ -155,15 +183,19 @@ object CommonASM {
         // 1 for class vpointer
         val clsSize = 4 * (1 + clsEnv.numFields)
 
+        val params = classInstanceCreation.parameters
+
         // Parameter code
-        val argCode =
-          classInstanceCreation.parameters
+        val argPushCode =
+          params.reverse
             .map(param => {
               ASM(s";; Parameter $param") ++
                 commonASM(Some(param), recurseMethod) ++
                 ASM("push eax")
             })
             .fold(ASM(""))(_ ++ _)
+
+        val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)}")
 
         val constructor =
           clsEnv.getConstructor(classInstanceCreation.parameters)
@@ -178,16 +210,19 @@ object CommonASM {
                |$externClsLabel
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
-               |mov edx, eax  ;; store object location in edx to use later TODO?
-               |;; pass arguments to constructor""".stripMargin) ++
-          argCode ++
+               |mov edx, eax  ;; store object location in edx to use later TODO?""".stripMargin) ++
+          methodPrecall ++
+          ASM("""
+            |;; pass arguments to constructor
+            |push edx ;; save object pointer """.stripMargin) ++
+          argPushCode ++
           ASM(s"""
-               |push edx ;; save object pointer
                |$externConslabel
-               |call $consLabel
-               |pop eax  ;; restore object pointer
+               |call $consLabel ;; Constructor should return obj pointer in eax
                |;; end class instance creation
-           """.stripMargin)
+           """.stripMargin) ++
+          methodPostcall ++
+          argPopCode
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
         val myCounter = incrementAndReturnCounter
 

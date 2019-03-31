@@ -148,6 +148,7 @@ object Joos1WCodeGen {
            |extern __exception
            |extern $clsVTableLabel
            |
+           |
            |;; class initializer
            |global cls_init_$clsLabel
            |global $clsLabel
@@ -162,6 +163,33 @@ object Joos1WCodeGen {
     ASM(";; TODO interfaces")
   }
 
+  def paramOffset(env: MethodEnvironment): Int = {
+    4 * (env.nparams + 1)
+  }
+
+  // def varOffset(env: VariableEnvironment): Int = {
+  //   val methodEnv = env.findEnclosingMethod()
+  //   val paramOffset = paramOffset(methodEnv)
+  //   val frameOffset = 4 * env.offset
+  //   paramOffset + frameOffset
+  // }
+
+  def methodASM(env: MethodEnvironment, bodyASM: ASM): ASM = {
+    val methDefLabel = methodDefinitionLabel(env)
+    val frameSize = 4 * env.varCount
+    val pOffset = paramOffset(env)
+    ASM(s"""global $methDefLabel
+           |$methDefLabel:
+           |mov ebp, esp ;; frame pointer <- stack pointer
+           |add ebp, $pOffset ;; move the frame pointer up for params
+           |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
+      bodyASM ++
+      ASM(s"""|.method_end:
+              |add esp, ${frameSize} ;; pop the frame
+              |ret
+              |""".stripMargin)
+  }
+
   def astASM(ast: Option[AST]): ASM = {
     ast match {
       case Some(ast: CompilationUnit) =>
@@ -172,40 +200,23 @@ object Joos1WCodeGen {
         classASM(cls)
       case Some(interfaceDeclaration: InterfaceDeclaration) =>
         interfaceASM(interfaceDeclaration)
-      case Some(meth: ConstructorDeclaration) =>
-        // TODO constructors
-        val env = meth.env.asInstanceOf[MethodEnvironment]
-        val methDefLabel = methodDefinitionLabel(env)
-        // TODO: arrays cannot depend on varCount, need frameSize or similar
-        val frameSize = env.varCount * 4
-        ASM(s"""global $methDefLabel
-                 |$methDefLabel:
-                 |push ebp  ;; push stack frame pointer
-                 |mov ebp, esp
-                 |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
-          MethodASM.methodASM(Some(meth.body)) ++
-          ASM(s"""|.method_end:
-                  |add esp, $frameSize ;; pop the frame
-                  |pop ebp   ;; pop stack frame pointer
-                  |ret
-                  |""".stripMargin)
+      case Some(const: ConstructorDeclaration) =>
+        val env = const.env.asInstanceOf[MethodEnvironment]
+        val bodyASM = MethodASM.methodASM(Some(const.children(1))) ++
+          ASM(s"""
+            | mov eax, [ebp] ;; constructor returns reference to obj
+          """.stripMargin)
+        val nparams = const.rawParameters.length
+        env.nparams = nparams
+        ASM(s";; constructor definition") ++
+          methodASM(env, bodyASM) ++ ASM(s";; constructor end")
       case Some(meth: MethodDeclaration) =>
         val env = meth.env.asInstanceOf[MethodEnvironment]
-        val methDefLabel = methodDefinitionLabel(env)
-        // TODO: arrays cannot depend on varCount, need frameSize or similar
-        val frameSize = env.varCount * 4
-        ASM(s"""global $methDefLabel
-               |$methDefLabel:
-               |push ebp  ;; push stack frame pointer
-               |mov ebp, esp
-               |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
-          MethodASM.methodASM(Some(meth.body)) ++
-          ASM(s"""
-               |.method_end:
-               |add esp, $frameSize ;; pop the frame
-               |pop ebp   ;; pop stack frame pointer
-               |ret
-               |""".stripMargin)
+        val bodyASM = MethodASM.methodASM(Some(meth.body))
+        val nparams = meth.header.get.parameters.length
+        env.nparams = nparams
+        ASM(s";; method definition") ++
+          methodASM(env, bodyASM) ++ ASM(s";; method end")
       case Some(fieldDeclaration: FieldDeclaration) =>
         // class fields are handled in classASM
         ASM("")
@@ -240,10 +251,12 @@ object Joos1WCodeGen {
         if (meth.identifier == "test") {
           val env = meth.env.asInstanceOf[MethodEnvironment]
           val methDefLabel = methodDefinitionLabel(env)
-          ASM(s"""
+          CommonASM.methodPrecall ++
+            ASM(s"""
                  |extern $methDefLabel
                  |call $methDefLabel
-                 |""".stripMargin)
+                 |""".stripMargin) ++
+            CommonASM.methodPostcall
         } else {
           ASM("")
         }
@@ -296,10 +309,13 @@ object Joos1WCodeGen {
       cls.myAst match {
         case c: ClassDeclaration =>
           val clsLabel = classLabel(cls)
-          acc ++ ASM(s"""
-                        |extern cls_init_$clsLabel
-                        |call cls_init_$clsLabel
-         """.stripMargin)
+          acc ++
+            CommonASM.methodPrecall ++
+            ASM(s"""
+                   |extern cls_init_$clsLabel
+                   |call cls_init_$clsLabel
+         """.stripMargin) ++
+            CommonASM.methodPostcall
         case i: InterfaceDeclaration =>
           // TODO: do interfaces have any initialization?
           acc
@@ -374,8 +390,9 @@ object Joos1WCodeGen {
       .foreach(pkgEnv => {
         classes = classes ++ pkgEnv.classTable.values
       })
-    mkMainASMFile(asts.head, classes) :: mkSubClassASMFile(classes) :: asts.map(
-      ast => mkASMFile(ast))
+    mkMainASMFile(asts.head, classes) ::
+      mkSubClassASMFile(classes) :: asts.map(ast => mkASMFile(ast))
+    // mkMainASMFile(asts.head, classes) :: asts.map(ast => mkASMFile(ast))
   }
 
   def resolveQualifiedName(

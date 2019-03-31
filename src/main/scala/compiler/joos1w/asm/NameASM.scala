@@ -21,7 +21,6 @@ object NameASM {
                 case field: FieldDeclaration =>
                   if (field.modifiers.contains("static")) {
                     val cls = vEnv.findEnclosingClass()
-                    // val clsLabel = Joos1WCodeGen.cl
                     val fieldLabel = Joos1WCodeGen.staticFieldLabel(vEnv)
                     asm = asm ++ ASM(s"""
                         |;; static field lookup
@@ -36,7 +35,7 @@ object NameASM {
                          |""".stripMargin)
                   }
                 case lvar: LocalVariableDeclaration =>
-                  val offset = vEnv.offset.get * 4
+                  val offset = 4 * vEnv.offset
                   asm = asm ++ ASM(s"""
                          |;; local variable lookup
                          |mov ebx, ebp     ;; ebx <- address of local variable

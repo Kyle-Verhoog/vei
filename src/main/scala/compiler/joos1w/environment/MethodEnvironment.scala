@@ -10,6 +10,7 @@ import scala.Boolean
 class MethodEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   var vtOffset: Option[Int] = None
+  var nparams = 0
 
   def signature: Signature = {
     myAst match {

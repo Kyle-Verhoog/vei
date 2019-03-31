@@ -16,13 +16,13 @@ object MethodASM {
   def methodASM(ast: Option[AST]): ASM = {
     ast match {
       case Some(methodBody: MethodBody) =>
-        if (methodBody.hasBody) methodASM(methodBody.leftChild) else ASM("")
+        methodASM(methodBody.leftChild)
       case Some(intAST: literals.IntegerLiteral) =>
         val intVal = intAST.integerValue
         ASM(s"mov eax, $intVal ;; integer literal")
       case Some(v: LocalVariableDeclaration) =>
         val env = v.env.asInstanceOf[VariableEnvironment]
-        val offset = env.offset.get * 4
+        val offset = env.offset * 4
         val declCode = methodASM(Some(v.variableDeclarator))
         ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
           declCode ++
@@ -96,7 +96,7 @@ object MethodASM {
              |mov [eax], ebx
            """.stripMargin)
       case Some(thisCall: ThisCall) =>
-        ASM(s"mov eax, [ebp - 0] ;; this reference")
+        ASM(s"mov eax, [ebp] ;; this reference")
       case Some(name: Name) =>
         NameASM.nameASM(Some(name))
       case Some(ast: AST) =>

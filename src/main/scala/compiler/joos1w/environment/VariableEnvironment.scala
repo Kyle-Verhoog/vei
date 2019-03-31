@@ -9,6 +9,7 @@ class VariableEnvironment(val myAst: AST,
                           parent: Option[GenericEnvironment],
                           var order: Int = 0)
     extends GenericEnvironment(myAst, parent) {
+
   def name: String = {
     myAst match {
       case ast: LocalVariableDeclaration => ast.name

@@ -13,7 +13,7 @@ class GenericEnvironment(val ast: AST,
   val childrenEnvironments: ListBuffer[GenericEnvironment] =
     ListBuffer[GenericEnvironment]()
   var varCount = 0
-  var offset: Option[Int] = None
+  var offset = 0
 
   // TODO consider having more specific tables that return specific AST types
   val classTable: mutable.HashMap[String, ClassEnvironment] =
@@ -38,7 +38,7 @@ class GenericEnvironment(val ast: AST,
         "Local variable: " + name + " already declared in current scope")
     }
     val method = findEnclosingMethod()
-    offset = Some(method.varCount)
+    offset = method.varCount
     method.varCount += 1
     variableTable += name -> env
     if (parentEnvironment.isDefined) parentEnvironment.get.verifyVariable(name)

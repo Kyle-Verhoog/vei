@@ -4,22 +4,25 @@ public class Basic {
 
   public Basic() {
     y = 10;
-    this.x = 15;
+    // this.x = 15;
   }
 
   public int basicMethod(int i, int y) {
-    return 3;
+    return i + y;
   }
 
-  public int basicStaticMethod(int i, int y) {
-    return 3;
+  public static int basicStaticMethod(int i, int j) {
+    return i + j;
   }
 
   public static int test() {
-    Basic b = new Basic();
+    // Basic b = new Basic();
+    // Basic e = new Basic();
+    // Basic e = new Basic();
     // int i = b.basicMethod(1, 2);
-    int i = b.y;
-    int j = b.x;
+    int i = basicStaticMethod(1, 2);
+    // int i = b.y;
+    // int j = b.x;
     return i;
   }
 }
