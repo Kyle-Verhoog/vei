@@ -44,12 +44,19 @@ object CommonASM {
         val str = strAST.value
         val strLabel = genStrLitLabel
 
-        val strASM = str
-          .drop(1)
-          .dropRight(1)
-          .foldLeft("")((acc, c) => {
-            acc ++ s"dd ${c.toInt}\n"
-          })
+        val newString = str.drop(1).dropRight(1)
+        var strASM = ""
+
+        var i = 0
+        while (i < newString.length) {
+          if (newString(i) != '\\') {
+            strASM += s"dd ${newString(i).toInt}\n"
+          } else {
+            strASM += s"dd ${Joos1WCodeGen.stringToChar(''' + newString.substring(i, i + 2) + ''').toInt}\n"
+            i += 1
+          }
+          i += 1
+        }
         new ASM(
           text = s"""
                |mov eax, $strLabel
@@ -365,3 +372,4 @@ object CommonASM {
     }
   }
 }
+
