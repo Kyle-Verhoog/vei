@@ -12,8 +12,8 @@ object StatementASM {
 
   def whileStatementASM(stmt: WhileStatement): ASM = {
     val myCounter = incrementAndReturnCounter
-    val conditionCode = MethodASM.methodASM(Some(stmt.expr))
-    val bodyCode = MethodASM.methodASM(Some(stmt.body))
+    val conditionCode = MethodASM.methodASM(Some(stmt.expr), lvalue = false)
+    val bodyCode = MethodASM.methodASM(Some(stmt.body), lvalue = false)
 
     ASM(s"""
            |;; While ( ${stmt.expr} )
@@ -31,10 +31,13 @@ object StatementASM {
   def forStatementASM(stmt: ForStatement): ASM = {
     val myCounter = incrementAndReturnCounter
 
-    val initializationCode = MethodASM.methodASM(Some(stmt.initialization))
-    val terminationCode = MethodASM.methodASM(Some(stmt.termination))
-    val incrementCode = MethodASM.methodASM(Some(stmt.increment))
-    val bodyCode = MethodASM.methodASM(Some(stmt.body))
+    val initializationCode =
+      MethodASM.methodASM(Some(stmt.initialization), lvalue = false)
+    val terminationCode =
+      MethodASM.methodASM(Some(stmt.termination), lvalue = false)
+    val incrementCode =
+      MethodASM.methodASM(Some(stmt.increment), lvalue = false)
+    val bodyCode = MethodASM.methodASM(Some(stmt.body), lvalue = false)
 
     ASM(
       s";; FOR ( ${stmt.initialization} ${stmt.termination} ${stmt.increment} )") ++
@@ -65,8 +68,9 @@ object StatementASM {
     children.head match {
       case child: IfStatement =>
         val myCounter = incrementAndReturnCounter
-        val conditionCode = MethodASM.methodASM(Some(child.expr))
-        val bodyCode = MethodASM.methodASM(Some(child.body))
+        val conditionCode =
+          MethodASM.methodASM(Some(child.expr), lvalue = false)
+        val bodyCode = MethodASM.methodASM(Some(child.body), lvalue = false)
         val elseCode = ifStatementChildrenASM(children.tail)
 
         ASM(s";; IF ( ${child.expr} )") ++
@@ -86,7 +90,7 @@ object StatementASM {
         if (children.length > 1)
           throw new RuntimeException(
             "Encountered non if statement child in the middle of an if statement list")
-        MethodASM.methodASM(Some(child))
+        MethodASM.methodASM(Some(child), lvalue = false)
     }
   }
 

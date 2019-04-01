@@ -124,7 +124,8 @@ object Joos1WCodeGen {
        """.stripMargin)
     fields.foreach(f => {
       val fieldCode =
-        astASM(Some(f.myAst.asInstanceOf[FieldDeclaration].variableDeclarator))
+        astASM(Some(f.myAst.asInstanceOf[FieldDeclaration].variableDeclarator),
+               false)
       val fieldLabel = staticFieldLabel(f)
       initCode = initCode ++ ASM(";; Initializing field")
       initCode = initCode ++
@@ -155,7 +156,7 @@ object Joos1WCodeGen {
            |dd $clsSubClsLabel
            |dd ${4 * clsEnv.subClsTableOffset}
            |""".stripMargin) ++
-      astASM(Some(cls.getClassBody)) ++
+      astASM(Some(cls.getClassBody), false) ++
       initCode
   }
 
@@ -220,12 +221,12 @@ object Joos1WCodeGen {
           """.stripMargin)
   }
 
-  def astASM(ast: Option[AST]): ASM = {
+  def astASM(ast: Option[AST], lvalue: Boolean): ASM = {
     ast match {
       case Some(ast: CompilationUnit) =>
-        astASM(ast.typeDeclaration)
+        astASM(ast.typeDeclaration, lvalue)
       case Some(ast: TypeDeclaration) =>
-        astASM(ast.leftChild)
+        astASM(ast.leftChild, lvalue)
       case Some(cls: ClassDeclaration) =>
         classASM(cls)
       case Some(interfaceDeclaration: InterfaceDeclaration) =>
@@ -233,7 +234,8 @@ object Joos1WCodeGen {
       case Some(const: ConstructorDeclaration) =>
         val env = const.env.asInstanceOf[MethodEnvironment]
         val objRefOffset = 4 * env.paramCount
-        val bodyASM = MethodASM.methodASM(Some(const.children(1))) ++
+        val bodyASM = MethodASM.methodASM(Some(const.children(1)),
+                                          lvalue = false) ++
           ASM(s"""
             | mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
           """.stripMargin)
@@ -243,7 +245,7 @@ object Joos1WCodeGen {
           methodASM(env, bodyASM) ++ ASM(s";; constructor end")
       case Some(meth: MethodDeclaration) =>
         val env = meth.env.asInstanceOf[MethodEnvironment]
-        val bodyASM = MethodASM.methodASM(Some(meth.body))
+        val bodyASM = MethodASM.methodASM(Some(meth.body), lvalue = false)
         val nparams = meth.header.get.parameters.length
         env.nparams = nparams // + 1 for implicit this reference
         ASM(s";; method definition") ++
@@ -255,17 +257,17 @@ object Joos1WCodeGen {
         astList.fieldName match {
           case "class_body_declarations" =>
             astList.children.foldLeft(ASM(""))((acc, ast) =>
-              acc ++ astASM(Some(ast)))
+              acc ++ astASM(Some(ast), lvalue))
           case s =>
             throw new MatchError(
               s"astASM match error on ASTList $s ${astList.parent.get.parent.get.toStrTree}")
         }
       case Some(name: Name) =>
         // resolve a name when initializing fields
-        NameASM.nameASM(Some(name))
+        NameASM.nameASM(Some(name), lvalue = false)
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH astASM on $ast")
-        CommonASM.commonASM(Some(ast), astASM)
+        CommonASM.commonASM(Some(ast), astASM, lvalue = false)
       case _ => throw new MatchError(s"methodAST match error on $ast")
     }
   }
@@ -405,7 +407,7 @@ object Joos1WCodeGen {
   }
 
   def mkASMFile(ast: AST): ASMFile = {
-    ASMFile(fileName(Some(ast)), astASM(Some(ast))._code)
+    ASMFile(fileName(Some(ast)), astASM(Some(ast), lvalue = false)._code)
   }
 
   def mkSubClassASMFile(classes: List[ClassEnvironment]): ASMFile = {

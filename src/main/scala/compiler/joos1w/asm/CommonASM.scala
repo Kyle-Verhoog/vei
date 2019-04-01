@@ -22,9 +22,9 @@ object CommonASM {
     counter
   }
 
-  //def procedureCall(objRef: ASM, params: List[AST]): ASM = {}
-
-  def commonASM(ast: Option[AST], recurseMethod: Option[AST] => ASM): ASM = {
+  def commonASM(ast: Option[AST],
+                recurseMethod: (Option[AST], Boolean) => ASM,
+                lvalue: Boolean): ASM = {
     ast match {
       case Some(intAST: literals.IntegerLiteral) =>
         val intVal = intAST.integerValue
@@ -57,37 +57,46 @@ object CommonASM {
           }
           i += 1
         }
+
+        // TODO: these are hardcoded values for the String class
+        val clsSize = 4 * (1 + 1)
+        val clsLabel = "java_lang_String"
         new ASM(
           text = s"""
-               |mov eax, $strLabel
-               |
-               |push eax ;; push something in place of obj ref
+               |mov eax, $clsSize
+               |call __malloc
+               |mov ebx, $clsLabel ;; store class pointer as first item in obj
+               |mov [eax], ebx
+               |push eax ;; push obj ref to new string as arg
+               |;; push char array literal as argument to string constructor
+               |mov eax, $strLabel ;; string literal $str
                |push eax ;; push the char array argument
                |call java_lang_String_String_char__
                |add esp, 8
+               |;; eax has obj pointer
              """.stripMargin,
           data = s"""
               |$strLabel: dd ${str.length - 2} ;; char array for string literal
               |dd 0
               |$strASM
-              |;; TODO call string constructor
             """.stripMargin
         )
       case Some(vd: VariableDeclarator) =>
         ASM(s";; variable declaration $vd") ++
-          commonASM(Some(vd.expression), recurseMethod)
+          commonASM(Some(vd.expression), recurseMethod, lvalue)
       case Some(expr: ConditionalExpression) =>
-        ExpressionASM.conditionalExpressionASM(expr, recurseMethod)
+        ExpressionASM.conditionalExpressionASM(expr, recurseMethod, lvalue)
       case Some(expr: GeneralExpression) =>
-        ExpressionASM.generalExpressionASM(expr, recurseMethod)
+        ExpressionASM.generalExpressionASM(expr, recurseMethod, lvalue)
       case Some(expr: UnaryExpression) =>
-        ExpressionASM.unaryExpressionASM(expr, recurseMethod)
+        ExpressionASM.unaryExpressionASM(expr, recurseMethod, lvalue)
       case Some(castExpression: CastExpression) =>
         // TODO widening for numeric types
         // TODO handle casting arrays
 
         val myCounter = incrementAndReturnCounter
-        val codeBeingCast = MethodASM.methodASM(Some(castExpression.beingCast))
+        val codeBeingCast =
+          MethodASM.methodASM(Some(castExpression.beingCast), lvalue)
 
         var typeCastTo = if (castExpression.simpleType.isDefined) {
           types.buildTypeFromString(castExpression.simpleType.get,
@@ -169,7 +178,7 @@ object CommonASM {
           val name = new Name(baseName)
           name.env = methodInvocation.env
           ASM(s";; Find base object/field for method invocation") ++
-            NameASM.nameASM(Some(name)) ++
+            NameASM.nameASM(Some(name), lvalue) ++
             ASM(s"push eax ;; push obj reference as arg")
         }
 
@@ -179,7 +188,7 @@ object CommonASM {
         val argPushCode =
           params
             .map(param => {
-              commonASM(Some(param), recurseMethod) ++
+              commonASM(Some(param), recurseMethod, lvalue) ++
                 ASM(s"push eax ;; push param $param")
             })
             .fold(ASM(""))(_ ++ _)
@@ -205,17 +214,18 @@ object CommonASM {
           argPopCode
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
-        val arrayPointer = MethodASM.methodASM(Some(arrayAccess.primary))
-        val index = MethodASM.methodASM(Some(arrayAccess.expression))
+        val arrayPointer =
+          MethodASM.methodASM(Some(arrayAccess.primary), lvalue)
+        val index = MethodASM.methodASM(Some(arrayAccess.expression), lvalue)
         ASM(s"""
                |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
                |""") ++
           arrayPointer ++
           ASM(s"""
-               |;; the pointer to the array is now in ebx, first we check index bounds
-               |mov ebx, [ebx]
-               |push ebx ;; store array pointer
-               |mov eax, [ebx] ;; get array size
+               |;; the pointer to the array is now in eax, first we check index bounds
+               |;; mov ebx, [ebx]
+               |push eax ;; store array pointer
+               |mov eax, [eax] ;; get array size
                |push eax ;; store array size""") ++
           index ++
           ASM(s"""
@@ -234,7 +244,16 @@ object CommonASM {
                |add edx, 2 ;; add offset for array metadata
                |imul edx, 4
                |add ebx, edx,
-               |mov eax, [ebx]""")
+               |;; ebx has &array[index]
+               |;; [ebx] has array[index]""") ++ (if (lvalue) {
+                                                    ASM(s"""
+               | mov eax, ebx ;; eax <- &array[index]
+           """.stripMargin)
+                                                  } else {
+                                                    ASM(s"""
+               | mov eax, [ebx] ;; eax <- array[index]
+           """.stripMargin)
+                                                  })
       case Some(classInstanceCreation: ClassInstanceCreation) =>
         /**
           * Instances have the following form
@@ -257,7 +276,7 @@ object CommonASM {
           params
             .map(param => {
               ASM(s";; Parameter $param") ++
-                commonASM(Some(param), recurseMethod) ++
+                commonASM(Some(param), recurseMethod, lvalue) ++
                 ASM("push eax")
             })
             .fold(ASM(""))(_ ++ _)
@@ -274,14 +293,14 @@ object CommonASM {
                |call __malloc
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
-               |mov edx, eax  ;; store object location in edx to use later TODO?
-               |push edx ;; save object pointer
                |;; pass arguments to constructor
+               |push edx ;;  object pointer
                |""".stripMargin) ++
           argPushCode ++
           ASM(s"""
                |call $consLabel ;; Constructor should return obj pointer in eax
                |;; end class instance creation
+               |;; eax has obj pointer
            """.stripMargin) ++
           argPopCode
       case Some(arrayCreationExpression: ArrayCreationExpression) =>
@@ -296,7 +315,8 @@ object CommonASM {
           case _                 => None
         }
 
-        val arraySize = MethodASM.methodASM(Some(arrayCreationExpression.expr))
+        val arraySize =
+          MethodASM.methodASM(Some(arrayCreationExpression.expr), lvalue)
 
         var assembly =
           ASM(s"""
@@ -333,14 +353,25 @@ object CommonASM {
               .asInstanceOf[VariableEnvironment]
             val fieldOffset = 4 * (fieldEnv.order + 1)
             val primaryAST =
-              CommonASM.commonASM(Some(fieldAccess.primary), recurseMethod)
-            primaryAST ++
-              ASM(s"""
-                   |;; Instance field access
-                   |;; assume ebx has address of object for field
-                   |add ebx, $fieldOffset ;; ebx <- addr of ${fieldAccess.identifier}
-                   |mov eax, [ebx] ;; eax <- ${fieldAccess.identifier}
-                   |""".stripMargin)
+              CommonASM.commonASM(Some(fieldAccess.primary),
+                                  recurseMethod,
+                                  lvalue)
+            if (lvalue) {
+              primaryAST ++
+                ASM(s"""
+                       |;; lvalue instance field access
+                       |;; assume eax has address of object for field
+                       |add eax, $fieldOffset ;; eax <- addr of ${fieldAccess.identifier}
+                       |""".stripMargin)
+            } else {
+              primaryAST ++
+                ASM(s"""
+                       |;; rvalue instance field access
+                       |;; assume eax has address of object for field
+                       |add eax, $fieldOffset ;; eax <- addr of ${fieldAccess.identifier}
+                       |mov eax, [eax] ;; eax <- ${fieldAccess.identifier}
+                       |""".stripMargin)
+            }
           case stringType: StringType =>
             ASM(s"""
                  |;; TODO string field access ${fieldAccess.identifier} ${fieldAccess.primary}
@@ -358,12 +389,10 @@ object CommonASM {
         val methodEnv = thisCall.env.findEnclosingMethod()
         val offset = 4 * methodEnv.paramCount
         ASM(s"""
-             | ;; mov ebx, ebp
-             | ;; add ebx, $offset
-             | mov ebx, [ebp + $offset] ;; ebx <- address of "this" obj reference
+             | mov eax, [ebp + $offset] ;; eax <- address of "this" obj reference
            """.stripMargin)
       case Some(name: Name) =>
-        recurseMethod(Some(name))
+        recurseMethod(Some(name), lvalue)
       case Some(_: Empty) => ASM("")
       case Some(ast: AST) =>
         throw new MatchError(s"commonASM match error on $ast ${ast.toStrTree}")
@@ -372,4 +401,3 @@ object CommonASM {
     }
   }
 }
-

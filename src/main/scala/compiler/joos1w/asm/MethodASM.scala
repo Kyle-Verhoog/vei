@@ -13,17 +13,17 @@ object MethodASM {
     counter
   }
 
-  def methodASM(ast: Option[AST]): ASM = {
+  def methodASM(ast: Option[AST], lvalue: Boolean): ASM = {
     ast match {
       case Some(methodBody: MethodBody) =>
-        methodASM(methodBody.leftChild)
+        methodASM(methodBody.leftChild, lvalue)
       case Some(intAST: literals.IntegerLiteral) =>
         val intVal = intAST.integerValue
         ASM(s"mov eax, $intVal ;; integer literal")
       case Some(v: LocalVariableDeclaration) =>
         val env = v.env.asInstanceOf[VariableEnvironment]
         val offset = 4 * env.localVarOffset
-        val declCode = methodASM(Some(v.variableDeclarator))
+        val declCode = methodASM(Some(v.variableDeclarator), lvalue)
         ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
           declCode ++
           ASM(s"mov [ebp - $offset], eax ;; assign variable ${v.name}")
@@ -31,14 +31,14 @@ object MethodASM {
         astList.fieldName match {
           case "block_statements" =>
             astList.children.foldLeft(ASM(""))((acc, ast) =>
-              acc ++ methodASM(Some(ast)))
+              acc ++ methodASM(Some(ast), lvalue))
           case _ =>
             throw new MatchError(s"methodASM match error on ASTList $ast")
         }
       case Some(stmt: TopLevelIf) =>
         StatementASM.topLevelIfStatementASM(stmt)
       case Some(retAST: Return) =>
-        val exprCode = methodASM(Some(retAST.expr()))
+        val exprCode = methodASM(Some(retAST.expr()), lvalue)
         ASM(s";; return ${retAST.expr()}") ++
           exprCode ++
           ASM("jmp .method_end")
@@ -48,8 +48,8 @@ object MethodASM {
         StatementASM.whileStatementASM(whileStatement)
       case Some(assignment: Assignment) =>
         val myCounter = incrementAndReturnCounter
-        val lhsCode = methodASM(Some(assignment.getLHS))
-        val rhsCode = methodASM(Some(assignment.getRHS))
+        val lhsCode = methodASM(Some(assignment.getLHS), lvalue = true)
+        val rhsCode = methodASM(Some(assignment.getRHS), lvalue = false)
 
         val subTypeCheckCode =
           assignment.getLHS match {
@@ -64,8 +64,9 @@ object MethodASM {
                 case ttype @ ((_: StringType) | (_: CustomType)) =>
                   ASM(s"""
                        |;; perform array access sub type check
-                       |mov ecx, [ebx]
-                       |mov ecx, [ecx + 4] ;; get addr to subclass table for rhs
+                       |;; assume address to array is in eax
+                       |;; mov ecx, [ebx]
+                       |mov ecx, [eax + 4] ;; get addr to subclass table for rhs
                        |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
                        |mov ebx, [edx]
                        |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
@@ -98,8 +99,9 @@ object MethodASM {
                   case ttype @ ((_: StringType) | (_: CustomType)) =>
                     ASM(s"""
                          |;; perform array access sub type check
-                         |mov ecx, [ebx]
-                         |mov ecx, [ecx + 4] ;; get addr to subclass table for rhs
+                         |;; assume address to array is in eax
+                         |;; mov ecx, [ebx]
+                         |mov ecx, [eax + 4] ;; get addr to subclass table for rhs
                          |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
                          |mov ebx, [edx]
                          |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
@@ -108,10 +110,7 @@ object MethodASM {
                          |mov eax, 0xffffffff
                          |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                          |je .array_subclass_check_pass${myCounter}
-
-
                          |.array_subclass_check_pass${myCounter}
-:
                          |pop eax ;; restore rhs value, finished
                 e check
            """.stripMargin)
@@ -125,23 +124,23 @@ object MethodASM {
         ASM(s";; ${assignment.getLHS} := ${assignment.getRHS}") ++
           ASM(s";; := eval lhs") ++
           lhsCode ++
-          ASM(s";; := saving lhs") ++
-          ASM(s"push ebx") ++
+          ASM(s"push eax ;; assignment: pushing lhs l-value to stack") ++
           ASM(s";; := eval rhs") ++
           rhsCode ++
-          ASM(s""";; := eax has rhs, ebx has rhs pointer""") ++
+          ASM(
+            s""";; := eax has rhs value (addr for obj, value for prim), ebx has rhs pointer (to stack addr)""") ++
           subTypeCheckCode ++
           ASM(s";; lhs := rhs") ++
           ASM(s"""
-             |mov ebx, eax
-             |pop eax
-             |mov [eax], ebx
+             |;; assignment: assume value from rhs in eax
+             |pop ebx         ;; assignment: popping lhs from stack
+             |mov [ebx], eax  ;; assignment: storing rhs value into lhs
            """.stripMargin)
       case Some(name: Name) =>
-        NameASM.nameASM(Some(name))
+        NameASM.nameASM(Some(name), lvalue)
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH methodASM on $ast")
-        CommonASM.commonASM(Some(ast), MethodASM.methodASM)
+        CommonASM.commonASM(Some(ast), MethodASM.methodASM, lvalue)
       case None => ASM("")
       case _    => throw new MatchError(s"methodASM match error on $ast")
     }

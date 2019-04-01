@@ -14,11 +14,12 @@ object ExpressionASM {
   }
 
   def generalExpressionASM(expr: GeneralExpression,
-                           recurseMethod: Option[AST] => ASM): ASM = {
+                           recurseMethod: (Option[AST], Boolean) => ASM,
+                           lvalue: Boolean): ASM = {
     expr.operation match {
       case Some(op) =>
-        val expr1Code = recurseMethod(Some(expr.firstExpr))
-        val expr2Code = recurseMethod(Some(expr.secondExpr))
+        val expr1Code = recurseMethod(Some(expr.firstExpr), lvalue)
+        val expr2Code = recurseMethod(Some(expr.secondExpr), lvalue)
         op match {
           case "+" =>
             ASM(s";; begin ${expr.firstExpr} + ${expr.secondExpr}") ++
@@ -135,8 +136,9 @@ object ExpressionASM {
   }
 
   def unaryExpressionASM(expr: UnaryExpression,
-                         recurseMethod: Option[AST] => ASM): ASM = {
-    val exprCode = recurseMethod(Some(expr.subExpression))
+                         recurseMethod: (Option[AST], Boolean) => ASM,
+                         lvalue: Boolean): ASM = {
+    val exprCode = recurseMethod(Some(expr.subExpression), lvalue)
 
     expr.operator match {
       case "!" =>
@@ -157,11 +159,12 @@ object ExpressionASM {
   }
 
   def conditionalExpressionASM(expr: ConditionalExpression,
-                               recurseMethod: Option[AST] => ASM): ASM = {
+                               recurseMethod: (Option[AST], Boolean) => ASM,
+                               lvalue: Boolean): ASM = {
     expr.operator match {
       case op =>
-        val expr1Code = recurseMethod(Some(expr.firstExpr))
-        val expr2Code = recurseMethod(Some(expr.secondExpr))
+        val expr1Code = recurseMethod(Some(expr.firstExpr), lvalue)
+        val expr2Code = recurseMethod(Some(expr.secondExpr), lvalue)
         op match {
           case "!=" =>
             val myCounter = incrementAndReturnCounter
