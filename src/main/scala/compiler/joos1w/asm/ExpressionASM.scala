@@ -22,6 +22,15 @@ object ExpressionASM {
         val expr2Code = recurseMethod(Some(expr.secondExpr), lvalue)
         op match {
           case "+" =>
+            val lhsType = environment.determineType(expr.firstExpr, expr.env)
+            val rhsType = environment.determineType(expr.secondExpr, expr.env)
+
+            if (lhsType.isString || rhsType.isString) { // handle string addition
+              // determine which one is a string
+              // for the other one break into cases: String, Primitive, Object
+              // TODO
+            }
+
             ASM(s";; begin ${expr.firstExpr} + ${expr.secondExpr}") ++
               expr1Code ++
               ASM("push eax") ++
