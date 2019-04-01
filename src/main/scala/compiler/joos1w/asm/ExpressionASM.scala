@@ -22,7 +22,6 @@ object ExpressionASM {
 
   def getStringValueOfMethodLabel(ttype: AbstractType): String = {
     ttype match {
-      case ttype: CharType    => "java_lang_String_valueOf_short"
       case ttype: IntType     => "java_lang_String_valueOf_int"
       case ttype: CharType    => "java_lang_String_valueOf_char"
       case ttype: ShortType   => "java_lang_String_valueOf_short"
