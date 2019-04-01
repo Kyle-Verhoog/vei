@@ -51,6 +51,26 @@ object ExpressionASM {
                  |imul eax, ebx
                  |;; end ${expr.firstExpr} * ${expr.secondExpr}
                  |""".stripMargin)
+          case "&" =>
+            ASM(s";; ${expr.firstExpr} & ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
+                     |pop ebx
+                     |and eax, ebx
+                     |;; end ${expr.firstExpr} * ${expr.secondExpr}
+                     |""".stripMargin)
+          case "|" =>
+            ASM(s";; ${expr.firstExpr} | ${expr.secondExpr}") ++
+              expr1Code ++
+              ASM("push eax") ++
+              expr2Code ++
+              ASM(s"""
+                     |pop ebx
+                     |or eax, ebx
+                     |;; end ${expr.firstExpr} * ${expr.secondExpr}
+                     |""".stripMargin)
           case "/" =>
             ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
               expr1Code ++
