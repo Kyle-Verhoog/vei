@@ -135,8 +135,6 @@ object MethodASM {
              |pop eax
              |mov [eax], ebx
            """.stripMargin)
-      case Some(thisCall: ThisCall) =>
-        ASM(s"mov eax, [ebp] ;; this reference")
       case Some(name: Name) =>
         NameASM.nameASM(Some(name))
       case Some(ast: AST) =>

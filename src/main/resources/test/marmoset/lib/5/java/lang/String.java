@@ -14,7 +14,7 @@ public class String {
     }
     public String(char[] chars) {
         this.chars = new char[chars.length];
-        for(int i = 0; i < chars.length; i = i + 1) this.chars[i] = chars[i];
+        for(int k = 0; k < chars.length; k = k + 1) this.chars[k] = chars[k];
     }
     public String(String other) {
         this.chars = other.chars;

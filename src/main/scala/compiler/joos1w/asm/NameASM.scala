@@ -12,6 +12,11 @@ object NameASM {
         Joos1WCodeGen
           .resolveQualifiedName(name.name, name.env)
           .foreach({
+            case lEnv: LengthEnvironmentt =>
+              asm = asm ++ ASM(s""";; array length field lookup
+                   |;; assume array start in ebx
+                   |mov eax, [eax] ;; eax <- length of array
+                   |""".stripMargin)
             case vEnv: VariableEnvironment =>
               vEnv.myAst match {
                 case field: FieldDeclaration =>
@@ -34,7 +39,7 @@ object NameASM {
                 case lvar: LocalVariableDeclaration =>
                   val offset = 4 * vEnv.localVarOffset
                   asm = asm ++ ASM(s"""
-                         |;; local variable lookup
+                         |;; local variable lookup "${lvar.name}"
                          |mov ebx, ebp     ;; ebx <- address of local variable
                          |sub ebx, $offset
                          |mov eax, [ebx]   ;; eax <- value of local variable
@@ -42,12 +47,14 @@ object NameASM {
                 case fparam: FormalParameter =>
                   val offset = 4 * vEnv.fpOffset
                   asm = asm ++ ASM(s"""
-                                      |;; formal param lookup
-                                      |mov ebx, ebp     ;; ebx <- address of local variable
+                                      |;; formal param lookup "${fparam.name}"
+                                      |mov ebx, ebp     ;; ebx <- address of param "${fparam.name}"
                                       |add ebx, $offset
-                                      |mov eax, [ebx]   ;; eax <- value of local variable
+                                      |mov eax, [ebx]   ;; eax <- value of param "${fparam.name}"
                                       | """.stripMargin)
-                case x => asm = asm ++ ASM(s";; TODO? ${x}")
+                case x =>
+                  asm = asm ++ ASM(
+                    s";; TODO? resolveQualifiedName gave ${x} for ${name.name}")
               }
             case clsEnv: ClassEnvironment =>
               val label = Joos1WCodeGen.classLabel(clsEnv)
@@ -56,50 +63,6 @@ object NameASM {
               asm = asm ++ ASM(s";; TODO $name codegen")
           })
         asm
-      /*
-        if (name.name.contains(".")) {
-          ASM(
-            s";; TODO field/qualified name lookup - could not find basename ${name.name}")
-        } else {
-          name.env.serarchForVariable(name.name) match {
-            case Some(v: VariableEnvironment) =>
-              v.myAst match {
-                case field: FieldDeclaration =>
-                  if (field.modifiers.contains("static")) {
-                    val fieldLabel = Joos1WCodeGen.staticFieldLabel(
-                      field.env.asInstanceOf[VariableEnvironment])
-                    ASM(
-                      s"""mov ebx, $fieldLabel     ;; ebx := &field ${name.name}
-                         | mov eax, [ebx] ;; eax := *field ${name.name}
-                         | """.stripMargin)
-                  } else {
-                    ASM(s";; TODO non-static fieldssss")
-                  }
-                case localVar: LocalVariableDeclaration =>
-                  if (v.offset.isDefined) {
-                    val offset = v.offset.get * 4
-                    ASM(s"""mov ebx, ebp     ;; ebx := &var ${name.name}
-                         |  sub ebx, $offset
-                         |  mov eax, [ebx] ;; eax := *var ${name.name}
-                         |  """.stripMargin)
-                  } else {
-                    throw new RuntimeException(s"OFFSET NOT DEFINED")
-                  }
-                case formalParameter: FormalParameter =>
-                  ASM(s"""
-                       |;; TODO formal parameters
-                     """.stripMargin)
-                case _ =>
-                  throw new RuntimeException(
-                    s"NameASM match error VariableEnv ${v.myAst}")
-              }
-            case None =>
-              ASM(
-                s";; TODO field/qualified name lookup - could not find ${name.name}")
-          }
-        }
-       */
-      case _ => throw new RuntimeException(s"NameASM match error $ast")
     }
   }
 }

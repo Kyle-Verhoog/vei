@@ -11,14 +11,15 @@ public class Basic {
   // }
 
   public static int test() {
-    Basic b1 = new Basic(3);
-    b1.x = 5;
-    Basic b2 = new Basic(3);
-    b2.x = 10;
+    // Basic b1 = new Basic(3);
+    // b1.x = 5;
+    // Basic b2 = new Basic(3);
+    // b2.x = 10;
 
-    int y = 3;
-    // System.out.println("3");
+    // int y = 3;
+    System.out.println(3);
     // return b.y;
-    return b1.x + b2.x;
+    // return b1.x + b2.x;
+    return 3;
   }
 }

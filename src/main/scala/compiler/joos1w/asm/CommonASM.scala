@@ -4,7 +4,7 @@ import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
 import compiler.joos1w.environment.environment.determineType
-import compiler.joos1w.environment.types.{ArrayType, CustomType, StringType}
+import compiler.joos1w.environment.types._
 
 object CommonASM {
   var strCount = 0
@@ -298,7 +298,44 @@ object CommonASM {
 
         assembly
       case Some(fieldAccess: FieldAccess) =>
-        ASM(s";; TODO field access")
+        environment.determineType(fieldAccess.primary, fieldAccess.env) match {
+          case customType: CustomType =>
+            val clsEnv = customType.env
+            val fieldEnv = clsEnv.containSet
+              .get(fieldAccess.identifier, None)
+              .get
+              .asInstanceOf[VariableEnvironment]
+            val fieldOffset = 4 * (fieldEnv.order + 1)
+            val primaryAST =
+              CommonASM.commonASM(Some(fieldAccess.primary), recurseMethod)
+            primaryAST ++
+              ASM(s"""
+                   |;; Instance field access
+                   |;; assume ebx has address of object for field
+                   |add ebx, $fieldOffset ;; ebx <- addr of ${fieldAccess.identifier}
+                   |mov eax, [ebx] ;; eax <- ${fieldAccess.identifier}
+                   |""".stripMargin)
+          case stringType: StringType =>
+            ASM(s"""
+                 |;; TODO string field access ${fieldAccess.identifier} ${fieldAccess.primary}
+               """.stripMargin)
+          case arrayType: ArrayType =>
+            ASM(s"""
+                 |;; TODO array field access ${fieldAccess.identifier} ${fieldAccess.primary}
+               """.stripMargin)
+          case x =>
+            ASM(s"""
+                 |;; TODO other field access ${fieldAccess.identifier} ${fieldAccess.primary}
+               """.stripMargin)
+        }
+      case Some(thisCall: ThisCall) =>
+        val methodEnv = thisCall.env.findEnclosingMethod()
+        val offset = 4 * methodEnv.paramCount
+        ASM(s"""
+             | ;; mov ebx, ebp
+             | ;; add ebx, $offset
+             | mov ebx, [ebp + $offset] ;; ebx <- address of "this" obj reference
+           """.stripMargin)
       case Some(name: Name) =>
         recurseMethod(Some(name))
       case Some(_: Empty) => ASM("")

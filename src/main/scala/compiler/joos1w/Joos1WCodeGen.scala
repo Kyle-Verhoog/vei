@@ -213,6 +213,13 @@ object Joos1WCodeGen {
     }
   }
 
+  def objRefOffset(methodEnv: MethodEnvironment): ASM = {
+    val objRefOffset = 4 * methodEnv.paramCount
+    ASM(s"""
+           | mov eax, [ebp + $objRefOffset] ;; reference to obj
+          """.stripMargin)
+  }
+
   def astASM(ast: Option[AST]): ASM = {
     ast match {
       case Some(ast: CompilationUnit) =>
