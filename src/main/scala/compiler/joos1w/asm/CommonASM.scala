@@ -35,12 +35,9 @@ object CommonASM {
              """.stripMargin)
         else ASM("mov eax, 0 ;; eax := false")
       case Some(charAST: literals.CharacterLiteral) =>
-        val charIntVal = charAST.value match {
-          case "'\\n'" => 10
-          case _       => charAST.value.charAt(1).toInt
-        }
+        val charIntVal = Joos1WCodeGen.stringToChar(charAST.value).toInt
         ASM(
-          s"mov eax, $charIntVal ;; eax := char literal here ${charAST.value} ${charAST.value.toCharArray}")
+          s"mov eax, $charIntVal ;; eax := char literal here ${charAST.value}")
       case Some(nullAST: literals.NullLiteral) =>
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>

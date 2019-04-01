@@ -8,6 +8,8 @@ public class Basic {
   // }
 
   public static int test() {
+    System.out.println(12345);
+    /*
     int i = 12345;
     char[] ret = new char[15];
     int j = 0;
@@ -21,7 +23,6 @@ public class Basic {
       j = j + 1;
     } else {
       while(i > 0) {
-        System.out.println(i);
         int d = i % 10;
         i = i / 10;
         ret[j] = (char) (d + '0');
@@ -34,6 +35,7 @@ public class Basic {
     }
     char[] ret2 = new char[j];
     for(i = 0; i < j; i = i + 1) ret2[i] = ret[j-1-i];
+    */
     return 0;
   }
 }

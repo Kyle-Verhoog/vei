@@ -489,15 +489,15 @@ object Joos1WCodeGen {
 
   def stringToChar(str: String): Char = {
     str match {
-      case "'\''" => '\''
-      case "'\"'" => '\"'
-      case "'\\'" => '\\'
-      case "'\n'" => '\n'
-      case "'\r'" => '\r'
-      case "'\t'" => '\t'
-      case "'\b'" => '\b'
-      case "'\f'" => '\f'
-      case "'\0'" => '\0'
+      case "'\\''"  => '\''
+      case "'\\\"'" => '\"'
+      case "'\\\'"  => '\\'
+      case "'\\n'"  => '\n'
+      case "'\\r'"  => '\r'
+      case "'\\t'"  => '\t'
+      case "'\\b'"  => '\b'
+      case "'\\f'"  => '\f'
+      case "'\\0'"  => '\0'
       case _ => {
         if (str.length != 3) {
           throw new RuntimeException(
