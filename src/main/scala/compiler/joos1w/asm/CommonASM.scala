@@ -43,10 +43,27 @@ object CommonASM {
       case Some(strAST: literals.StringLiteral) =>
         val str = strAST.value
         val strLabel = genStrLitLabel
+
+        val strASM = str
+          .drop(1)
+          .dropRight(1)
+          .foldLeft("")((acc, c) => {
+            acc ++ s"dd ${c.toInt}\n"
+          })
         new ASM(
-          text = s"mov eax, $strLabel",
+          text = s"""
+               |mov eax, $strLabel
+               |
+               |push eax ;; push something in place of obj ref
+               |push eax ;; push the char array argument
+               |call java_lang_String_String_char__
+               |add esp, 8
+             """.stripMargin,
           data = s"""
-              | $strLabel: db $str
+              |$strLabel: dd ${str.length - 2} ;; char array for string literal
+              |dd 0
+              |$strASM
+              |;; TODO call string constructor
             """.stripMargin
         )
       case Some(vd: VariableDeclarator) =>

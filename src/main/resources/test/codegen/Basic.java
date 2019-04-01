@@ -8,7 +8,7 @@ public class Basic {
   // }
 
   public static int test() {
-    System.out.println(12345);
+    // System.out.println(12345);
     /*
     int i = 12345;
     char[] ret = new char[15];
@@ -36,6 +36,13 @@ public class Basic {
     char[] ret2 = new char[j];
     for(i = 0; i < j; i = i + 1) ret2[i] = ret[j-1-i];
     */
-    return 0;
+    String x = "test";
+    System.out.println(x.length());
+    System.out.println(x.getchars()[0]);
+    System.out.println(x.getchars()[1]);
+    System.out.println(x.getchars()[2]);
+    System.out.println(x.getchars()[3]);
+    System.out.println("hello kevin\n");
+    return 0; // x.charAt(1);
   }
 }

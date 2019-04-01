@@ -3,6 +3,11 @@ import java.util.Arrays;
 
 public class String {
     public char[] chars;
+
+    public char[] getchars() {
+      return chars;
+    }
+
     public int length() {
         return chars.length;
     }
