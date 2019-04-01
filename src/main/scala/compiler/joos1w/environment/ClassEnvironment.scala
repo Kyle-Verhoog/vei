@@ -568,7 +568,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
   }
 
   override def findEnclosingMethod(): MethodEnvironment = {
-    throw new RuntimeException("Cannot find enclosing method on a class env!")
+    throw new NoSuchMethodError("Cannot find enclosing method on a class env!")
   }
 
   override def findEnclosingClass(): ClassEnvironment = {

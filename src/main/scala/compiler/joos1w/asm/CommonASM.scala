@@ -34,6 +34,13 @@ object CommonASM {
                |mov eax, 0xffffffff ;; eax := true
              """.stripMargin)
         else ASM("mov eax, 0 ;; eax := false")
+      case Some(charAST: literals.CharacterLiteral) =>
+        val charIntVal = charAST.value match {
+          case "'\\n'" => 10
+          case _       => charAST.value.charAt(1).toInt
+        }
+        ASM(
+          s"mov eax, $charIntVal ;; eax := char literal here ${charAST.value} ${charAST.value.toCharArray}")
       case Some(nullAST: literals.NullLiteral) =>
         ASM(s"mov eax, 0 ;; null literal")
       case Some(strAST: literals.StringLiteral) =>
@@ -45,8 +52,6 @@ object CommonASM {
               | $strLabel: db $str
             """.stripMargin
         )
-      case Some(strAST: literals.CharacterLiteral) =>
-        ASM(s";; TODO character literal")
       case Some(vd: VariableDeclarator) =>
         ASM(s";; variable declaration $vd") ++
           commonASM(Some(vd.expression), recurseMethod)

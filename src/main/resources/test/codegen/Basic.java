@@ -1,7 +1,4 @@
 public class Basic {
-  // public static int y = 0;
-  public int x;
-
   public Basic(int x) {
     // y = x;
   }
@@ -11,15 +8,32 @@ public class Basic {
   // }
 
   public static int test() {
-    // Basic b1 = new Basic(3);
-    // b1.x = 5;
-    // Basic b2 = new Basic(3);
-    // b2.x = 10;
-
-    // int y = 3;
-    System.out.println(3);
-    // return b.y;
-    // return b1.x + b2.x;
-    return 3;
+    int i = 12345;
+    char[] ret = new char[15];
+    int j = 0;
+    boolean wasneg = false;
+    if(i<0) {
+      wasneg = true;
+      i = -i;
+    }
+    if(i == 0) {
+      ret[j] = '0';
+      j = j + 1;
+    } else {
+      while(i > 0) {
+        System.out.println(i);
+        int d = i % 10;
+        i = i / 10;
+        ret[j] = (char) (d + '0');
+        j = j + 1;
+      }
+    }
+    if(wasneg) {
+      ret[j] = '-';
+      j = j + 1;
+    }
+    char[] ret2 = new char[j];
+    for(i = 0; i < j; i = i + 1) ret2[i] = ret[j-1-i];
+    return 0;
   }
 }
