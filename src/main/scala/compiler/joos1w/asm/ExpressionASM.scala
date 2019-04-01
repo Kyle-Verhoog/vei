@@ -1,9 +1,16 @@
 package compiler.joos1w.asm
 
+import com.sun.jdi.ByteType
 import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
 import compiler.joos1w.environment.environment
-import compiler.joos1w.environment.types.{CustomType, StringType}
+import compiler.joos1w.environment.types.numeric.{CharType, IntType, ShortType}
+import compiler.joos1w.environment.types.{
+  AbstractType,
+  BooleanType,
+  CustomType,
+  StringType
+}
 
 object ExpressionASM {
   var counter = 0
@@ -11,6 +18,19 @@ object ExpressionASM {
   def incrementAndReturnCounter: Int = {
     counter += 1
     counter
+  }
+
+  def getStringValueOfMethodLabel(ttype: AbstractType): String = {
+    ttype match {
+      case ttype: CharType    => "java_lang_String_valueOf_short"
+      case ttype: IntType     => "java_lang_String_valueOf_int"
+      case ttype: CharType    => "java_lang_String_valueOf_char"
+      case ttype: ShortType   => "java_lang_String_valueOf_short"
+      case ttype: ByteType    => "java_lang_String_valueOf_byte"
+      case ttype: BooleanType => "java_lang_String_valueOf_boolean"
+      case ttype: CustomType  => "java_lang_String_valueOf_Object"
+      case ttype: StringType  => "java_lang_String_valueOf_String"
+    }
   }
 
   def generalExpressionASM(expr: GeneralExpression,
@@ -28,7 +48,67 @@ object ExpressionASM {
             if (lhsType.isString || rhsType.isString) { // handle string addition
               // determine which one is a string
               // for the other one break into cases: String, Primitive, Object
-              // TODO
+
+              // gets string values of both LHS and RHS into eax and ebx
+              val getStringValuesASM =
+                if (lhsType.isString && !rhsType.isString) { // only lhs string
+                  val valueOfMethodLabel = getStringValueOfMethodLabel(rhsType)
+                  ASM(
+                    s";; BEGIN STRING ADDITION OF TYPES: ${lhsType}  +  ${rhsType}")
+                  expr2Code ++
+                    ASM(s"""
+                       |push 0 ;; push nothing as this reference for static method
+                       |push eax ;; push value of RHS
+                       |call ${valueOfMethodLabel}
+                       |add esp, 8
+                       |;; ebx should now have pointer to string value of rhs, save it, and then get LHS string
+                       |push ebx
+                       |""".stripMargin) ++
+                    expr1Code ++
+                    ASM(s"""
+                       |mov eax, ebx
+                       |pop ebx ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                       |;; now we concat the two strings""".stripMargin)
+
+                } else if (!lhsType.isString && rhsType.isString) { // only rhs string
+                  val valueOfMethodLabel = getStringValueOfMethodLabel(lhsType)
+                  ASM(
+                    s";; BEGIN STRING ADDITION OF TYPES: ${lhsType}  +  ${rhsType}")
+                  expr1Code ++
+                    ASM(s"""
+                           |push 0 ;; push nothing as this reference for static method
+                           |push eax ;; push value of LHS
+                           |call ${valueOfMethodLabel}
+                           |add esp, 8
+                           |;; ebx should now have pointer to string value of rhs, save it, and then get LHS string
+                           |push ebx
+                           |""".stripMargin) ++
+                    expr2Code ++
+                    ASM(s"""
+                           |pop eax ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                           |;; now we concat the two strings""".stripMargin)
+                } else { // both string
+                  ASM(
+                    s";; BEGIN STRING ADDITION OF TYPES: ${lhsType}  +  ${rhsType}")
+                  expr1Code ++
+                    ASM(s"""
+                           |push ebx ;; save lhs string pointer
+                           |""".stripMargin) ++
+                    expr2Code ++
+                    ASM(s"""
+                           |pop eax ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                           |;; now we concat the two strings""".stripMargin)
+                }
+
+              // we now have eax as LHS string pointer, ebx as RHS string pointer, and perform concat
+              return getStringValuesASM ++
+                ASM(s"""
+                       |;; TODO concat strings
+                       |push eax
+                       |push ebx
+                       |call java_lang_String_concat_String
+                       |add esp, 8
+                       |""".stripMargin)
             }
 
             ASM(s";; begin ${expr.firstExpr} + ${expr.secondExpr}") ++
