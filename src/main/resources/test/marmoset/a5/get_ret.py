@@ -7,7 +7,7 @@ import sys
 JAVA_SRC = """
 public class Runner {{
   public static void main(String[] args) {{
-    System.out.println({}.test());
+    java.lang.System.exit({}.test());
   }}
 }}
 """
@@ -40,6 +40,12 @@ for f in os.listdir(os.getcwd()):
 
     print(stdout)
     print(stderr)
+    print(ret)
 
-    # with open('{}.ret'.format(test_name), 'wb') as retf:
-    #     retf.write(stdout)
+    with open('{}.out'.format(test_name), 'wb') as outf:
+       outf.write(stdout)
+    with open('{}.ret'.format(test_name), 'w') as retf:
+       retf.write(str(ret))
+
+
+    subprocess.call(['rm', 'Runner.java'])
