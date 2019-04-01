@@ -71,7 +71,8 @@ object MethodASM {
                        |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
                        |push edx ;; put back lhs pointer
                        |push eax ;; save rhs value
-                       |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
+                       |mov eax, 0xffffffff
+                       |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                        |je .array_subclass_check_pass${myCounter}
                        |call __exception
                        |.array_subclass_check_pass${myCounter}:
@@ -104,7 +105,8 @@ object MethodASM {
                          |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
                          |push edx ;; put back lhs pointer
                          |push eax ;; save rhs value
-                         |cmp 0xffffffff, [ecx + edx] ;; check if rhs is subclass of lhs
+                         |mov eax, 0xffffffff
+                         |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                          |je .array_subclass_check_pass${myCounter}
 
 
