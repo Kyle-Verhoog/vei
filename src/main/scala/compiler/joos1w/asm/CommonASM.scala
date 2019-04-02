@@ -154,9 +154,7 @@ object CommonASM {
         }
         val methodAST = methodEnv.myAst.asInstanceOf[MethodDeclaration]
         val isStatic = methodAST.modifiers.contains("static")
-
         val containingCls = methodInvocation.env.findEnclosingClass()
-        val methodInCls = containingCls.declareSet.values.toSet contains methodEnv
 
         // whether or not the method call is an implicit this.method() call
         val isThisMethod = methodInvocation.name == methodAST.identifier
@@ -170,7 +168,8 @@ object CommonASM {
                |push eax
              """.stripMargin)
         } else if (isThisMethod) {
-          val offset = 4 * methodEnv.paramCount
+          val enclosingMethod = methodInvocation.env.findEnclosingMethod()
+          val offset = 4 * enclosingMethod.paramCount
           ASM(s";; implicit this.${methodAST.identifier} method call") ++
             ASM(s"""
                  |mov eax, [ebp + $offset] ;; "this" should be in frame pointer
@@ -200,16 +199,7 @@ object CommonASM {
         val argPopCode = ASM(s"add esp, ${4 * (params.length + 1)} ;; pop args")
 
         val methodLabel = Joos1WCodeGen.methodDefinitionLabel(methodEnv)
-        val methodCallCode =
-          if (methodInCls) {
-            ASM(s"""
-                 |call $methodLabel ;; invoke method ${methodAST}
-             """.stripMargin)
-          } else {
-            ASM(s"""
-                 |call $methodLabel ;; invoke external method ${methodAST}
-               """.stripMargin)
-          }
+        val methodCallCode = ASM(s"call $methodLabel")
 
         ASM(s""";; method invocation $methodInvocation""".stripMargin) ++
           objRefCode ++
