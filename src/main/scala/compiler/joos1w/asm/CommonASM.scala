@@ -120,12 +120,12 @@ object CommonASM {
 
             ASM(s"""
                    |;;CAST EXPRESSION from ${castExpression.beingCast} to ${typeCastTo}
-                   |;; get class that it is being cast to
+                   |;; cast: get class that it is being cast to
                    |mov eax, ${classLabel}
                    |push eax ;; save class pointer""") ++
               codeBeingCast ++
               ASM(s"""
-                   |mov edx, eax ;; store thing being cast to return after cast check complete
+                   |mov edx, eax ;; cast: store thing being cast to return after cast check complete
                    |mov eax, [eax] ;; eax <- class(eax)
                    |pop ebx ;; restore class pointer of type being casted to
                    |push edx
@@ -167,7 +167,9 @@ object CommonASM {
                |mov eax, 0 ;; null argument for static method
                |push eax
              """.stripMargin)
-        } else if (isThisMethod) {
+        } else if (isThisMethod && methodInvocation
+                     .children(1)
+                     .isInstanceOf[Name]) {
           val enclosingMethod = methodInvocation.env.findEnclosingMethod()
           val offset = 4 * enclosingMethod.paramCount
           ASM(s";; implicit this.${methodAST.identifier} method call") ++
@@ -175,12 +177,16 @@ object CommonASM {
                  |mov eax, [ebp + $offset] ;; "this" should be in frame pointer
                  |push eax
                """.stripMargin)
+        } else if (!methodInvocation.children(1).isInstanceOf[Name]) {
+          ASM(s";; resolving method invocation prefix") ++
+            commonASM(Some(methodInvocation.children(1)), recurseMethod, lvalue) ++
+            ASM(s"push eax ;; push obj reference as arg")
         } else {
           val baseName =
             methodInvocation.name.split("\\.").dropRight(1).mkString(".")
           val name = new Name(baseName)
           name.env = methodInvocation.env
-          ASM(s";; Find base object/field for method invocation") ++
+          ASM(s";; find base object/field for method invocation") ++
             NameASM.nameASM(Some(name), lvalue) ++
             ASM(s"push eax ;; push obj reference as arg")
         }

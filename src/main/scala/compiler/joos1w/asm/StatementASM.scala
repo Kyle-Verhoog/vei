@@ -42,16 +42,18 @@ object StatementASM {
     ASM(
       s";; FOR ( ${stmt.initialization} ${stmt.termination} ${stmt.increment} )") ++
       initializationCode ++
+      ASM(s"") ++
       ASM(s".start_for${myCounter}:") ++
+      ASM(s";; check condition and jump as appropriate") ++
+      terminationCode ++
+      ASM(s"""
+             |;; determine if should jump
+             |cmp eax, 0
+             |je .end_for${myCounter}""") ++
       bodyCode ++
       ASM(s";; increment") ++
       incrementCode ++
-      ASM(s";; check condition and jump as appropriate") ++
-      terminationCode ++
-      ASM(s"") ++
-      ASM(s""";; determine if should jump
-             |cmp eax, 0
-             |je .end_for${myCounter}
+      ASM(s"""
              |jmp .start_for${myCounter}
              |.end_for${myCounter}:
        """.stripMargin)

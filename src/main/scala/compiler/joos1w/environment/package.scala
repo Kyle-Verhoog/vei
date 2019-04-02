@@ -1317,6 +1317,7 @@ package object environment {
 
     if (ttype1.equals(ttype2)) return
     if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[CharType]) return
+    if (ttype1.isInstanceOf[CharType] && ttype2.isInstanceOf[IntType]) return
     if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[ShortType]) return
     if (ttype1.isInstanceOf[ShortType] && ttype2.isInstanceOf[BytesType]) return
     if (ttype1.isInstanceOf[IntType] && ttype2.isInstanceOf[BytesType]) return // by transitivity
