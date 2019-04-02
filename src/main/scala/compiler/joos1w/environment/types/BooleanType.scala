@@ -1,5 +1,5 @@
 package compiler.joos1w.environment.types
 
-class BooleanType extends AbstractType {
+class BooleanType extends PrimType {
   override def stringType: String = "boolean"
 }

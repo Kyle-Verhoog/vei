@@ -1,16 +1,10 @@
 package compiler.joos1w.asm
 
 import com.sun.jdi.ByteType
-import compiler.joos1w.Joos1WCodeGen
 import compiler.joos1w.ast._
-import compiler.joos1w.environment.environment
+import compiler.joos1w.environment.{environment}
 import compiler.joos1w.environment.types.numeric.{CharType, IntType, ShortType}
-import compiler.joos1w.environment.types.{
-  AbstractType,
-  BooleanType,
-  CustomType,
-  StringType
-}
+import compiler.joos1w.environment.types._
 
 object ExpressionASM {
   var counter = 0
@@ -189,36 +183,36 @@ object ExpressionASM {
                      |""".stripMargin)
           case "instanceof" =>
             val myCounter = incrementAndReturnCounter
+            val lhs = environment.determineType(expr.firstExpr, expr.env)
             val rhs = environment.determineType(expr.secondExpr, expr.env)
-            val rhsTypeEnv = rhs match {
-              case rhs: StringType => rhs.env
-              case rhs: CustomType => rhs.env
-            }
-
-            ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
-              ASM(";; get left side instanceof") ++
-              expr1Code ++
-              ASM(s"""
-                     |push eax ;; instanceof: push lhs obj ref
-                     |         ;; TODO? array ref
-                     |;; get instanceof right sides class into ebx
+            (lhs, rhs) match {
+              case (_: PrimType, _) =>
+                ASM("mov eax, 0")
+              case _ =>
+                ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
+                  ASM(";; get left side instanceof") ++
+                  expr1Code ++
+                  ASM(s"""
+                         |push eax ;; instanceof: push lhs obj ref
+                         |         ;; TODO? array ref
+                         |;; get instanceof right sides class into ebx
                     """.stripMargin) ++
-              expr2Code ++
-              ASM(s"""
-                     |;; now esp has pointer to lhs, eax has pointer to rhs
-                     |;; eax should be a class addr
-                     |;; perform actual instance of, eax has lhs class, ebx has rhs class
-                     |mov ecx, [eax + 8] ;; get offset of subclass table for rhs
-                     |pop ebx            ;; ebx <- lhs obj ref
-                     |mov ebx, [ebx]     ;; ebx <- class(ebx)
-                     |mov edx, [ebx + 4] ;; get offset to subclass table for lhs
-                     |mov eax, 0xffffffff
-                     |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
-                     |mov eax, 0xffffffff
-                     |je .instanceof_subtype_check_pass${myCounter}
-                     |mov eax, 0
-                     |.instanceof_subtype_check_pass${myCounter}:""".stripMargin)
-
+                  expr2Code ++
+                  ASM(s"""
+                         |;; now esp has pointer to lhs, eax has pointer to rhs
+                         |;; eax should be a class addr
+                         |;; perform actual instance of, eax has lhs class, ebx has rhs class
+                         |mov ecx, [eax + 8] ;; get offset of subclass table for rhs
+                         |pop ebx            ;; ebx <- lhs obj ref
+                         |mov ebx, [ebx]     ;; ebx <- class(ebx)
+                         |mov edx, [ebx + 4] ;; get offset to subclass table for lhs
+                         |mov eax, 0xffffffff
+                         |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
+                         |mov eax, 0xffffffff
+                         |je .instanceof_subtype_check_pass${myCounter}
+                         |mov eax, 0
+                         |.instanceof_subtype_check_pass${myCounter}:""".stripMargin)
+            }
         }
       case _ => throw new MatchError(s"Expression match error")
     }

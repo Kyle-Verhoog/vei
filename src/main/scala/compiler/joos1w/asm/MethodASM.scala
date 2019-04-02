@@ -23,7 +23,7 @@ object MethodASM {
         val env = v.env.asInstanceOf[VariableEnvironment]
         val offset = 4 * env.localVarOffset
         val declCode = methodASM(Some(v.variableDeclarator), lvalue)
-        ASM(s";; ${v.ttype} ${v.name} = ${v.variableDeclarator}") ++
+        ASM(s";; ${v.ttype} ${v.name} := ${v.variableDeclarator}") ++
           declCode ++
           ASM(s"mov [ebp - $offset], eax ;; assign variable ${v.name}")
       case Some(astList: ASTList) =>

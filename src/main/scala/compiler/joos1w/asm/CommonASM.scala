@@ -303,7 +303,7 @@ object CommonASM {
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
                |;; pass arguments to constructor
-               |push edx ;;  object pointer
+               |push eax ;;  object pointer
                |""".stripMargin) ++
           argPushCode ++
           ASM(s"""
