@@ -54,13 +54,13 @@ object ExpressionASM {
                        |push eax ;; push value of RHS
                        |call ${valueOfMethodLabel}
                        |add esp, 8
-                       |;; ebx should now have pointer to string value of rhs, save it, and then get LHS string
-                       |push ebx
+                       |;; eax should now have pointer to string value of rhs, save it, and then get LHS string
+                       |push eax
                        |""".stripMargin) ++
                     expr1Code ++
                     ASM(s"""
-                       |mov eax, ebx
-                       |pop ebx ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                       |;; eax has lhs, esp has rhs
+                       |pop ebx ;; ebx <- rhs obj/arr ref
                        |;; now we concat the two strings""".stripMargin)
 
                 } else if (!lhsType.isString && rhsType.isString) { // only rhs string
@@ -73,23 +73,23 @@ object ExpressionASM {
                            |push eax ;; push value of LHS
                            |call ${valueOfMethodLabel}
                            |add esp, 8
-                           |;; ebx should now have pointer to string value of rhs, save it, and then get LHS string
-                           |push ebx
+                           |;; eax should now have pointer to string value of rhs, save it, and then get LHS string
+                           |push eax
                            |""".stripMargin) ++
                     expr2Code ++
                     ASM(s"""
-                           |pop eax ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                           |pop ebx ;; eax now has string pointer of RHS, ebx has string pointer of LHS
                            |;; now we concat the two strings""".stripMargin)
                 } else { // both string
                   ASM(
                     s";; BEGIN STRING ADDITION OF TYPES: ${lhsType}  +  ${rhsType}")
                   expr1Code ++
                     ASM(s"""
-                           |push ebx ;; save lhs string pointer
+                           |push eax ;; save lhs string pointer
                            |""".stripMargin) ++
                     expr2Code ++
                     ASM(s"""
-                           |pop eax ;; eax now has string pointer of LHS, ebx has string pointer of RHS
+                           |pop ebx ;; eax now has string pointer of RHS, ebx has string pointer of LHS
                            |;; now we concat the two strings""".stripMargin)
                 }
 
@@ -234,8 +234,7 @@ object ExpressionASM {
         ASM(";; ${expr.operator} ${expr.subExpression}") ++
           exprCode ++
           ASM(s"""
-               |sub eax, eax
-               |sub eax, eax
+               |imul eax, -1
                |""".stripMargin)
       case s => throw new MatchError(s"TODO IMPLEMENT $s")
     }

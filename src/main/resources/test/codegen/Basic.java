@@ -1,23 +1,32 @@
+// CODE_GENERATION
 public class Basic {
-  public int x;
 
-  public Basic() {
-    this.x = 3;
-  }
+    public String s;
 
-  public static int test() {
-    // boolean b = true;
-    //boolean e = false;
-    Basic a = new Basic();
-    // boolean c = e || a instanceof Basic;
-    //boolean d = b && a instanceof Basic;
+    public Basic (String str) {
+        this.s = str+str+str;
+    }
 
-    // if (c && d){
-    //   return 123;
-    // }
-    // else {
-    //   return 12378;
-    // }
-    return a.x;
-  }
+    public static int test() {
+        String str = "111" +  2;
+        System.out.println(str);
+        return 0;
+        // if (Integer.parseInt("4"+"2")==42)
+        //     str = str+"22";
+        // else
+        //     str = str+"33";
+        // int i=0;
+        // while (i<10) {
+        //     i = i+1;
+        //     str = str+"444";
+        // }
+        // for (int j=0; j<10; j=j+1) {
+        //     str = str+"55"+"66"+str;
+        // }
+        // if (new Basic(str).s.equals((Object)(str+str+str)))
+        //     return 123;
+        // else
+        //     return 0;
+    }
+
 }

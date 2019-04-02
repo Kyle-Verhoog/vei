@@ -170,9 +170,10 @@ object CommonASM {
                |push eax
              """.stripMargin)
         } else if (isThisMethod) {
+          val offset = 4 * methodEnv.paramCount
           ASM(s";; implicit this.${methodAST.identifier} method call") ++
             ASM(s"""
-                 |mov eax, ebp ;; "this" should be in frame pointer
+                 |mov eax, [ebp + $offset] ;; "this" should be in frame pointer
                  |push eax
                """.stripMargin)
         } else {
