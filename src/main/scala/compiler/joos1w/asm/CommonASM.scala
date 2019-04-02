@@ -432,6 +432,8 @@ object CommonASM {
       case Some(name: Name) =>
         recurseMethod(Some(name), lvalue)
       case Some(_: Empty) => ASM("")
+      case Some(hack: Hack) =>
+        commonASM(hack.leftChild, recurseMethod, lvalue)
       case Some(ast: AST) =>
         throw new MatchError(s"commonASM match error on $ast ${ast.toStrTree}")
       case None => ASM("")

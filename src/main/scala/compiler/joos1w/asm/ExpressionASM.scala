@@ -33,6 +33,7 @@ object ExpressionASM {
       case ttype: BooleanType => "java_lang_String_valueOf_boolean"
       case ttype: CustomType  => "java_lang_String_valueOf_Object"
       case ttype: StringType  => "java_lang_String_valueOf_String"
+      case ttype: NullType    => "java_lang_String_valueOf_Object"
     }
   }
 
@@ -272,7 +273,7 @@ object ExpressionASM {
               ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |jne .end_not_equal${myCounter}
                    |mov ebx, 0
                    |.end_not_equal${myCounter}:
@@ -289,7 +290,7 @@ object ExpressionASM {
                    |cmp eax, ebx
                    |mov ebx, 0
                    |jne .end_equal_equal${myCounter}
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |.end_equal_equal${myCounter}:
                    |mov eax, ebx
                    |""".stripMargin)
@@ -302,7 +303,7 @@ object ExpressionASM {
               ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |jge .end_greater_equal${myCounter}
                    |mov ebx, 0
                    |.end_greater_equal${myCounter}:
@@ -317,7 +318,7 @@ object ExpressionASM {
               ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |jg .end_greater${myCounter}
                    |mov ebx, 0
                    |.end_greater${myCounter}:
@@ -332,7 +333,7 @@ object ExpressionASM {
               ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |jle .end_less_equal${myCounter}
                    |mov ebx, 0
                    |.end_less_equal${myCounter}:
@@ -347,7 +348,7 @@ object ExpressionASM {
               ASM(s"""
                    |pop ebx ;; restore expr2 value
                    |cmp eax, ebx
-                   |mov ebx, 1
+                   |mov ebx, 0xffffffff
                    |jl .end_less${myCounter}
                    |mov ebx, 0
                    |.end_less${myCounter}:
@@ -368,10 +369,10 @@ object ExpressionASM {
             ASM(s";; ${expr.firstExpr} || ${expr.secondExpr}") ++
               expr1Code ++
               ASM(s"""
-                   |cmp eax, 0xffffffff
-                   |je .end_and${myCounter}""".stripMargin) ++
+                   |cmp eax, 0xffffffff ;; OR short-circuit
+                   |je .end_or${myCounter}""".stripMargin) ++
               expr2Code ++
-              ASM(s".end_and${myCounter}:")
+              ASM(s".end_or${myCounter}:")
 
         }
     }

@@ -242,16 +242,45 @@ object Joos1WCodeGen {
 
         val instanceFields = clsEnv.instanceFields
         var instanceFieldInitCode = ASM("")
+
+        // First initialize all fields to 0
         instanceFields.foreach(field => {
           val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
           if (fieldAST.variableDeclarator.hasExpression) {
-            val expr = fieldAST.variableDeclarator.expression
-            val fieldInitCode = astASM(Some(expr), lvalue)
             val fieldOffset = 4 * field.fieldOffset
 
             instanceFieldInitCode = instanceFieldInitCode ++
               ASM(s"""
                      |;; initialize field ${fieldAST.name}
+                     |;; add "this" reference
+                     |mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
+                     |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
+                     |mov ebx, 0
+                     |mov [eax], ebx        ;; initialize field to 0
+            """.stripMargin)
+          }
+        })
+
+        // Then initialize fields with their initializers
+        instanceFields.foreach(field => {
+          val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
+          if (fieldAST.variableDeclarator.hasExpression) {
+            val expr = fieldAST.variableDeclarator.expression
+            // terrible hack:
+            // if the expr somewhere contains a reference to the current class
+            // ie "this.____" then the code will try to find an enclosing method
+            // for fields there is no enclosing method... so let's attach one
+            val hack = new Hack
+            hack.env = env
+            hack.parent = Some(expr.parent.get)
+            hack.leftChild = Some(expr)
+            val fieldInitCode =
+              CommonASM.commonASM(Some(hack), MethodASM.methodASM, lvalue)
+            val fieldOffset = 4 * field.fieldOffset
+
+            instanceFieldInitCode = instanceFieldInitCode ++
+              ASM(s"""
+                     |;; initialize field ${fieldAST.name} ${expr}
                      |;; add "this" reference
                      |mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
                      |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
@@ -298,6 +327,13 @@ object Joos1WCodeGen {
       case Some(name: Name) =>
         // resolve a name when initializing fields
         NameASM.nameASM(Some(name), lvalue)
+      case Some(fieldAccess: FieldAccess) =>
+        // This is when there is a field initializer
+        // public int b = this.a; // b = 0
+        // public int a = 22; // a = 22
+        // but we handle this initialization in the constructor, so do nothing
+        // here
+        ASM("")
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH astASM on $ast")
         CommonASM.commonASM(Some(ast), astASM, lvalue)

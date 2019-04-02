@@ -95,7 +95,7 @@ object Joos1WCompiler {
     println(s"OUTPUTTING TO $pwd")
     val outputDir = pwd ++ "/output"
     asm
-    // .drop(1)
+      .drop(1)
       .foreach(code => {
         println(s"OUTPUTTING CODE ${code.fileName}")
         val fileName = outputDir ++ "/" ++ code.fileName
