@@ -94,13 +94,15 @@ object Joos1WCompiler {
     val pwd = System.getenv("PWD")
     println(s"OUTPUTTING TO $pwd")
     val outputDir = pwd ++ "/output"
-    asm.foreach(code => {
-      println(s"OUTPUTTING CODE ${code.fileName}")
-      val fileName = outputDir ++ "/" ++ code.fileName
-      printToFile(new File(fileName)) { p =>
-        p.print(code.src)
-      }
-    })
+    asm
+      .drop(1)
+      .foreach(code => {
+        println(s"OUTPUTTING CODE ${code.fileName}")
+        val fileName = outputDir ++ "/" ++ code.fileName
+        printToFile(new File(fileName)) { p =>
+          p.print(code.src)
+        }
+      })
 
     println("done")
   }
