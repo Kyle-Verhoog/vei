@@ -125,20 +125,21 @@ object CommonASM {
                    |push eax ;; save class pointer""") ++
               codeBeingCast ++
               ASM(s"""
-                   |mov edx, eax ; store thing being cast to return after cast check complete
+                   |mov edx, eax ;; store thing being cast to return after cast check complete
                    |mov eax, [eax] ;; eax <- class(eax)
                    |pop ebx ;; restore class pointer of type being casted to
+                   |push edx
                    |;; perform cast check
                    |mov edx, [eax + 4] ;; get offset to subclass table for thing that is being cast
                    |mov ecx, [ebx + 8] ;; get offset of subclass table for type being cast to
                    |mov eax, 0xffffffff
                    |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
-                   |pop eax ;; restore the thing being cast into eax
                    |je .cast_expression_pass${myCounter}
                    |mov ebx, ${myCounter}
                    |call __exception
                    |.cast_expression_pass${myCounter}:
-                   |mov eax, edx ;; cast: restore obj ref""".stripMargin)
+                   |pop eax  ;; cast: restore obj ref
+                   |""".stripMargin)
           case _ => ASM(s"""
                |;;TODO PRIMITIVE CAST CHECK
                |

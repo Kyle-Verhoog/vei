@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 # End-to-end test runner for the vei compiler
 
-# TEST_DIR_PATH = 'src/main/resources/test/marmoset/a5/'
-TEST_DIR_PATH = 'src/main/resources/test/codegen/'
+TEST_DIR_PATH = 'src/main/resources/test/marmoset/a5/'
+# TEST_DIR_PATH = 'src/main/resources/test/codegen/'
 STDLIB_DIR_PATH = 'src/main/resources/test/marmoset/lib/5/'
 ASM_EXEC_PATH = os.path.abspath('bin/nasm')
 VEI_EXEC_PATH = os.path.abspath('./joosc')
@@ -169,6 +169,7 @@ class TestSuite:
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         ret = p.returncode
+        stdout = stdout.decode('utf-8')
 
         passing = None
         if self._exp_ret is not None and int(ret) == int(self._exp_ret):
@@ -179,7 +180,7 @@ class TestSuite:
             self.log_info('TEST {} FAILED RETURN CODE MISMATCH {} != {}'.format(self.name, int(ret), int(self._exp_ret)))
             passing = False
 
-        if self._exp_out is not None and str(stdout) == str(self._exp_out):
+        if self._exp_out is not None and stdout == str(self._exp_out):
             passing = True
         elif self._exp_out is None:
             pass
