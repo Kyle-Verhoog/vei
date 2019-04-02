@@ -22,12 +22,12 @@ object NameASM {
           case (vEnv: VariableEnvironment, i) =>
             vEnv.myAst match {
               case field: FieldDeclaration =>
+                val clsEnv = vEnv.findEnclosingClass()
                 if (field.modifiers.contains("static")) {
                   val fieldLabel = Joos1WCodeGen.staticFieldLabel(vEnv)
                   // if this is the first occurrence of a static field then
                   // load the implicit class reference
                   if (i == 0) {
-                    val clsEnv = vEnv.findEnclosingClass()
                     val clsLabel = Joos1WCodeGen.classLabel(clsEnv)
                     asm = asm ++ ASM(
                       s"mov eax, $clsLabel ;; load implicit class address for static field")
@@ -96,7 +96,8 @@ object NameASM {
                            | """.stripMargin)
                 }
               case fparam: FormalParameter =>
-                val offset = 4 * vEnv.fpOffset
+                val methodEnv = name.env.findEnclosingMethod()
+                val offset = 4 * (methodEnv.paramCount - vEnv.fpOffset + 1)
 
                 if (lvalue) {
                   asm = asm ++
