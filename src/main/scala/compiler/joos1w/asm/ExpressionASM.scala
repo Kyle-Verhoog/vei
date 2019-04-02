@@ -195,8 +195,6 @@ object ExpressionASM {
               case rhs: CustomType => rhs.env
             }
 
-            val classLabel = Joos1WCodeGen.classLabel(rhsTypeEnv)
-
             ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
               ASM(";; get left side instanceof") ++
               expr1Code ++
