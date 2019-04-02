@@ -1,10 +1,10 @@
 package compiler.joos1w.asm
 
-import com.sun.jdi.ByteType
-import compiler.joos1w.ast._
-import compiler.joos1w.environment.{environment}
-import compiler.joos1w.environment.types.numeric.{CharType, IntType, ShortType}
 import compiler.joos1w.environment.types._
+import compiler.joos1w.ast._
+import compiler.joos1w.environment.environment
+import compiler.joos1w.environment.types.numeric.{BytesType, CharType, IntType, ShortType}
+import compiler.joos1w.environment.types.{AbstractType, BooleanType, CustomType, StringType}
 
 object ExpressionASM {
   var counter = 0
@@ -19,7 +19,7 @@ object ExpressionASM {
       case ttype: IntType     => "java_lang_String_valueOf_int"
       case ttype: CharType    => "java_lang_String_valueOf_char"
       case ttype: ShortType   => "java_lang_String_valueOf_short"
-      case ttype: ByteType    => "java_lang_String_valueOf_byte"
+      case ttype: BytesType    => "java_lang_String_valueOf_byte"
       case ttype: BooleanType => "java_lang_String_valueOf_boolean"
       case ttype: CustomType  => "java_lang_String_valueOf_Object"
       case ttype: StringType  => "java_lang_String_valueOf_String"
