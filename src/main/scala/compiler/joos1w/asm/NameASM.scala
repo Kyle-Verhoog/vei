@@ -59,20 +59,20 @@ object NameASM {
            """.stripMargin)
                   }
 
-                  val fieldOffset = 4 * (vEnv.order + 1)
+                  val fieldOffset = 4 * vEnv.fieldOffset
                   if (lvalue) {
                     asm = asm ++
                       ASM(s"""
                              |;; l-value instance field access
                              |;; assume eax has address of object for field
-                             |add eax, $fieldOffset ;; eax <- addr of ${field.name}
+                             |add eax, $fieldOffset ;; eax <- addr of field ${field.name}
                              |""".stripMargin)
                   } else {
                     asm = asm ++
                       ASM(s"""
                              |;; r-value instance field access
                              |;; assume eax has address of object for field
-                             |add eax, $fieldOffset ;; eax <- addr of ${field.name}
+                             |add eax, $fieldOffset ;; eax <- addr of field ${field.name}
                              |mov eax, [eax] ;; eax <- ${field.name} (addr for obj, literal for prim)
                              |""".stripMargin)
                   }

@@ -108,24 +108,28 @@ object Joos1WCodeGen {
     val clsVTableLabel = classVTableLabel(clsEnv)
     val clsSubClsLabel = classSubClassTableLabel(clsEnv)
 
-    var fields = List[VariableEnvironment]()
-    clsEnv.containSet.values.foreach({
-      case fieldEnv: VariableEnvironment =>
-        if (fieldEnv.modifiers.contains("static")) {
-          fields = fieldEnv :: fields
-        }
-      case _ =>
-    })
+    // Add instance field offsets
+    clsEnv.instanceFields
+      .sortBy(f => f.order)
+      .foreach(f => {
+        f.fieldOffset = clsEnv.instanceFieldCount
+        clsEnv.instanceFieldCount += 1
+      })
+
+    var staticFields = clsEnv.staticFields
 
     // sort the fields by their order
-    fields = fields.sortBy(f => f.order)
+    staticFields = staticFields.sortBy(f => f.order)
     var initCode = ASM(s"""
                           |cls_init_$clsLabel:
        """.stripMargin)
-    fields.foreach(f => {
+    staticFields.foreach(f => {
+      // add static field offsets
+      f.fieldOffset = clsEnv.staticFieldCount
+      clsEnv.staticFieldCount += 1
       val fieldCode =
         astASM(Some(f.myAst.asInstanceOf[FieldDeclaration].variableDeclarator),
-               false)
+               lvalue = false)
       val fieldLabel = staticFieldLabel(f)
       initCode = initCode ++ ASM(";; Initializing field")
       initCode = initCode ++
@@ -156,7 +160,7 @@ object Joos1WCodeGen {
            |dd $clsSubClsLabel
            |dd ${4 * clsEnv.subClsTableOffset}
            |""".stripMargin) ++
-      astASM(Some(cls.getClassBody), false) ++
+      astASM(Some(cls.getClassBody), lvalue = false) ++
       initCode
   }
 
@@ -233,9 +237,36 @@ object Joos1WCodeGen {
         interfaceASM(interfaceDeclaration)
       case Some(const: ConstructorDeclaration) =>
         val env = const.env.asInstanceOf[MethodEnvironment]
+        val clsEnv = const.env.findEnclosingClass()
         val objRefOffset = 4 * env.paramCount
-        val bodyASM = MethodASM.methodASM(Some(const.children(1)),
-                                          lvalue = false) ++
+
+        val instanceFields = clsEnv.instanceFields
+        var instanceFieldInitCode = ASM("")
+        instanceFields.foreach(field => {
+          val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
+          if (fieldAST.variableDeclarator.hasExpression) {
+            val expr = fieldAST.variableDeclarator.expression
+            val fieldInitCode = astASM(Some(expr), lvalue)
+            val fieldOffset = 4 * field.fieldOffset
+
+            instanceFieldInitCode = instanceFieldInitCode ++
+              ASM(s"""
+                     |;; initialize field ${fieldAST.name}
+                     |;; add "this" reference
+                     |mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
+                     |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
+                     |push eax
+            """.stripMargin) ++
+              fieldInitCode ++
+              ASM(s"""
+                     |pop ebx
+                     |mov [ebx], eax ;; field ${fieldAST.name} <- eax
+             """.stripMargin)
+          }
+        })
+
+        val bodyASM = instanceFieldInitCode ++
+          MethodASM.methodASM(Some(const.children(1)), lvalue = false) ++
           ASM(s"""
             | mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
           """.stripMargin)

@@ -8,8 +8,9 @@ import scala.collection.mutable
 
 class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
-
   var subClsTableOffset = 0
+  var staticFieldCount = 1
+  var instanceFieldCount = 1 // offset by one for object structure (class vptr)
 
   myAst match {
     case ast: ClassDeclaration => {
@@ -180,6 +181,20 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
           v.myAst match {
             case f: FieldDeclaration =>
               if (f.modifiers.contains("static")) v :: acc else acc
+            case _ => acc
+          }
+        case _ => acc
+      }
+    })
+  }
+
+  def instanceFields: List[VariableEnvironment] = {
+    containSet.values.foldLeft(List[VariableEnvironment]())((acc, env) => {
+      env match {
+        case v: VariableEnvironment =>
+          v.myAst match {
+            case f: FieldDeclaration =>
+              if (!f.modifiers.contains("static")) v :: acc else acc
             case _ => acc
           }
         case _ => acc

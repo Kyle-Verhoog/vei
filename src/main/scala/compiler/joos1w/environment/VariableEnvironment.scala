@@ -9,6 +9,7 @@ class VariableEnvironment(val myAst: AST,
                           parent: Option[GenericEnvironment],
                           var order: Int = 0)
     extends GenericEnvironment(myAst, parent) {
+  var fieldOffset = 0
 
   def name: String = {
     myAst match {

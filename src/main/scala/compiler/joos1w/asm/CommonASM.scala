@@ -273,7 +273,7 @@ object CommonASM {
         val clsEnv = env.serarchForClass(classInstanceCreation.name).get
         val clsLabel = Joos1WCodeGen.classDefinitionLabel(clsEnv)
         // 1 for class vpointer
-        val clsSize = 4 * (1 + clsEnv.numFields)
+        val clsSize = 4 * (1 + clsEnv.instanceFieldCount)
 
         val params = classInstanceCreation.parameters
 
@@ -281,7 +281,7 @@ object CommonASM {
         val argPushCode =
           params
             .map(param => {
-              ASM(s";; Parameter $param") ++
+              ASM(s";; parameter $param") ++
                 commonASM(Some(param), recurseMethod, lvalue) ++
                 ASM("push eax")
             })
