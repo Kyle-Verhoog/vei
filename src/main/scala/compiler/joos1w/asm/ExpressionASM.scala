@@ -201,16 +201,19 @@ object ExpressionASM {
               ASM(";; get left side instanceof") ++
               expr1Code ++
               ASM(s"""
-                     |mov eax, [eax] ;; store lhs pointer
-                     |mov eax, [eax]
+                     |push eax ;; instanceof: push lhs obj ref
+                     |         ;; TODO? array ref
                      |;; get instanceof right sides class into ebx
                     """.stripMargin) ++
               expr2Code ++
               ASM(s"""
-                     |;;now eax has pointer to lhs, ebx has pointer to rhs
+                     |;; now esp has pointer to lhs, eax has pointer to rhs
+                     |;; eax should be a class addr
                      |;; perform actual instance of, eax has lhs class, ebx has rhs class
-                     |mov ecx, [ebx + 8] ;; get offset of subclass table for rhs
-                     |mov edx, [eax + 4] ;; get offset to subclass table for lhs
+                     |mov ecx, [eax + 8] ;; get offset of subclass table for rhs
+                     |pop ebx            ;; ebx <- lhs obj ref
+                     |mov ebx, [ebx]     ;; ebx <- class(ebx)
+                     |mov edx, [ebx + 4] ;; get offset to subclass table for lhs
                      |mov eax, 0xffffffff
                      |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                      |mov eax, 0xffffffff

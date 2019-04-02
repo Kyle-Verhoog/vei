@@ -15,6 +15,15 @@ public class Basic {
     System.out.println(o[6]);
 
 
+    System.out.println(o[6] instanceof String);
+    int x = 5;
+    // System.out.println(x instanceof int);
+    Object obj = new Object();
+    String s = "test";
+    System.out.println(s instanceof Object);
+    System.out.println(s instanceof String);
+    System.out.println(s instanceof Integer);
+
     if (!o[6].equals((Object)"foobar")) {
       return 5;
     }
