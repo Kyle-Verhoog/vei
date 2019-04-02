@@ -59,7 +59,7 @@ object CommonASM {
         }
 
         // TODO: these are hardcoded values for the String class
-        val clsSize = 4 * (1 + 1)
+        val clsSize = 4 * (1 + 1 + 1)
         val clsLabel = "java_lang_String"
         new ASM(
           text = s"""
@@ -358,7 +358,7 @@ object CommonASM {
               .get(fieldAccess.identifier, None)
               .get
               .asInstanceOf[VariableEnvironment]
-            val fieldOffset = 4 * (fieldEnv.order + 1)
+            val fieldOffset = 4 * fieldEnv.fieldOffset
             val primaryAST =
               CommonASM.commonASM(
                 Some(fieldAccess.primary),
@@ -381,12 +381,42 @@ object CommonASM {
                        |""".stripMargin)
             }
           case stringType: StringType =>
-            ASM(s"""
-                 |;; TODO string field access ${fieldAccess.identifier} ${fieldAccess.primary}
-               """.stripMargin)
+            val clsEnv = stringType.env
+            val fieldEnv = clsEnv.containSet
+              .get(fieldAccess.identifier, None)
+              .get
+              .asInstanceOf[VariableEnvironment]
+            val fieldOffset = 4 * fieldEnv.fieldOffset
+            val primaryASM =
+              CommonASM.commonASM(
+                Some(fieldAccess.primary),
+                recurseMethod,
+                if (lvalue) false else lvalue) // prevent the lvalue from propagating
+            if (lvalue) {
+              primaryASM ++
+                ASM(s"""
+                       |;; lvalue instance field access
+                       |;; assume eax has address of object for field
+                       |add eax, $fieldOffset ;; eax <- addr of ${fieldAccess.identifier}
+                       |""".stripMargin)
+            } else {
+              primaryASM ++
+                ASM(s"""
+                       |;; rvalue instance field access
+                       |;; assume eax has address of object for field
+                       |add eax, $fieldOffset ;; eax <- addr of ${fieldAccess.identifier}
+                       |mov eax, [eax] ;; eax <- ${fieldAccess.identifier}
+                       |""".stripMargin)
+            }
           case arrayType: ArrayType =>
-            ASM(s"""
-                 |;; TODO array field access ${fieldAccess.identifier} ${fieldAccess.primary}
+            val primaryASM =
+              CommonASM.commonASM(Some(fieldAccess.primary),
+                                  recurseMethod,
+                                  lvalue)
+            primaryASM ++ ASM(s"""
+                 |;; array field access (MUST be .length)
+                 |;; assume eax has address to array
+                 |mov eax, [eax + 4] ;; eax <- array length
                """.stripMargin)
           case x =>
             ASM(s"""

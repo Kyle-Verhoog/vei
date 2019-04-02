@@ -269,6 +269,8 @@ object Joos1WCodeGen {
           MethodASM.methodASM(Some(const.children(1)), lvalue = false) ++
           ASM(s"""
             | mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
+            | mov ebx, 0
+            | mov [eax + 4], ebx   ;; store 0 length as default for obj
           """.stripMargin)
         val nparams = const.rawParameters.length
         env.nparams = nparams // no +1 because constructors have another arg added

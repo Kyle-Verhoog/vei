@@ -10,7 +10,7 @@ class ClassEnvironment(val myAst: AST, parent: Option[GenericEnvironment])
     extends GenericEnvironment(myAst, parent) {
   var subClsTableOffset = 0
   var staticFieldCount = 1
-  var instanceFieldCount = 1 // offset by one for object structure (class vptr)
+  var instanceFieldCount = 2 // offset by two for object structure (class vptr) and length field
 
   myAst match {
     case ast: ClassDeclaration => {
