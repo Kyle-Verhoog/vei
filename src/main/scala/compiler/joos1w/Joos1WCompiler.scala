@@ -81,7 +81,7 @@ object Joos1WCompiler {
         |     global __exception
         | __exception:
         |     mov eax, 1   ; sys_exit system call
-        |     mov ebx, 13
+        |     ;; mov ebx, 13
         |     int 0x80
         | 
         | section .data

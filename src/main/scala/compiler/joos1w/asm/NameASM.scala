@@ -16,8 +16,8 @@ object NameASM {
         resolvedParts.zipWithIndex.foreach({
           case (lEnv: LengthEnvironmentt, _) =>
             asm = asm ++ ASM(s""";; array length field lookup
-                   |;; assume array start in eax, length of array stored at position 0
-                   |mov eax, [eax] ;; eax <- length of array
+                   |;; assume array start in eax, length of array stored at position 4
+                   |mov eax, [eax + 4] ;; eax <- length of array
                    |""".stripMargin)
           case (vEnv: VariableEnvironment, i) =>
             vEnv.myAst match {
@@ -92,7 +92,7 @@ object NameASM {
                            |;; r-value local variable lookup "${lvar.name}"
                            |mov eax, ebp     ;; eax <- addr of local variable on stack
                            |sub eax, $offset
-                           |mov eax, [ebx]   ;; eax <- value of local variable (addr for obj, literal for prim)
+                           |mov eax, [eax]   ;; eax <- value of local variable (addr for obj, literal for prim)
                            | """.stripMargin)
                 }
               case fparam: FormalParameter =>
@@ -111,12 +111,12 @@ object NameASM {
                            |;; r-value formal param lookup "${fparam.name}"
                            |mov eax, ebp     ;; eax <- address of param "${fparam.name}"
                            |add eax, $offset
-                           |mov eax, [ebx]   ;; eax <- value of param "${fparam.name}" (addr for obj, literal for prim)
+                           |mov eax, [eax]   ;; eax <- value of param "${fparam.name}" (addr for obj, literal for prim)
                            | """.stripMargin)
                 }
               case x =>
                 asm = asm ++ ASM(
-                  s";; TODO? resolveQualifiedName gave ${x} for ${name.name}")
+                  s";; TODO? resolveQualifiedName gave $x for ${name.name}")
             }
           case (clsEnv: ClassEnvironment, _) =>
             val label = Joos1WCodeGen.classLabel(clsEnv)

@@ -76,8 +76,9 @@ object CommonASM {
                |;; eax has obj pointer
              """.stripMargin,
           data = s"""
-              |$strLabel: dd ${str.length - 2} ;; char array for string literal
-              |dd 0
+              |$strLabel:
+              |dd 0                 ;; null obj reference
+              |dd ${str.length - 2} ;; length of char array
               |$strASM
             """.stripMargin
         )
@@ -135,6 +136,7 @@ object CommonASM {
                    |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
                    |pop eax ;; restore the thing being cast into eax
                    |je .cast_expression_pass${myCounter}
+                   |mov ebx, ${myCounter}
                    |call __exception
                    |.cast_expression_pass${myCounter}:""".stripMargin)
           case _ => ASM(s"""
@@ -167,7 +169,7 @@ object CommonASM {
                |push eax
              """.stripMargin)
         } else if (isThisMethod) {
-          ASM(s";; Implicit this.${methodAST.identifier} method call") ++
+          ASM(s";; implicit this.${methodAST.identifier} method call") ++
             ASM(s"""
                  |mov eax, ebp ;; "this" should be in frame pointer
                  |push eax
@@ -207,7 +209,7 @@ object CommonASM {
                """.stripMargin)
           }
 
-        ASM(s""";; Method invocation $methodInvocation""".stripMargin) ++
+        ASM(s""";; method invocation $methodInvocation""".stripMargin) ++
           objRefCode ++
           argPushCode ++
           methodCallCode ++
@@ -215,43 +217,49 @@ object CommonASM {
       case Some(arrayAccess: ArrayAccess) =>
         val myCounter = incrementAndReturnCounter
         val arrayPointer =
-          MethodASM.methodASM(Some(arrayAccess.primary), lvalue)
-        val index = MethodASM.methodASM(Some(arrayAccess.expression), lvalue)
+          MethodASM.methodASM(
+            Some(arrayAccess.primary),
+            if (lvalue) false else lvalue) // prevent the lvalue from propagating
+        val index = MethodASM.methodASM(
+          Some(arrayAccess.expression),
+          if (lvalue) false else lvalue) // prevent the lvalue from propagating
         ASM(s"""
-               |;; Array access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
+               |;; array ${if (lvalue) "lvalue" else "rvalue"} access: ${arrayAccess.primary} size: [${arrayAccess.expression}])
                |""") ++
           arrayPointer ++
           ASM(s"""
                |;; the pointer to the array is now in eax, first we check index bounds
-               |;; mov ebx, [ebx]
-               |push eax ;; store array pointer
-               |mov eax, [eax] ;; get array size
-               |push eax ;; store array size""") ++
+               |push eax ;; store array pointer""") ++
           index ++
           ASM(s"""
                |;; eax has array index
-               |mov edx, eax ;; edx now has array index
-               |pop ecx ;; get array size
                |pop ebx ;; get array pointer
-               |cmp edx, ecx ;; perform index bounds check
+               |mov ecx, [ebx + 4] ;; ecx <- array size
+               |mov edx, ebx ;; copy array pointer
+               |cmp eax, ecx ;; perform index bounds check
                |jl .array_check_pass_upper_bound${myCounter}
+               |mov ebx, ${myCounter}
                |call __exception
                |.array_check_pass_upper_bound${myCounter}:
-               |cmp edx, 0 ;; perform index bounds check
+               |cmp eax, 0 ;; perform index bounds check
                |jge .array_check_pass_lower_bound${myCounter}
+               |mov ebx, ${myCounter}
                |call __exception
                |.array_check_pass_lower_bound${myCounter}:
-               |add edx, 2 ;; add offset for array metadata
-               |imul edx, 4
-               |add ebx, edx,
+               |add eax, 2 ;; add offset for array metadata
+               |imul eax, 4
+               |add ebx, eax,
+               |;; edx has array pointer (&array[0])
                |;; ebx has &array[index]
                |;; [ebx] has array[index]""") ++ (if (lvalue) {
                                                     ASM(s"""
                | mov eax, ebx ;; eax <- &array[index]
+               | mov ebx, edx ;; ebx <- &array
            """.stripMargin)
                                                   } else {
                                                     ASM(s"""
                | mov eax, [ebx] ;; eax <- array[index]
+               | mov ebx, edx ;; ebx <- &array
            """.stripMargin)
                                                   })
       case Some(classInstanceCreation: ClassInstanceCreation) =>
@@ -327,19 +335,20 @@ object CommonASM {
                  |push eax ;; store actual array size
                  |cmp eax, 0
                  |jge .create_array${myCounter}
+                 |mov ebx, ${myCounter}
                  |call __exception
                  |.create_array${myCounter}:
                  |add eax, 2 ;; add offset for array metadata
                  |imul eax, 4 ;; number of bytes for array
                  |call __malloc
                  |pop ebx ;; get the size
-                 |mov [eax], ebx ;; put array size into first array element""")
+                 |mov [eax + 4], ebx ;; put array size into second array element""")
 
         // insert label for array type if it is not a primitive type
         if (arrayTypeLabel.isDefined) {
           assembly = assembly ++ ASM(s"""
                              |mov edx, ${arrayTypeLabel.get}
-                             |mov [eax + 4], edx ;; store array type pointer""")
+                             |mov [eax], edx ;; store array type pointer at position 0""")
         }
 
         assembly
@@ -353,9 +362,10 @@ object CommonASM {
               .asInstanceOf[VariableEnvironment]
             val fieldOffset = 4 * (fieldEnv.order + 1)
             val primaryAST =
-              CommonASM.commonASM(Some(fieldAccess.primary),
-                                  recurseMethod,
-                                  lvalue)
+              CommonASM.commonASM(
+                Some(fieldAccess.primary),
+                recurseMethod,
+                if (lvalue) false else lvalue) // prevent the lvalue from propagating
             if (lvalue) {
               primaryAST ++
                 ASM(s"""

@@ -1,6 +1,5 @@
 package compiler.joos1w.asm
 
-import compiler.joos1w.asm.CommonASM.incrementAndReturnCounter
 import compiler.joos1w.ast._
 import compiler.joos1w.environment._
 import compiler.joos1w.environment.types.{ArrayType, CustomType, StringType}
@@ -62,24 +61,24 @@ object MethodASM {
               // TODO handle primitive
               rhsType match {
                 case ttype @ ((_: StringType) | (_: CustomType)) =>
-                  ASM(s"""
-                       |;; perform array access sub type check
-                       |;; assume address to array is in eax
-                       |;; mov ecx, [ebx]
-                       |mov ecx, [eax + 4] ;; get addr to subclass table for rhs
-                       |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
-                       |mov ebx, [edx]
-                       |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
-                       |push edx ;; put back lhs pointer
+                  Some(ASM(s"""
+                       |;; perform array access subtype check
+                       |;; assume address to rhs array/obj is in eax
+                       |;;        address to lhs array/obj is in esp
+                       |pop ebx            ;; get lhs array/obj ref
+                       |mov ebx, [ebx]     ;; get cls of array/obj ref
+                       |mov ecx, [ebx + 8] ;; get offset of subclass table for lhs
+                       |mov ebx, [eax]     ;; get rhs array/obj cls
+                       |mov ebx, [ebx + 4] ;; get addr of subclass table for rhs
                        |push eax ;; save rhs value
                        |mov eax, 0xffffffff
-                       |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
+                       |cmp eax, [ebx + ecx] ;; check if rhs is subclass of lhs
                        |je .array_subclass_check_pass${myCounter}
                        |call __exception
                        |.array_subclass_check_pass${myCounter}:
                        |pop eax ;; restore rhs value, finished array access sub type check
-           """.stripMargin)
-                case _ => ASM(s"""""")
+           """.stripMargin))
+                case _ => None
               }
             // otherwise, check type of lhs, if it's an array we want to make sure it is assignable
             case _ =>
@@ -97,27 +96,27 @@ object MethodASM {
                 // TODO handle primitive
                 rhsType match {
                   case ttype @ ((_: StringType) | (_: CustomType)) =>
-                    ASM(s"""
-                         |;; perform array access sub type check
-                         |;; assume address to array is in eax
-                         |;; mov ecx, [ebx]
-                         |mov ecx, [eax + 4] ;; get addr to subclass table for rhs
-                         |pop edx ;; get pointer to lhs WE MUST PUT THIS BACK ON THE STACK
-                         |mov ebx, [edx]
-                         |mov edx, [ebx + 8] ;; get offset of subclass table for lhs
-                         |push edx ;; put back lhs pointer
+                    Some(ASM(s"""
+                         |;; perform array access subtype check
+                         |;; assume address to rhs array/obj is in eax
+                         |;;        address to lhs array/obj is in esp
+                         |pop ebx            ;; get lhs array/obj ref
+                         |mov ebx, [ebx]     ;; get cls of array/obj ref
+                         |mov ecx, [ebx + 8] ;; get offset of subclass table for lhs
+                         |mov ebx, [eax]     ;; get rhs array/obj cls
+                         |mov ebx, [ebx + 4] ;; get addr of subclass table for rhs
                          |push eax ;; save rhs value
                          |mov eax, 0xffffffff
-                         |cmp eax, [ecx + edx] ;; check if rhs is subclass of lhs
+                         |cmp eax, [ebx + ecx] ;; check if rhs is subclass of lhs
                          |je .array_subclass_check_pass${myCounter}
-                         |.array_subclass_check_pass${myCounter}
-                         |pop eax ;; restore rhs value, finished
-                e check
-           """.stripMargin)
-                  case _ => ASM(s"""""")
+                         |call __exception
+                         |.array_subclass_check_pass${myCounter}:
+                         |pop eax ;; restore rhs value, finished array access sub type check
+           """.stripMargin))
+                  case _ => None
                 }
               } else {
-                ASM(s"""""")
+                None
               }
           }
 
@@ -125,11 +124,14 @@ object MethodASM {
           ASM(s";; := eval lhs") ++
           lhsCode ++
           ASM(s"push eax ;; assignment: pushing lhs l-value to stack") ++
+          (if (subTypeCheckCode.isDefined)
+             ASM(s"push ebx ;; assignment: save lhs pointer for subtype check")
+           else ASM("")) ++
           ASM(s";; := eval rhs") ++
           rhsCode ++
           ASM(
             s""";; := eax has rhs value (addr for obj, value for prim), ebx has rhs pointer (to stack addr)""") ++
-          subTypeCheckCode ++
+          (if (subTypeCheckCode.isDefined) subTypeCheckCode.get else ASM("")) ++
           ASM(s";; lhs := rhs") ++
           ASM(s"""
              |;; assignment: assume value from rhs in eax

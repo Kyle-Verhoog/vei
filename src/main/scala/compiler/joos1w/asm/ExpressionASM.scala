@@ -201,7 +201,7 @@ object ExpressionASM {
               ASM(";; get left side instanceof") ++
               expr1Code ++
               ASM(s"""
-                     |mov eax, [ebx] ;; store lhs pointer
+                     |mov eax, [eax] ;; store lhs pointer
                      |mov eax, [eax]
                      |;; get instanceof right sides class into ebx
                     """.stripMargin) ++

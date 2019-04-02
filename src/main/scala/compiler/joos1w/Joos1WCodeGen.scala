@@ -264,10 +264,10 @@ object Joos1WCodeGen {
         }
       case Some(name: Name) =>
         // resolve a name when initializing fields
-        NameASM.nameASM(Some(name), lvalue = false)
+        NameASM.nameASM(Some(name), lvalue)
       case Some(ast: AST) =>
         println(s"WARNING: FALLING THROUGH astASM on $ast")
-        CommonASM.commonASM(Some(ast), astASM, lvalue = false)
+        CommonASM.commonASM(Some(ast), astASM, lvalue)
       case _ => throw new MatchError(s"methodAST match error on $ast")
     }
   }

@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 # End-to-end test runner for the vei compiler
 
-TEST_DIR_PATH = 'src/main/resources/test/marmoset/a5/'
-# TEST_DIR_PATH = 'src/main/resources/test/codegen/'
+# TEST_DIR_PATH = 'src/main/resources/test/marmoset/a5/'
+TEST_DIR_PATH = 'src/main/resources/test/codegen/'
 STDLIB_DIR_PATH = 'src/main/resources/test/marmoset/lib/5/'
 ASM_EXEC_PATH = os.path.abspath('bin/nasm')
 VEI_EXEC_PATH = os.path.abspath('./joosc')
