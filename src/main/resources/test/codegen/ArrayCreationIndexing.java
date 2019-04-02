@@ -15,6 +15,11 @@ public class ArrayCreationIndexing {
         for (int i = 0; i < 5; i = i + 1) {
             ret = ret + myArray[i];
         }
+
+        if (myArray.length == 5) {
+          ret = ret + 1;
+        }
+
         // ret = 16
         return ret;
     }
