@@ -431,6 +431,8 @@ object CommonASM {
            """.stripMargin)
       case Some(name: Name) =>
         recurseMethod(Some(name), lvalue)
+      case Some(assignment: Assignment) =>
+        recurseMethod(Some(assignment), lvalue)
       case Some(_: Empty) => ASM("")
       case Some(hack: Hack) =>
         commonASM(hack.leftChild, recurseMethod, lvalue)
