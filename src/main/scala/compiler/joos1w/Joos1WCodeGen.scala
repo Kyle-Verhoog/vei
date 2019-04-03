@@ -3,6 +3,8 @@ package compiler.joos1w
 import asm._
 import ast._
 import compiler.joos1w.environment._
+import compiler.joos1w.environment.environment._
+import compiler.joos1w.environment.types.PrimType
 
 case class ASMFile(fileName: String, src: String)
 
@@ -108,14 +110,6 @@ object Joos1WCodeGen {
     val clsVTableLabel = classVTableLabel(clsEnv)
     val clsSubClsLabel = classSubClassTableLabel(clsEnv)
 
-    // Add instance field offsets
-    clsEnv.instanceFields
-      .sortBy(f => f.order)
-      .foreach(f => {
-        f.fieldOffset = clsEnv.instanceFieldCount
-        clsEnv.instanceFieldCount += 1
-      })
-
     var staticFields = clsEnv.staticFields
 
     // sort the fields by their order
@@ -150,9 +144,66 @@ object Joos1WCodeGen {
         | ret ;; end of class initialization procedure
       """.stripMargin)
 
+    var instanceFieldInitCode = ASM("")
+    val instanceFields = clsEnv.instanceFields.sortBy(f => f.order)
+    instanceFields.foreach(field => {
+      field.fieldOffset = clsEnv.instanceFieldCount
+      clsEnv.instanceFieldCount += 1
+
+      // First initialize all primitive fields to 0
+      val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
+      determineType(fieldAST, field) match {
+        case _: PrimType =>
+          val fieldOffset = 4 * field.fieldOffset
+
+          instanceFieldInitCode = instanceFieldInitCode ++
+            ASM(s"""
+                   |;; initialize field ${fieldAST.name}
+                   |;; add "this" reference
+                   |mov eax, [ebp + 8] ;; assume obj ref is only parameter
+                   |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
+                   |mov ebx, 0
+                   |mov [eax], ebx        ;; initialize field to 0
+            """.stripMargin)
+        case _ =>
+      }
+    })
+
+    // Then initialize fields with their initializers
+    instanceFields.foreach(field => {
+      val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
+      if (fieldAST.variableDeclarator.hasExpression) {
+        val expr = fieldAST.variableDeclarator.expression
+        val fieldInitCode =
+          CommonASM.commonASM(Some(expr), MethodASM.methodASM, false)
+        val fieldOffset = 4 * field.fieldOffset
+
+        instanceFieldInitCode = instanceFieldInitCode ++
+          ASM(s"""
+                 |;; initialize field ${fieldAST.name} $expr
+                 |;; add "this" reference
+                 |mov eax, [ebp + 8] ;; obj ref is the first param
+                 |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
+                 |push eax
+            """.stripMargin) ++
+          fieldInitCode ++
+          ASM(s"""
+                 |pop ebx
+                 |mov [ebx], eax ;; field ${fieldAST.name} <- eax
+             """.stripMargin)
+      }
+    })
+
+    val defaultConstructorBody = ASM(s"""
+         |;; class default constructor
+       """.stripMargin) ++ instanceFieldInitCode
+
+    val defaultConstructorASM =
+      rawMethodASM(s"default_constructor_$clsLabel", 1, defaultConstructorBody)
+
     ASM(s"""
-           |
            |;; class initializer
+           |
            |global cls_init_$clsLabel
            |global $clsLabel
            |$clsLabel:
@@ -161,7 +212,7 @@ object Joos1WCodeGen {
            |dd ${4 * clsEnv.subClsTableOffset}
            |""".stripMargin) ++
       astASM(Some(cls.getClassBody), lvalue = false) ++
-      initCode
+      initCode ++ defaultConstructorASM
   }
 
   def interfaceASM(int: InterfaceDeclaration): ASM = {
@@ -178,17 +229,15 @@ object Joos1WCodeGen {
   //   val frameOffset = 4 * env.offset
   //   paramOffset + frameOffset
   // }
-
-  def methodASM(env: MethodEnvironment, bodyASM: ASM): ASM = {
-    val methDefLabel = methodDefinitionLabel(env)
-    val frameSize = 4 * env.localVarCount
+  def rawMethodASM(methDefLabel: String, nParams: Int, bodyASM: ASM): ASM = {
+    val frameSize = 4 * nParams
     if (methDefLabel == "java_io_OutputStream_nativeWrite_int") {
       new ASM(
         s"""
            |; Implementation of java.io.OutputStream.nativeWrite method.
            |; Outputs the low-order byte of eax to standard output.
-           |global ${methDefLabel}
-           |${methDefLabel}:
+           |global $methDefLabel
+           |$methDefLabel:
            |    mov [char], al ; save the low order byte in memory
            |    mov eax, 4     ; sys_write system call
            |    mov ecx, char  ; address of bytes to write
@@ -205,17 +254,22 @@ object Joos1WCodeGen {
       )
     } else {
       ASM(s"""global $methDefLabel
-           |$methDefLabel:
-           |push ebp
-           |mov ebp, esp ;; frame pointer <- stack pointer
-           |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
+             |$methDefLabel:
+             |push ebp
+             |mov ebp, esp ;; frame pointer <- stack pointer
+             |sub esp, $frameSize ;; push the stack frame""".stripMargin) ++
         bodyASM ++
         ASM(s"""|.method_end:
-              |mov esp, ebp ;; reset stack pointer
-              |pop ebp
-              |ret
-              |""".stripMargin)
+                |mov esp, ebp ;; reset stack pointer
+                |pop ebp
+                |ret
+                |""".stripMargin)
     }
+  }
+
+  def methodASM(env: MethodEnvironment, bodyASM: ASM): ASM = {
+    val methDefLabel = methodDefinitionLabel(env)
+    rawMethodASM(methDefLabel, env.localVarCount, bodyASM)
   }
 
   def objRefOffset(methodEnv: MethodEnvironment): ASM = {
@@ -238,63 +292,16 @@ object Joos1WCodeGen {
       case Some(const: ConstructorDeclaration) =>
         val env = const.env.asInstanceOf[MethodEnvironment]
         val clsEnv = const.env.findEnclosingClass()
+        val clsLabel = classLabel(clsEnv)
         val objRefOffset = 4 * env.paramCount
 
-        val instanceFields = clsEnv.instanceFields
-        var instanceFieldInitCode = ASM("")
-
-        // First initialize all fields to 0
-        instanceFields.foreach(field => {
-          val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
-          if (fieldAST.variableDeclarator.hasExpression) {
-            val fieldOffset = 4 * field.fieldOffset
-
-            instanceFieldInitCode = instanceFieldInitCode ++
-              ASM(s"""
-                     |;; initialize field ${fieldAST.name}
-                     |;; add "this" reference
-                     |mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
-                     |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
-                     |mov ebx, 0
-                     |mov [eax], ebx        ;; initialize field to 0
-            """.stripMargin)
-          }
-        })
-
-        // Then initialize fields with their initializers
-        instanceFields.foreach(field => {
-          val fieldAST = field.myAst.asInstanceOf[FieldDeclaration]
-          if (fieldAST.variableDeclarator.hasExpression) {
-            val expr = fieldAST.variableDeclarator.expression
-            // terrible hack:
-            // if the expr somewhere contains a reference to the current class
-            // ie "this.____" then the code will try to find an enclosing method
-            // for fields there is no enclosing method... so let's attach one
-            val hack = new Hack
-            hack.env = env
-            hack.parent = Some(expr.parent.get)
-            hack.leftChild = Some(expr)
-            val fieldInitCode =
-              CommonASM.commonASM(Some(hack), MethodASM.methodASM, lvalue)
-            val fieldOffset = 4 * field.fieldOffset
-
-            instanceFieldInitCode = instanceFieldInitCode ++
-              ASM(s"""
-                     |;; initialize field ${fieldAST.name} ${expr}
-                     |;; add "this" reference
-                     |mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj
-                     |add eax, $fieldOffset ;; eax <- addr of ${fieldAST.name}
-                     |push eax
-            """.stripMargin) ++
-              fieldInitCode ++
-              ASM(s"""
-                     |pop ebx
-                     |mov [ebx], eax ;; field ${fieldAST.name} <- eax
-             """.stripMargin)
-          }
-        })
-
-        val bodyASM = instanceFieldInitCode ++
+        val bodyASM = ASM(s"""
+             |;; invoke default constructor
+             |mov eax, [ebp + $objRefOffset] ;; push obj ref to default constructor
+             |push eax
+             |call default_constructor_$clsLabel
+             |add esp, 4
+           """.stripMargin) ++
           MethodASM.methodASM(Some(const.children(1)), lvalue = false) ++
           ASM(s"""
             | mov eax, [ebp + $objRefOffset] ;; constructor returns reference to obj

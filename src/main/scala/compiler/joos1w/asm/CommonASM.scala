@@ -299,6 +299,10 @@ object CommonASM {
                |call __malloc
                |mov ebx, $clsLabel ;; store class pointer as first item in obj
                |mov [eax], ebx
+               |;; call default constructor
+               |push eax
+               |call default_constructor_$clsLabel
+               |pop eax
                |;; pass arguments to constructor
                |push eax ;;  object pointer
                |""".stripMargin) ++
@@ -424,11 +428,20 @@ object CommonASM {
                """.stripMargin)
         }
       case Some(thisCall: ThisCall) =>
-        val methodEnv = thisCall.env.findEnclosingMethod()
-        val offset = 4 * methodEnv.paramCount
-        ASM(s"""
-             | mov eax, [ebp + $offset] ;; eax <- address of "this" obj reference
+        try {
+          val methodEnv = thisCall.env.findEnclosingMethod()
+          val offset = 4 * methodEnv.paramCount
+          ASM(s"""
+                 | mov eax, [ebp + $offset] ;; eax <- address of "this" obj reference
            """.stripMargin)
+        } catch {
+          case _: NoSuchMethodError =>
+            ASM(s"""
+                   |;; constructor fall-back obj reference: assume obj ref in first arg slot
+                   |mov eax, [ebp + 8] ;; eax <- constructor
+           """.stripMargin)
+          case _: Throwable => ASM(";; TODO: indeterminate this reference")
+        }
       case Some(name: Name) =>
         recurseMethod(Some(name), lvalue)
       case Some(assignment: Assignment) =>
