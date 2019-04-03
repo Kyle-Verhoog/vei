@@ -100,7 +100,8 @@ object ExpressionASM {
                            |""".stripMargin) ++
                     expr2Code ++
                     ASM(s"""
-                           |pop ebx ;; eax now has string pointer of RHS, ebx has string pointer of LHS
+                           |mov ebx, eax
+                           |pop eax ;; eax now has string pointer of RHS, ebx has string pointer of LHS
                            |;; now we concat the two strings""".stripMargin)
                 }
 
@@ -203,6 +204,10 @@ object ExpressionASM {
             val rhs = environment.determineType(expr.secondExpr, expr.env)
             (lhs, rhs) match {
               case (_: PrimType, _) =>
+                ASM("mov eax, 0")
+              case (_: ArrayType, _: CustomType) =>
+                ASM("mov eax, 0")
+              case (_: CustomType, _: ArrayType) =>
                 ASM("mov eax, 0")
               case _ =>
                 ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++

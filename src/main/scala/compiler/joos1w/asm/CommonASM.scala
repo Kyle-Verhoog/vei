@@ -154,11 +154,9 @@ object CommonASM {
         }
         val methodAST = methodEnv.myAst.asInstanceOf[MethodDeclaration]
         val isStatic = methodAST.modifiers.contains("static")
-        val containingCls = methodInvocation.env.findEnclosingClass()
 
         // whether or not the method call is an implicit this.method() call
         val isThisMethod = methodInvocation.name == methodAST.identifier
-        val offset = methodEnv.vtOffset
 
         // Get the object reference for the method call or null if it's a static
         // method
