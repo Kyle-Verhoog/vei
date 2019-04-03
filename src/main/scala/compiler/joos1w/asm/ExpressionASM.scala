@@ -34,6 +34,7 @@ object ExpressionASM {
       case ttype: CustomType  => "java_lang_String_valueOf_Object"
       case ttype: StringType  => "java_lang_String_valueOf_String"
       case ttype: NullType    => "java_lang_String_valueOf_Object"
+      case _: ArrayType       => "java_lang_String_valueOf_Object"
     }
   }
 
@@ -89,7 +90,8 @@ object ExpressionASM {
                            |""".stripMargin) ++
                     expr2Code ++
                     ASM(s"""
-                           |pop ebx ;; eax now has string pointer of RHS, ebx has string pointer of LHS
+                           |mov ebx, eax
+                           |pop eax ;; eax now has string pointer of RHS, ebx has string pointer of LHS
                            |;; now we concat the two strings""".stripMargin)
                 } else { // both string
                   ASM(
@@ -167,6 +169,7 @@ object ExpressionASM {
                      |;; end ${expr.firstExpr} * ${expr.secondExpr}
                      |""".stripMargin)
           case "/" =>
+            val myCounter = incrementAndReturnCounter
             ASM(s";; ${expr.firstExpr} / ${expr.secondExpr}") ++
               expr1Code ++
               ASM("push eax") ++
@@ -174,10 +177,10 @@ object ExpressionASM {
               // TODO something about the sign
               ASM(s"""
                  |cmp eax, 0
-                 |jne .div_cont
+                 |jne .div_cont${myCounter}
                  |mov ebx, 99
                  |call __exception
-                 |.div_cont:
+                 |.div_cont${myCounter}:
                  |mov ebx, eax
                  |pop eax
                  |mov edx, 0
@@ -208,6 +211,8 @@ object ExpressionASM {
               case (_: ArrayType, _: CustomType) =>
                 ASM("mov eax, 0")
               case (_: CustomType, _: ArrayType) =>
+                ASM("mov eax, 0")
+              case (_: CustomType, _: PrimType) =>
                 ASM("mov eax, 0")
               case _ =>
                 ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++

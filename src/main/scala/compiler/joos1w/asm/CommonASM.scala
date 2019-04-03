@@ -48,6 +48,7 @@ object CommonASM {
         var strASM = ""
 
         var i = 0
+        var len = 0
         while (i < newString.length) {
           if (newString(i) != '\\') {
             strASM += s"dd ${newString(i).toInt}\n"
@@ -56,6 +57,7 @@ object CommonASM {
             i += 1
           }
           i += 1
+          len += 1
         }
 
         // TODO: these are hardcoded values for the String class
@@ -78,7 +80,7 @@ object CommonASM {
           data = s"""
               |$strLabel:
               |dd 0                 ;; null obj reference
-              |dd ${str.length - 2} ;; length of char array
+              |dd ${len} ;; length of char array
               |$strASM
             """.stripMargin
         )
