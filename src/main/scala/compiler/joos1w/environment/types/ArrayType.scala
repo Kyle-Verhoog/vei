@@ -1,7 +1,6 @@
 package compiler.joos1w.environment.types
-import scala.Boolean
 
-class ArrayType(val rootType: AbstractType) extends AbstractType {
+case class ArrayType(rootType: AbstractType) extends AbstractType {
   override def stringType: String = {
     rootType.stringType + "[]"
   }
@@ -11,6 +10,6 @@ class ArrayType(val rootType: AbstractType) extends AbstractType {
   }
 
   override def toString: String = {
-    "ArrayType(" + stringType +")"
+    "ArrayType(" + stringType + ")"
   }
 }

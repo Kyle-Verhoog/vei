@@ -1,6 +1,7 @@
 package compiler.joos1w.asm
 
 import compiler.joos1w.environment.types._
+import compiler.joos1w.environment.types.ArrayType
 import compiler.joos1w.ast._
 import compiler.joos1w.environment.environment
 import compiler.joos1w.environment.types.numeric.{
@@ -206,19 +207,23 @@ object ExpressionASM {
             val lhs = environment.determineType(expr.firstExpr, expr.env)
             val rhs = environment.determineType(expr.secondExpr, expr.env)
             (lhs, rhs) match {
-              case (_: PrimType, _) =>
+              case (ArrayType(_: PrimType), _: CustomType) =>
                 ASM("mov eax, 0")
-              case (_: ArrayType, _: CustomType) =>
-                ASM("mov eax, 0")
-              case (_: CustomType, _: ArrayType) =>
+              case (_: CustomType, ArrayType(_: PrimType)) =>
                 ASM("mov eax, 0")
               case (_: CustomType, _: PrimType) =>
+                ASM("mov eax, 0")
+              case (_: PrimType, _) =>
                 ASM("mov eax, 0")
               case _ =>
                 ASM(s";; ${expr.firstExpr} instanceof( ${expr.secondExpr} )") ++
                   ASM(";; get left side instanceof") ++
                   expr1Code ++
                   ASM(s"""
+                         |cmp eax, 0 ;; NULL check
+                         |jne .continue${myCounter} ;; if NULL jmp to end else continue
+                         |jmp .instanceof_subtype_check_pass${myCounter} ;;
+                         |.continue${myCounter}:
                          |push eax ;; instanceof: push lhs obj ref
                          |         ;; TODO? array ref
                          |;; get instanceof right sides class into ebx

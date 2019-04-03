@@ -101,11 +101,24 @@ object CommonASM {
         val codeBeingCast =
           MethodASM.methodASM(Some(castExpression.beingCast), lvalue)
 
+        val typeBeingCast =
+          determineType(castExpression.beingCast, castExpression.env)
+
         var typeCastTo = if (castExpression.simpleType.isDefined) {
           types.buildTypeFromString(castExpression.simpleType.get,
                                     castExpression.env)
         } else { // it has an expression as its type
           determineType(castExpression.children.head, castExpression.env)
+        }
+
+        (typeCastTo, typeBeingCast) match {
+          case (_: ArrayType, _: CustomType) =>
+            throw new ClassCastException(
+              s"cannot cast custom type to array type")
+          case (_: CustomType, _: ArrayType) =>
+            throw new ClassCastException(
+              s"cannot cast array type to custom type")
+          case _ =>
         }
 
         // if typeCastTo is an array, get the actual type
@@ -446,9 +459,8 @@ object CommonASM {
         recurseMethod(Some(name), lvalue)
       case Some(assignment: Assignment) =>
         recurseMethod(Some(assignment), lvalue)
-      case Some(_: Empty) => ASM("")
-      case Some(hack: Hack) =>
-        commonASM(hack.leftChild, recurseMethod, lvalue)
+      case Some(_: Empty)         => ASM("")
+      case Some(_: PrimitiveType) => ASM("")
       case Some(ast: AST) =>
         throw new MatchError(s"commonASM match error on $ast ${ast.toStrTree}")
       case None => ASM("")
