@@ -112,22 +112,21 @@ object CommonASM {
         }
 
         (typeCastTo, typeBeingCast) match {
-          case (_: ArrayType, _: CustomType) =>
-            throw new ClassCastException(
-              s"cannot cast custom type to array type")
-          case (_: CustomType, _: ArrayType) =>
-            throw new ClassCastException(
-              s"cannot cast array type to custom type")
-          case _ =>
-        }
-
-        // if typeCastTo is an array, get the actual type
-        if (typeCastTo.isInstanceOf[ArrayType]) {
-          typeCastTo = typeCastTo.asInstanceOf[ArrayType].rootType
-        }
-
-        typeCastTo match {
-          case ttype @ ((_: StringType) | (_: CustomType)) =>
+          case (_: PrimType | ArrayType(_: PrimType),
+                _: CustomType | ArrayType(_: CustomType)) =>
+            ASM(s"""
+                 |;; cannot cast custom type to primitive type
+                 |mov ebx, 13
+                 |call __exception
+               """.stripMargin)
+          case (_: CustomType | ArrayType(_: CustomType),
+                _: PrimType | ArrayType(_: PrimType)) =>
+            ASM(s"""
+                   |;; cannot cast primitive type to custom type
+                   |mov ebx, 13
+                   |call __exception
+               """.stripMargin)
+          case (ttype @ (_: StringType | _: CustomType), _) =>
             val classLabel = ttype match {
               case ttype: StringType => Joos1WCodeGen.classLabel(ttype.env)
               case ttype: CustomType => Joos1WCodeGen.classLabel(ttype.env)

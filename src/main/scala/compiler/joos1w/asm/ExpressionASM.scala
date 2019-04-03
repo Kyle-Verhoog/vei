@@ -185,7 +185,8 @@ object ExpressionASM {
                  |mov ebx, eax
                  |pop eax
                  |mov edx, 0
-                 |div ebx
+                 |cdq
+                 |idiv ebx
                  |;; end ${expr.firstExpr} / ${expr.secondExpr}
                  |""".stripMargin)
           case "%" =>
