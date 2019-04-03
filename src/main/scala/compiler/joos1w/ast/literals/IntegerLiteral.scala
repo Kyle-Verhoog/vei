@@ -14,6 +14,11 @@ class IntegerLiteral(rawValue: String, var negative: Boolean = false)
   }
 
   def integerValue: Int = {
+    // Hack until we fix weeding
+    if (rawValue == "2147483648") {
+      return -2147483648
+    }
+
     if (negative) {
       return ("-" + rawValue).toInt
     }

@@ -14,7 +14,7 @@ object Joos1WEnvironment {
     environment.environment.verifyEnvironment(rootEnvironment)
     println("verifying ast...")
     asts.foreach(ast => {
-      println(ast.toStrTree)
+      // println(ast.toStrTree)
       environment.environment.verifyAST(ast)
     })
     rootEnvironment

@@ -677,22 +677,22 @@ object AST {
         // the integer literal to properly check integer ranges
         childrenTypes match {
           case "-" :: "unary_expression" :: Nil =>
-            val ast = fromParseTreeAttachChildren(
+            fromParseTreeAttachChildren(
               // changed from general to unary
-              new UnaryExpression(getValue(children.head)),
+              new UnaryExpression("-"),
               children(1) :: Nil
             )
-            // check if unary expression was IntegerLiteral, if so negate it
-            ast.getChild(0).get match {
-              case ast: IntegerLiteral =>
-                // if an integer literal isn't a direct expression, check its bounds before negating
-                if (!isDirectExpression(parseTree.children(1))) {
-                  ast.integerValue // will trigger evaluation
-                }
-                ast.setNegative(true)
-                ast
-              case _ => ast
-            }
+          // check if unary expression was IntegerLiteral, if so negate it
+          // ast.getChild(0).get match {
+          //   case ast: IntegerLiteral =>
+          //     // if an integer literal isn't a direct expression, check its bounds before negating
+          //     if (!isDirectExpression(parseTree.children(1))) {
+          //       ast.integerValue // will trigger evaluation
+          //     }
+          //     ast.setNegative(true)
+          //     ast
+          //   case _ => ast
+          // }
           case "unary_expression_not_plus_minus" :: Nil =>
             fromParseTree(children.head, parent)
           case _ => throw ASTConstructionException(s"$tokenType $childrenTypes")
